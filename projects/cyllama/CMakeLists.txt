@@ -81,6 +81,4 @@ target_link_libraries(
     PUBLIC
     ${Python_LIBRARIES}
     ${LLAMA_LINK_LIBS}
-    $<IF:$<BOOL:${LLAMA_SHAREDLIB}>,-lllama,${LLAMA_STATICLIB}>
-    $<IF:$<BOOL:${LLAMA_SHAREDLIB}>,-lllama,${GGML_STATICLIB}>
 )

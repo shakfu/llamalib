@@ -1,14 +1,11 @@
-# set path so `faust` be queried for the path to stdlib
+# set path so `llama-cli` etc.. be in path
 export PATH := $(PWD)/bin:$(PATH)
 
 WITH_DYLIB=0
 
 MIN_OSX_VER := -mmacosx-version-min=13.6
 
-LLAMA_STATICLIB := ./lib/libfaust.a
-INTERP_TESTS := tests/test_faust_interp
-
-LIBLAMMA := lib/libllama.a
+LIBLAMMA := ./lib/libllama.a
 
 .PHONY: cmake clean setup setup_inplace wheel
 

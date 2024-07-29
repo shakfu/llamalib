@@ -35,7 +35,5 @@ target_link_directories(
 target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
-    ${LLAMA_STATICLIB}
-    ${GGML_STATICLIB}
     ${LLAMA_LINK_LIBS}
 )

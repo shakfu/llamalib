@@ -1,4 +1,4 @@
-# llamalab
+# llamalib
 
 Early stage experiments with different python wrappers of [llama.cpp](https://github.com/ggerganov/llama.cpp)
 

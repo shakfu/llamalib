@@ -43,6 +43,8 @@ set(GGML_STATICLIB
 	${PROJECT_LIB_DIRS}/libggml${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 set(LLAMA_LINK_LIBS
+    $<IF:$<BOOL:${LLAMA_SHAREDLIB}>,-lllama,${LLAMA_STATICLIB}>
+    $<IF:$<BOOL:${LLAMA_SHAREDLIB}>,-lggml,${GGML_STATICLIB}>
     "$<$<PLATFORM_ID:Darwin>:-framework Accelerate>"
     "$<$<PLATFORM_ID:Darwin>:-framework Foundation>"
 	# "$<$<PLATFORM_ID:Darwin>:-framework CoreFoundation>"
