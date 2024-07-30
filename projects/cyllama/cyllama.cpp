@@ -1246,6 +1246,8 @@ static CYTHON_INLINE float __PYX_NAN() {
 #define __PYX_HAVE_API__cyllama
 /* Early includes */
 #include <stdint.h>
+#include <string.h>
+#include <stdio.h>
 #include "ggml.h"
 #include "ggml-backend.h"
 #include "llama.h"
@@ -2110,6 +2112,10 @@ static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
 /* Module declarations from "libc.stdint" */
 
+/* Module declarations from "libc.string" */
+
+/* Module declarations from "libc.stdio" */
+
 /* Module declarations from "llama" */
 
 /* Module declarations from "cyllama" */
@@ -2187,6 +2193,10 @@ typedef struct {
   #endif
   #ifdef __Pyx_Coroutine_USED
   PyTypeObject *__pyx_CoroutineType;
+  #endif
+  #if CYTHON_USE_MODULE_STATE
+  #endif
+  #if CYTHON_USE_MODULE_STATE
   #endif
   #if CYTHON_USE_MODULE_STATE
   #endif
@@ -2379,6 +2389,10 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #endif
 #ifdef __Pyx_Coroutine_USED
 #define __pyx_CoroutineType __pyx_mstate_global->__pyx_CoroutineType
+#endif
+#if CYTHON_USE_MODULE_STATE
+#endif
+#if CYTHON_USE_MODULE_STATE
 #endif
 #if CYTHON_USE_MODULE_STATE
 #endif

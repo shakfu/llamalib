@@ -14,7 +14,7 @@ LIBRARIES = ["pthread"]
 if WITH_DYLIB:
     LIBRARIES.extend(['llama', 'ggml'])
 else:
-    EXTRA_OBJECTS.extend(['lib/libfaust.a', 'lib/libggml.a'])
+    EXTRA_OBJECTS.extend(['lib/libllama.a', 'lib/libggml.a'])
 
 CWD = os.getcwd()
 LIB = os.path.join(CWD, 'lib')
@@ -25,14 +25,9 @@ INCLUDE_DIRS.append(os.path.join(CWD, 'include'))
 if platform.system() == 'Darwin':
     EXTRA_LINK_ARGS.append('-Wl,-rpath,'+LIB)
 
-    "$<$<PLATFORM_ID:Darwin>:-framework Accelerate>"
-    "$<$<PLATFORM_ID:Darwin>:-framework Foundation>"
-    # "$<$<PLATFORM_ID:Darwin>:-framework CoreFoundation>"
-    "$<$<PLATFORM_ID:Darwin>:-framework Metal>"
-    "$<$<PLATFORM_ID:Darwin>:-framework MetalKit>"
 
 os.environ['LDFLAGS'] = ' '.join([
-    '-framework Acceleraten',
+    '-framework Accelerate',
     '-framework Foundation',
     # '-framework CoreFoundation',
     '-framework Metal',
@@ -40,27 +35,25 @@ os.environ['LDFLAGS'] = ' '.join([
 ])
 
 extensions = [
-    Extension("cyfaust", 
+    Extension("cyllama", 
         [
-            "projects/cyfaust/cyfaust.pyx", 
-            "include/rtaudio/RtAudio.cpp",
-            "include/rtaudio/rtaudio_c.cpp",
+            "projects/cyllama/cyllama.pyx", 
         ],
-        define_macros = [
-            ("INTERP_DSP", 1),
-            ("__MACOSX_CORE__", None)
-        ],
+        # define_macros = [
+        #     ("INTERP_DSP", 1),
+        #     ("__MACOSX_CORE__", None)
+        # ],
         include_dirs = INCLUDE_DIRS,
         libraries = LIBRARIES,
         library_dirs = LIBRARY_DIRS,
         extra_objects = EXTRA_OBJECTS,
-        extra_compile_args = ['-std=c++11'],
+        extra_compile_args = ['-std=c++14'],
         extra_link_args = EXTRA_LINK_ARGS,
     ),
 ]
 
 setup(
-    name='cyfaust',
+    name='cyllama',
     ext_modules=cythonize(
         extensions,
         language_level="3str",

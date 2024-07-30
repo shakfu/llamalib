@@ -1,4 +1,5 @@
-from libc.stdint cimport int32_t, int8_t, int64_t, uint32_t
+from libc.stdint cimport int32_t, int8_t, int64_t, uint32_t, uint64_t, uint8_t
+from libc.stdio cimport FILE
 
 
 cdef extern from "ggml.h":
@@ -465,3 +466,725 @@ cdef extern from "llama.h":
 
 
 
+    # Initialize the llama + ggml backend
+    # If numa is true, use NUMA optimizations
+    # Call once at the start of the program
+    cdef void llama_backend_init()
+
+    #optional:
+    # cdef void llama_numa_init(ggml_numa_strategy numa)
+
+    # Call once at the end of the program - currently only used for MPI
+    cdef void llama_backend_free()
+
+    cdef llama_model * llama_load_model_from_file(
+            const char * path_model,
+            llama_model_params params)
+
+    cdef void llama_free_model(llama_model * model)
+
+    cdef llama_context * llama_new_context_with_model(
+                     llama_model * model,
+            llama_context_params   params)
+
+    # Frees all allocated memory
+    cdef void llama_free(llama_context * ctx)
+
+    cdef int64_t llama_time_us()
+
+    cdef size_t llama_max_devices()
+
+    cdef bint llama_supports_mmap       ()
+    cdef bint llama_supports_mlock      ()
+    cdef bint llama_supports_gpu_offload()
+
+    cdef const llama_model * llama_get_model(const llama_context * ctx)
+
+    cdef uint32_t llama_n_ctx      (const llama_context * ctx)
+    cdef uint32_t llama_n_batch    (const llama_context * ctx)
+    cdef uint32_t llama_n_ubatch   (const llama_context * ctx)
+    cdef uint32_t llama_n_seq_max  (const llama_context * ctx)
+
+    cdef llama_pooling_type get_llama_pooling_type(const llama_context * ctx)
+    cdef llama_vocab_type   get_llama_vocab_type  (const llama_model * model)
+    cdef llama_rope_type    get_llama_rope_type   (const llama_model * model)
+
+    cdef int32_t llama_n_vocab    (const llama_model * model)
+    cdef int32_t llama_n_ctx_train(const llama_model * model)
+    cdef int32_t llama_n_embd     (const llama_model * model)
+    cdef int32_t llama_n_layer    (const llama_model * model)
+
+    # Get the model's RoPE frequency scaling factor
+    cdef float llama_rope_freq_scale_train(const llama_model * model)
+
+    # Functions to access the model's GGUF metadata scalar values
+    # - The functions return the length of the string on success, or -1 on failure
+    # - The output string is always null-terminated and cleared on failure
+    # - GGUF array values are not supported by these functions
+
+    # Get metadata value as a string by key name
+    cdef int32_t llama_model_meta_val_str(const llama_model * model, const char * key, char * buf, size_t buf_size)
+
+    # Get the number of metadata key/value pairs
+    cdef int32_t llama_model_meta_count(const llama_model * model)
+
+    # Get metadata key name by index
+    cdef int32_t llama_model_meta_key_by_index(const llama_model * model, int32_t i, char * buf, size_t buf_size)
+
+    # Get metadata value as a string by index
+    cdef int32_t llama_model_meta_val_str_by_index(const llama_model * model, int32_t i, char * buf, size_t buf_size)
+
+    # Get a string describing the model type
+    cdef int32_t llama_model_desc(const llama_model * model, char * buf, size_t buf_size)
+
+    # Returns the total size of all the tensors in the model in bytes
+    cdef uint64_t llama_model_size(const llama_model * model)
+
+    # Returns the total number of parameters in the model
+    cdef uint64_t llama_model_n_params(const llama_model * model)
+
+    # Get a llama model tensor
+    cdef ggml_tensor * llama_get_model_tensor(llama_model * model, const char * name)
+
+    # Returns true if the model contains an encoder that requires llama_encode() call
+    cdef bint llama_model_has_encoder(const llama_model * model)
+
+    # For encoder-decoder models, this function returns id of the token that must be provided
+    # to the decoder to start generating output sequence. For other models, it returns -1.
+    cdef llama_token llama_model_decoder_start_token(const llama_model * model)
+
+    # Returns 0 on success
+    cdef uint32_t llama_model_quantize(
+            const char * fname_inp,
+            const char * fname_out,
+            const llama_model_quantize_params * params)
+
+    # Load a LoRA adapter from file
+    # The loaded adapter will be associated to the given model, and will be free when the model is deleted
+    cdef llama_lora_adapter * llama_lora_adapter_init(llama_model * model, const char * path_lora)
+
+    # Add a loaded LoRA adapter to given context
+    # This will not modify model's weight
+    cdef int32_t llama_lora_adapter_set(
+            llama_context * ctx,
+            llama_lora_adapter * adapter,
+            float scale)
+
+    # Remove a specific LoRA adapter from given context
+    # Return -1 if the adapter is not present in the context
+    cdef int32_t llama_lora_adapter_remove(
+            llama_context * ctx,
+            llama_lora_adapter * adapter)
+
+    # Remove all LoRA adapters from given context
+    cdef void llama_lora_adapter_clear(llama_context * ctx)
+
+    # Manually free a LoRA adapter
+    # Note: loaded adapters will be free when the associated model is deleted
+    cdef void llama_lora_adapter_free(llama_lora_adapter * adapter)
+
+    # Apply a loaded control vector to a llama_context, or if data is NULL, clear
+    # the currently loaded vector.
+    # n_embd should be the size of a single layer's control, and data should point
+    # to an n_embd x n_layers buffer starting from layer 1.
+    # il_start and il_end are the layer range the vector should apply to (both inclusive)
+    # See llama_control_vector_load in common to load a control vector.
+    cdef int32_t llama_control_vector_apply(
+            llama_context * lctx,
+                     const float * data,
+                          size_t   len,
+                         int32_t   n_embd,
+                         int32_t   il_start,
+                         int32_t   il_end)
+
+    ctypedef struct llama_kv_cache_view_cell:
+        # The position for this cell. Takes KV cache shifts into account.
+        # May be negative if the cell is not populated.
+        llama_pos pos
+
+    # An updateable view of the KV cache.
+    ctypedef struct llama_kv_cache_view:
+        # Number of KV cache cells. This will be the same as the context size.
+        int32_t n_cells
+
+        # Maximum number of sequences that can exist in a cell. It's not an error
+        # if there are more sequences in a cell than this value, however they will
+        # not be visible in the view cells_sequences.
+        int32_t n_seq_max
+
+        # Number of tokens in the cache. For example, if there are two populated
+        # cells, the first with 1 sequence id in it and the second with 2 sequence
+        # ids then you'll have 3 tokens.
+        int32_t token_count
+
+        # Number of populated cache cells.
+        int32_t used_cells
+
+        # Maximum contiguous empty slots in the cache.
+        int32_t max_contiguous
+
+        # Index to the start of the max_contiguous slot range. Can be negative
+        # when cache is full.
+        int32_t max_contiguous_idx
+
+        # Information for an individual cell.
+        llama_kv_cache_view_cell * cells
+
+        # The sequences for each cell. There will be n_seq_max items per cell.
+        llama_seq_id * cells_sequences
+
+    # Create an empty KV cache view. (use only for debugging purposes)
+    cdef llama_kv_cache_view llama_kv_cache_view_init(const llama_context * ctx, int32_t n_seq_max)
+
+    # Free a KV cache view. (use only for debugging purposes)
+    cdef void llama_kv_cache_view_free(llama_kv_cache_view * view)
+
+    # Update the KV cache view structure with the current state of the KV cache. (use only for debugging purposes)
+    cdef void llama_kv_cache_view_update(const llama_context * ctx, llama_kv_cache_view * view)
+
+    # Returns the number of tokens in the KV cache (slow, use only for debug)
+    # If a KV cell has multiple sequences assigned to it, it will be counted multiple times
+    cdef int32_t llama_get_kv_cache_token_count(const llama_context * ctx)
+
+    # Returns the number of used KV cells (i.e. have at least one sequence assigned to them)
+    cdef int32_t llama_get_kv_cache_used_cells(const llama_context * ctx)
+
+    # Clear the KV cache - both cell info is erased and KV data is zeroed
+    cdef void llama_kv_cache_clear(llama_context * ctx)
+
+
+    # Removes all tokens that belong to the specified sequence and have positions in [p0, p1)
+    # Returns false if a partial sequence cannot be removed. Removing a whole sequence never fails
+    # seq_id < 0 : match any sequence
+    # p0 < 0     : [0,  p1]
+    # p1 < 0     : [p0, inf)
+    cdef bint llama_kv_cache_seq_rm(
+            llama_context * ctx,
+                    llama_seq_id   seq_id,
+                       llama_pos   p0,
+                       llama_pos   p1)
+
+    # Copy all tokens that belong to the specified sequence to another sequence
+    # Note that this does not allocate extra KV cache memory - it simply assigns the tokens to the new sequence
+    # p0 < 0 : [0,  p1]
+    # p1 < 0 : [p0, inf)
+    cdef void llama_kv_cache_seq_cp(
+            llama_context * ctx,
+                    llama_seq_id   seq_id_src,
+                    llama_seq_id   seq_id_dst,
+                       llama_pos   p0,
+                       llama_pos   p1)
+
+    # Removes all tokens that do not belong to the specified sequence
+    cdef void llama_kv_cache_seq_keep(
+            llama_context * ctx,
+                    llama_seq_id   seq_id)
+
+    # Adds relative position "delta" to all tokens that belong to the specified sequence and have positions in [p0, p1)
+    # If the KV cache is RoPEd, the KV data is updated accordingly:
+    #   - lazily on next llama_decode()
+    #   - explicitly with llama_kv_cache_update()
+    # p0 < 0 : [0,  p1]
+    # p1 < 0 : [p0, inf)
+    cdef void llama_kv_cache_seq_add(
+            llama_context * ctx,
+                    llama_seq_id   seq_id,
+                       llama_pos   p0,
+                       llama_pos   p1,
+                       llama_pos   delta)
+
+    # Integer division of the positions by factor of `d > 1`
+    # If the KV cache is RoPEd, the KV data is updated accordingly:
+    #   - lazily on next llama_decode()
+    #   - explicitly with llama_kv_cache_update()
+    # p0 < 0 : [0,  p1]
+    # p1 < 0 : [p0, inf)
+    cdef void llama_kv_cache_seq_div(
+            llama_context * ctx,
+                    llama_seq_id   seq_id,
+                       llama_pos   p0,
+                       llama_pos   p1,
+                             int   d)
+
+    # Returns the largest position present in the KV cache for the specified sequence
+    cdef llama_pos llama_kv_cache_seq_pos_max(
+            llama_context * ctx,
+                    llama_seq_id   seq_id)
+
+    # Defragment the KV cache
+    # This will be applied:
+    #   - lazily on next llama_decode()
+    #   - explicitly with llama_kv_cache_update()
+    cdef void llama_kv_cache_defrag(llama_context * ctx)
+
+    # Apply the KV cache updates (such as K-shifts, defragmentation, etc.)
+    cdef void llama_kv_cache_update(llama_context * ctx)
+
+
+
+    #
+    # State / sessions
+    #
+
+    # Returns the *actual* size in bytes of the state
+    # (rng, logits, embedding and kv_cache)
+    # Only use when saving the state, not when restoring it, otherwise the size may be too small.
+    cdef size_t llama_state_get_size( llama_context * ctx)
+
+    # Copies the state to the specified destination address.
+    # Destination needs to have allocated enough memory.
+    # Returns the number of bytes copied
+    cdef size_t llama_state_get_data(
+             llama_context * ctx,
+                         uint8_t * dst,
+                          size_t   size)
+
+    # Set the state reading from the specified address
+    # Returns the number of bytes read
+    cdef size_t llama_state_set_data(
+             llama_context * ctx,
+                   const uint8_t * src,
+                          size_t   size)
+
+    # Save/load session file
+    cdef bint llama_state_load_file(
+             llama_context * ctx,
+                      const char * path_session,
+                     llama_token * tokens_out,
+                          size_t   n_token_capacity,
+                          size_t * n_token_count_out)
+
+    cdef bint llama_state_save_file(
+             llama_context * ctx,
+                      const char * path_session,
+               const llama_token * tokens,
+                          size_t   n_token_count)
+
+    # Get the exact size needed to copy the KV cache of a single sequence
+    cdef size_t llama_state_seq_get_size(
+             llama_context * ctx,
+                    llama_seq_id   seq_id)
+
+    # Copy the KV cache of a single sequence into the specified buffer
+    cdef size_t llama_state_seq_get_data(
+             llama_context * ctx,
+                         uint8_t * dst,
+                          size_t   size,
+                    llama_seq_id   seq_id)
+
+    # Copy the sequence data (originally copied with `llama_state_seq_get_data`) into the specified sequence
+    # Returns:
+    #  - Positive: Ok
+    #  - Zero: Failed to load
+    cdef size_t llama_state_seq_set_data(
+             llama_context * ctx,
+                   const uint8_t * src,
+                          size_t   size,
+                    llama_seq_id   dest_seq_id)
+
+    cdef size_t llama_state_seq_save_file(
+             llama_context * ctx,
+                      const char * filepath,
+                    llama_seq_id   seq_id,
+               const llama_token * tokens,
+                          size_t   n_token_count)
+
+    cdef size_t llama_state_seq_load_file(
+             llama_context * ctx,
+                      const char * filepath,
+                    llama_seq_id   dest_seq_id,
+                     llama_token * tokens_out,
+                          size_t   n_token_capacity,
+                          size_t * n_token_count_out)
+
+    #
+    # Decoding
+    #
+
+    # Return batch for single sequence of tokens starting at pos_0
+    #
+    # NOTE: this is a helper function to facilitate transition to the new batch API - avoid using it
+    #
+    cdef  llama_batch llama_batch_get_one(
+                  llama_token * tokens,
+                      int32_t   n_tokens,
+                    llama_pos   pos_0,
+                 llama_seq_id   seq_id)
+
+    # Allocates a batch of tokens on the heap that can hold a maximum of n_tokens
+    # Each token can be assigned up to n_seq_max sequence ids
+    # The batch has to be freed with llama_batch_free()
+    # If embd != 0, llama_batch.embd will be allocated with size of n_tokens * embd * sizeof(float)
+    # Otherwise, llama_batch.token will be allocated to store n_tokens llama_token
+    # The rest of the llama_batch members are allocated with size n_tokens
+    # All members are left uninitialized
+    cdef  llama_batch llama_batch_init(
+            int32_t n_tokens,
+            int32_t embd,
+            int32_t n_seq_max)
+
+    # Frees a batch of tokens allocated with llama_batch_init()
+    cdef void llama_batch_free( llama_batch batch)
+
+    # Processes a batch of tokens with the ecoder part of the encoder-decoder model.
+    # Stores the encoder output internally for later use by the decoder cross-attention layers.
+    #   0 - success
+    # < 0 - error
+    cdef int32_t llama_encode(
+             llama_context * ctx,
+               llama_batch   batch)
+
+    # Positive return values does not mean a fatal error, but rather a warning.
+    #   0 - success
+    #   1 - could not find a KV slot for the batch (try reducing the size of the batch or increase the context)
+    # < 0 - error
+    cdef int32_t llama_decode(
+             llama_context * ctx,
+               llama_batch   batch)
+
+    # Set the number of threads used for decoding
+    # n_threads is the number of threads used for generation (single token)
+    # n_threads_batch is the number of threads used for prompt and batch processing (multiple tokens)
+    cdef void llama_set_n_threads( llama_context * ctx, uint32_t n_threads, uint32_t n_threads_batch)
+
+    # Get the number of threads used for generation of a single token.
+    cdef uint32_t llama_n_threads( llama_context * ctx)
+
+    # Get the number of threads used for prompt and batch processing (multiple token).
+    cdef uint32_t llama_n_threads_batch( llama_context * ctx)
+
+    # Set whether the model is in embeddings mode or not
+    # If true, embeddings will be returned but logits will not
+    cdef void llama_set_embeddings( llama_context * ctx, bint embeddings)
+
+    # Set whether to use causal attention or not
+    # If set to true, the model will only attend to the past tokens
+    cdef void llama_set_causal_attn( llama_context * ctx, bint causal_attn)
+
+    # Set abort callback
+    cdef void llama_set_abort_callback( llama_context * ctx, ggml_abort_callback abort_callback, void * abort_callback_data)
+
+    # Wait until all computations are finished
+    # This is automatically done when using one of the functions below to obtain the computation results
+    # and is not necessary to call it explicitly in most cases
+    cdef void llama_synchronize( llama_context * ctx)
+
+    # Token logits obtained from the last call to llama_decode()
+    # The logits for which llama_batch.logits[i] != 0 are stored contiguously
+    # in the order they have appeared in the batch.
+    # Rows: number of tokens for which llama_batch.logits[i] != 0
+    # Cols: n_vocab
+    cdef float * llama_get_logits( llama_context * ctx)
+
+    # Logits for the ith token. For positive indices, Equivalent to:
+    # llama_get_logits(ctx) + ctx->output_ids[i]*n_vocab
+    # Negative indicies can be used to access logits in reverse order, -1 is the last logit.
+    # returns NULL for invalid ids.
+    cdef float * llama_get_logits_ith( llama_context * ctx, int32_t i)
+
+    # Get all output token embeddings.
+    # when pooling_type == LLAMA_POOLING_TYPE_NONE or when using a generative model,
+    # the embeddings for which llama_batch.logits[i] != 0 are stored contiguously
+    # in the order they have appeared in the batch.
+    # shape: [n_outputs*n_embd]
+    # Otherwise, returns NULL.
+    cdef float * llama_get_embeddings( llama_context * ctx)
+
+    # Get the embeddings for the ith token. For positive indices, Equivalent to:
+    # llama_get_embeddings(ctx) + ctx->output_ids[i]*n_embd
+    # Negative indicies can be used to access embeddings in reverse order, -1 is the last embedding.
+    # shape: [n_embd] (1-dimensional)
+    # returns NULL for invalid ids.
+    cdef float * llama_get_embeddings_ith( llama_context * ctx, int32_t i)
+
+    # Get the embeddings for a sequence id
+    # Returns NULL if pooling_type is LLAMA_POOLING_TYPE_NONE
+    # shape: [n_embd] (1-dimensional)
+    cdef float * llama_get_embeddings_seq( llama_context * ctx, llama_seq_id seq_id)
+
+
+    #
+    # Vocab
+    #
+
+    cdef const char * llama_token_get_text(const  llama_model * model, llama_token token)
+
+    cdef float llama_token_get_score(const  llama_model * model, llama_token token)
+
+    cdef llama_token_attr llama_token_get_attr(const  llama_model * model, llama_token token)
+
+    # Check if the token is supposed to end generation (end-of-generation, eg. EOS, EOT, etc.)
+    cdef bint llama_token_is_eog(const  llama_model * model, llama_token token)
+
+    # Identify if Token Id is a control token or a render-able token
+    cdef bint llama_token_is_control(const  llama_model * model, llama_token token)
+
+    # Special tokens
+    cdef llama_token llama_token_bos(const  llama_model * model) # beginning-of-sentence
+    cdef llama_token llama_token_eos(const  llama_model * model) # end-of-sentence
+    cdef llama_token llama_token_cls(const  llama_model * model) # classification
+    cdef llama_token llama_token_sep(const  llama_model * model) # sentence separator
+    cdef llama_token llama_token_nl (const  llama_model * model) # next-line
+    cdef llama_token llama_token_pad(const  llama_model * model) # padding
+
+    # Returns -1 if unknown, 1 for true or 0 for false.
+    cdef int32_t llama_add_bos_token(const  llama_model * model)
+
+    # Returns -1 if unknown, 1 for true or 0 for false.
+    cdef int32_t llama_add_eos_token(const  llama_model * model)
+
+    # Codellama infill tokens
+    cdef llama_token llama_token_prefix(const  llama_model * model) # Beginning of infill prefix
+    cdef llama_token llama_token_middle(const  llama_model * model) # Beginning of infill middle
+    cdef llama_token llama_token_suffix(const  llama_model * model) # Beginning of infill suffix
+    cdef llama_token llama_token_eot   (const  llama_model * model) # End of infill middle
+
+    #
+    # Tokenization
+    #
+
+    # @details Convert the provided text into tokens.
+    # @param tokens The tokens pointer must be large enough to hold the resulting tokens.
+    # @return Returns the number of tokens on success, no more than n_tokens_max
+    # @return Returns a negative number on failure - the number of tokens that would have been returned
+    # @param add_special Allow to add BOS and EOS tokens if model is configured to do so.
+    # @param parse_special Allow tokenizing special and/or control tokens which otherwise are not exposed and treated
+    #                      as plaintext. Does not insert a leading space.
+    cdef int32_t llama_tokenize(
+        const  llama_model * model,
+                      const char * text,
+                         int32_t   text_len,
+                     llama_token * tokens,
+                         int32_t   n_tokens_max,
+                            bint   add_special,
+                            bint   parse_special)
+
+    # Token Id -> Piece.
+    # Uses the vocabulary in the provided context.
+    # Does not write null terminator to the buffer.
+    # User can skip up to 'lstrip' leading spaces before copying (useful when encoding/decoding multiple tokens with 'add_space_prefix')
+    # @param special If true, special tokens are rendered in the output.
+    cdef int32_t llama_token_to_piece(
+              const  llama_model * model,
+                           llama_token   token,
+                                  char * buf,
+                               int32_t   length,
+                               int32_t   lstrip,
+                                  bint   special)
+
+    # @details Convert the provided tokens into text (inverse of llama_tokenize()).
+    # @param text The char pointer must be large enough to hold the resulting text.
+    # @return Returns the number of chars/bytes on success, no more than text_len_max.
+    # @return Returns a negative number on failure - the number of chars/bytes that would have been returned.
+    # @param remove_special Allow to remove BOS and EOS tokens if model is configured to do so.
+    # @param unparse_special If true, special tokens are rendered in the output.
+    cdef int32_t llama_detokenize(
+        const  llama_model * model,
+               const llama_token * tokens,
+                         int32_t   n_tokens,
+                            char * text,
+                         int32_t   text_len_max,
+                            bint   remove_special,
+                            bint   unparse_special)
+
+
+    #
+    # Chat templates
+    #
+
+    # Apply chat template. Inspired by hf apply_chat_template() on python.
+    # Both "model" and "custom_template" are optional, but at least one is required. "custom_template" has higher precedence than "model"
+    # NOTE: This function does not use a jinja parser. It only support a pre-defined list of template. See more: https:#github.com/ggerganov/llama.cpp/wiki/Templates-supported-by-llama_chat_apply_template
+    # @param tmpl A Jinja template to use for this chat. If this is nullptr, the model’s default chat template will be used instead.
+    # @param chat Pointer to a list of multiple llama_chat_message
+    # @param n_msg Number of llama_chat_message in this chat
+    # @param add_ass Whether to end the prompt with the token(s) that indicate the start of an assistant message.
+    # @param buf A buffer to hold the output formatted prompt. The recommended alloc size is 2 * (total number of characters of all messages)
+    # @param length The size of the allocated buffer
+    # @return The total number of bytes of the formatted prompt. If is it larger than the size of buffer, you may need to re-alloc it and then re-apply the template.
+    cdef int32_t llama_chat_apply_template(
+              const  llama_model * model,
+                            const char * tmpl,
+       const  llama_chat_message * chat,
+                                size_t   n_msg,
+                                  bint   add_ass,
+                                  char * buf,
+                               int32_t   length)
+
+    #
+    # Grammar
+    #
+
+    # Initialize a llama_grammar.
+    #
+    # @param rules The rule elements of the grammar to initialize.
+    # @param n_rules The number of rules.
+    # @param start_rule_index The index of the root rule (the starting point of the grammar).
+    # @return The initialized llama_grammar or nullptr if initialization failed.
+    cdef  llama_grammar * llama_grammar_init(
+            const llama_grammar_element ** rules,
+                                 size_t    n_rules,
+                                 size_t    start_rule_index)
+
+    cdef void llama_grammar_free( llama_grammar * grammar)
+
+    cdef  llama_grammar * llama_grammar_copy(const  llama_grammar * grammar)
+
+    # @details Apply constraints from grammar
+    cdef void llama_grammar_sample(
+            const  llama_grammar * grammar,
+            const  llama_context * ctx,
+                llama_token_data_array * candidates)
+
+    # @details Accepts the sampled token into the grammar
+    cdef void llama_grammar_accept_token(
+             llama_grammar * grammar,
+             llama_context * ctx,
+                     llama_token   token)
+
+    #
+    # Sampling functions
+    #
+
+    # Sets the current rng seed.
+    cdef void llama_set_rng_seed( llama_context * ctx, uint32_t seed)
+
+    # @details Repetition penalty described in CTRL academic paper https:#arxiv.org/abs/1909.05858, with negative logit fix.
+    # @details Frequency and presence penalties described in OpenAI API https:#platform.openai.com/docs/api-reference/parameter-details.
+    cdef void llama_sample_repetition_penalties(
+             llama_context * ctx,
+          llama_token_data_array * candidates,
+               const llama_token * last_tokens,
+                          size_t   penalty_last_n,
+                           float   penalty_repeat,
+                           float   penalty_freq,
+                           float   penalty_present)
+
+    # @details Apply classifier-free guidance to the logits as described in academic paper "Stay on topic with Classifier-Free Guidance" https:#arxiv.org/abs/2306.17806
+    # @param logits Logits extracted from the original generation context.
+    # @param logits_guidance Logits extracted from a separate context from the same model. Other than a negative prompt at the beginning, it should have all generated and user input tokens copied from the main context.
+    # @param scale Guidance strength. 1.0f means no guidance. Higher values mean stronger guidance.
+    cdef void llama_sample_apply_guidance(
+               llama_context * ctx,
+                             float * logits,
+                             float * logits_guidance,
+                             float   scale)
+
+    # @details Sorts candidate tokens by their logits in descending order and calculate probabilities based on logits.
+    cdef void llama_sample_softmax(
+             llama_context * ctx,
+          llama_token_data_array * candidates)
+
+    # @details Top-K sampling described in academic paper "The Curious Case of Neural Text Degeneration" https:#arxiv.org/abs/1904.09751
+    cdef void llama_sample_top_k(
+             llama_context * ctx,
+          llama_token_data_array * candidates,
+                         int32_t   k,
+                          size_t   min_keep)
+
+    # @details Nucleus sampling described in academic paper "The Curious Case of Neural Text Degeneration" https:#arxiv.org/abs/1904.09751
+    cdef void llama_sample_top_p(
+             llama_context * ctx,
+          llama_token_data_array * candidates,
+                           float   p,
+                          size_t   min_keep)
+
+    # @details Minimum P sampling as described in https:#github.com/ggerganov/llama.cpp/pull/3841
+    cdef void llama_sample_min_p(
+             llama_context * ctx,
+          llama_token_data_array * candidates,
+                           float   p,
+                          size_t   min_keep)
+
+    # @details Tail Free Sampling described in https:#www.trentonbricken.com/Tail-Free-Sampling/.
+    cdef void llama_sample_tail_free(
+             llama_context * ctx,
+          llama_token_data_array * candidates,
+                           float   z,
+                          size_t   min_keep)
+
+    # @details Locally Typical Sampling implementation described in the paper https:#arxiv.org/abs/2202.00666.
+    cdef void llama_sample_typical(
+             llama_context * ctx,
+          llama_token_data_array * candidates,
+                           float   p,
+                          size_t   min_keep)
+
+    # @details Dynamic temperature implementation described in the paper https:#arxiv.org/abs/2309.02772.
+    cdef void llama_sample_entropy(
+             llama_context * ctx,
+          llama_token_data_array * candidates_p,
+                           float   min_temp,
+                           float   max_temp,
+                           float   exponent_val)
+
+    cdef void llama_sample_temp(
+             llama_context * ctx,
+          llama_token_data_array * candidates,
+                           float   temp)
+
+    # @details Mirostat 1.0 algorithm described in the paper https:#arxiv.org/abs/2007.14966. Uses tokens instead of words.
+    # @param candidates A vector of `llama_token_data` containing the candidate tokens, their probabilities (p), and log-odds (logit) for the current position in the generated text.
+    # @param tau  The target cross-entropy (or surprise) value you want to achieve for the generated text. A higher value corresponds to more surprising or less predictable text, while a lower value corresponds to less surprising or more predictable text.
+    # @param eta The learning rate used to update `mu` based on the error between the target and observed surprisal of the sampled word. A larger learning rate will cause `mu` to be updated more quickly, while a smaller learning rate will result in slower updates.
+    # @param m The number of tokens considered in the estimation of `s_hat`. This is an arbitrary value that is used to calculate `s_hat`, which in turn helps to calculate the value of `k`. In the paper, they use `m = 100`, but you can experiment with different values to see how it affects the performance of the algorithm.
+    # @param mu Maximum cross-entropy. This value is initialized to be twice the target cross-entropy (`2 * tau`) and is updated in the algorithm based on the error between the target and observed surprisal.
+    cdef llama_token llama_sample_token_mirostat(
+             llama_context * ctx,
+          llama_token_data_array * candidates,
+                           float   tau,
+                           float   eta,
+                         int32_t   m,
+                           float * mu)
+
+    # @details Mirostat 2.0 algorithm described in the paper https:#arxiv.org/abs/2007.14966. Uses tokens instead of words.
+    # @param candidates A vector of `llama_token_data` containing the candidate tokens, their probabilities (p), and log-odds (logit) for the current position in the generated text.
+    # @param tau  The target cross-entropy (or surprise) value you want to achieve for the generated text. A higher value corresponds to more surprising or less predictable text, while a lower value corresponds to less surprising or more predictable text.
+    # @param eta The learning rate used to update `mu` based on the error between the target and observed surprisal of the sampled word. A larger learning rate will cause `mu` to be updated more quickly, while a smaller learning rate will result in slower updates.
+    # @param mu Maximum cross-entropy. This value is initialized to be twice the target cross-entropy (`2 * tau`) and is updated in the algorithm based on the error between the target and observed surprisal.
+    cdef llama_token llama_sample_token_mirostat_v2(
+             llama_context * ctx,
+          llama_token_data_array * candidates,
+                           float   tau,
+                           float   eta,
+                           float * mu)
+
+    # @details Selects the token with the highest probability.
+    #          Does not compute the token probabilities. Use llama_sample_softmax() instead.
+    cdef llama_token llama_sample_token_greedy(
+             llama_context * ctx,
+          llama_token_data_array * candidates)
+
+    # @details Randomly selects a token from the candidates based on their probabilities using the RNG of ctx.
+    cdef llama_token llama_sample_token(
+             llama_context * ctx,
+          llama_token_data_array * candidates)
+
+    #
+    # Model split
+    #
+
+    # @details Build a split GGUF final path for this chunk.
+    #          llama_split_path(split_path, sizeof(split_path), "/models/ggml-model-q4_0", 2, 4) => split_path = "/models/ggml-model-q4_0-00002-of-00004.gguf"
+    #  Returns the split_path length.
+    cdef int llama_split_path(char * split_path, size_t maxlen, const char * path_prefix, int split_no, int split_count)
+
+    # @details Extract the path prefix from the split_path if and only if the split_no and split_count match.
+    #          llama_split_prefix(split_prefix, 64, "/models/ggml-model-q4_0-00002-of-00004.gguf", 2, 4) => split_prefix = "/models/ggml-model-q4_0"
+    #  Returns the split_prefix length.
+    cdef int llama_split_prefix(char * split_prefix, size_t maxlen, const char * split_path, int split_no, int split_count)
+
+    # Performance information
+    cdef  llama_timings llama_get_timings( llama_context * ctx)
+
+    cdef void llama_print_timings( llama_context * ctx)
+    cdef void llama_reset_timings( llama_context * ctx)
+
+    # Print system information
+    cdef const char * llama_print_system_info()
+
+    # Set callback for all future logging events.
+    # If this is not called, or NULL is supplied, everything is output on stderr.
+    # cdef void llama_log_set(ggml_log_callback log_callback, void * user_data) #TODO
+
+    cdef void llama_dump_timing_info_yaml(FILE * stream, const  llama_context * ctx)
