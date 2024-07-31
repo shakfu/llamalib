@@ -1,10 +1,11 @@
 # llamalib
 
-Early stage experiments with different python wrappers of [llama.cpp](https://github.com/ggerganov/llama.cpp)
+Early stage experiments with different python wrappers of @ggerganov's [llama.cpp](https://github.com/ggerganov/llama.cpp). The purpose is to learn about the internals a c++/c LLM inference engine and understand how they work and interact with other software.
 
-Starting with cython wrapper first.. other variants may not be built (but infrastructre is in place in any case.)
+Given that there is a fairly mature ctypes based wrapper provided by @abetlen's [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) project. One promising idea is to just replace the ctypes wrapper in `llama-cpp-python` with one of compiled python wrappers and contribute back to that project if successful.
 
-Early development will be on macOS for convenience.
+Starting with cython wrapper first.. other variants are added intermittently. Early development will be on macOS to keep things simple.
+
 
 ## Usage
 

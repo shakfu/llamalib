@@ -33,6 +33,7 @@ ifeq ($(WITH_DYLIB),1)
 endif
 
 bind:
+	@rm -rf bind
 	@make -f scripts/bind/bind.mk bind
 
 test: test_cyllama test_pbllama test_nbllama prep_tests
