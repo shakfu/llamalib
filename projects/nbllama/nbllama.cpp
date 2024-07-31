@@ -1,4 +1,5 @@
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/shared_ptr.h>
 
 #include <llama.h>
 
@@ -12,7 +13,6 @@ NB_MODULE(nbllama, m) {
     m.doc() = "nanobind pyllama wrapper"; // optional module docstring
 
     nb::class_<llama_token_data>(m, "llama_token_data")
-        // .def( nb::init<>( [](){ return new llama_token_data(); } ))
         .def(nb::init<>())
         .def_rw("id", &llama_token_data::id)         // token id
         .def_rw("logit", &llama_token_data::logit)   // log-odds of the token
