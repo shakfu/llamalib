@@ -7,7 +7,7 @@ MIN_OSX_VER := -mmacosx-version-min=13.6
 
 LIBLAMMA := ./lib/libllama.a
 
-.PHONY: cmake clean setup setup_inplace wheel
+.PHONY: cmake clean setup setup_inplace wheel bind
 
 all: cmake
 
@@ -32,6 +32,8 @@ ifeq ($(WITH_DYLIB),1)
 	delocate-wheel -v dist/*.whl 
 endif
 
+bind:
+	@make -f scripts/bind/bind.mk bind
 
 test: test_cyllama test_pbllama test_nbllama prep_tests
 	@echo "DONE"
