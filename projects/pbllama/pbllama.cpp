@@ -11,6 +11,9 @@ namespace py = pybind11;
 PYBIND11_MODULE(pbllama, m) {
     m.doc() = "pybind11 pyllama wrapper"; // optional module docstring
 
+    struct llama_model {};
+    struct llama_context {};
+
     // m.def("backend_init", &llama_backend_init, "Initialize the llama + ggml backend.\n\nCall once at the start of a program.");
     // m.def("backend_free", &llama_backend_free, "Call once at the end of the program - currently only used for MPI.");
 
@@ -248,6 +251,8 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_numa_init", (void (*)(enum ggml_numa_strategy)) &llama_numa_init, "C++: llama_numa_init(enum ggml_numa_strategy) --> void", py::arg("numa"));
 
     m.def("llama_backend_free", (void (*)()) &llama_backend_free, "C++: llama_backend_free() --> void");
+
+    m.def("load_model_from_file", (struct llama_model (*)(const char *, struct llama_model_params *)) &llama_load_model_from_file, "Load a model from file", py::arg("path_model"), py::arg("params"));
 
     m.def("llama_time_us", (int (*)()) &llama_time_us, "C++: llama_time_us() --> int");
 

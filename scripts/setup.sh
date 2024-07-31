@@ -1,4 +1,6 @@
 CWD=`pwd`
+LIB=${CWD}/lib/
+INCLUDE=${CWD}/include/
 LLAMACPP_VERSION="0832de7"
 
 get_llamacpp() {
@@ -13,7 +15,10 @@ get_llamacpp() {
 		cd build && \
 		cmake .. -DBUILD_SHARED_LIBS=OFF && \
 		cmake --build . --config Release && \
-		cmake --install . --prefix ${CWD}
+		cmake --install . --prefix ${CWD} && \
+		cp llama.cpp/build/common/libcommon.a ${LIB} && \
+		cp llama.cpp/common/*.h ${INCLUDE} && \
+		cp llama.cpp/common/*.hpp ${INCLUDE}
 }
 
 remove_current() {
@@ -28,5 +33,5 @@ main() {
 	get_llamacpp
 }
 
-main
-
+# main
+get_llamacpp
