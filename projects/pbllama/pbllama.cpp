@@ -9,7 +9,7 @@ namespace py = pybind11;
 
 
 PYBIND11_MODULE(pbllama, m) {
-    m.doc() = "pybind11 pyllama wrapper"; // optional module docstring
+    m.doc() = "pbllama: pybind11 llama.cpp wrapper"; // optional module docstring
 
     struct llama_model {};
     struct llama_context {};
@@ -264,35 +264,20 @@ PYBIND11_MODULE(pbllama, m) {
 
 
     m.def("llama_model_default_params", (struct llama_model_params (*)()) &llama_model_default_params, "C++: llama_model_default_params() --> struct llama_model_params");
-
     m.def("llama_context_default_params", (struct llama_context_params (*)()) &llama_context_default_params, "C++: llama_context_default_params() --> struct llama_context_params");
-
     m.def("llama_model_quantize_default_params", (struct llama_model_quantize_params (*)()) &llama_model_quantize_default_params, "C++: llama_model_quantize_default_params() --> struct llama_model_quantize_params");
-
     m.def("llama_backend_init", (void (*)()) &llama_backend_init, "C++: llama_backend_init() --> void");
-
     m.def("llama_numa_init", (void (*)(enum ggml_numa_strategy)) &llama_numa_init, "C++: llama_numa_init(enum ggml_numa_strategy) --> void", py::arg("numa"));
-
     m.def("llama_backend_free", (void (*)()) &llama_backend_free, "C++: llama_backend_free() --> void");
-
     m.def("llama_load_model_from_file", (struct llama_model (*)(const char *, struct llama_model_params *)) &llama_load_model_from_file, "Load a model from file", py::arg("path_model"), py::arg("params"));
-
     m.def("llama_free_model", (void (*)(struct llama_model *)) &llama_free_model, "Free a model", py::arg("model"));
-
     m.def("llama_new_context_with_model", (struct llama_context (*)(struct llama_model *, struct llama_context_params)) &llama_new_context_with_model, "New context with model", py::arg("model"), py::arg("params"));
-
     m.def("llama_free", (void (*)(struct llama_context *)) &llama_free, "Free context", py::arg("ctx"));
-
     m.def("llama_time_us", (int64_t (*)()) &llama_time_us, "C++: llama_time_us() --> int");
-
     m.def("llama_max_devices", (size_t (*)()) &llama_max_devices, "C++: llama_max_devices() --> int");
-
     m.def("llama_supports_mmap", (bool (*)()) &llama_supports_mmap, "C++: llama_supports_mmap() --> bool");
-
     m.def("llama_supports_mlock", (bool (*)()) &llama_supports_mlock, "C++: llama_supports_mlock() --> bool");
-
     m.def("llama_supports_gpu_offload", (bool (*)()) &llama_supports_gpu_offload, "C++: llama_supports_gpu_offload() --> bool");
-
     m.def("llama_get_model", (const struct llama_model (*)(const struct llama_context *)) &llama_get_model, "get model from context", py::arg("ctx"));
 
     m.def("llama_n_ctx", (uint32_t (*)(const struct llama_context *)) &llama_n_ctx, "get n_ctx from context", py::arg("ctx"));
@@ -417,22 +402,23 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_tokenize", (int32_t (*)(const struct llama_model *, const char*, int32_t, llama_token*, int32_t, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("text_len"), py::arg("tokens"), py::arg("n_tokens_max"), py::arg("add_special"), py::arg("parse_special"));
     m.def("llama_token_to_piece", (int32_t (*)(const struct llama_model *, llama_token, char*, int32_t, int32_t, bool)) &llama_token_to_piece, "", py::arg("model"), py::arg("token"), py::arg("buf"), py::arg("length"), py::arg("lstrip"), py::arg("special"));
 
-    // int32_t llama_detokenize(const struct llama_model* model, const llama_token* tokens, int32_t n_tokens, char* text, int32_t text_len_max, bool remove_special, bool unparse_special);
+    m.def("llama_detokenize", (int32_t (*)(const struct llama_model *, const llama_token*, int32_t, char*, int32_t, bool, bool)) &llama_detokenize, "", py::arg("model"), py::arg("tokens"), py::arg("n_tokens"), py::arg("text"), py::arg("text_len_max"), py::arg("remove_special"), py::arg("unparse_special"));
 
-    // int32_t llama_chat_apply_template(const struct llama_model* model, const char* tmpl, const struct llama_chat_message* chat, size_t n_msg, bool add_ass, char* buf, int32_t length);
+    m.def("llama_chat_apply_template", (int32_t (*)(const struct llama_model *, const char*, const struct llama_chat_message*, size_t, bool, char*, int32_t)) &llama_chat_apply_template, "", py::arg("model"), py::arg("tmpl"), py::arg("chat"), py::arg("n_msg"), py::arg("add_ass"), py::arg("buf"), py::arg("length"));
+
+    // m.def("llama_grammar_init", (struct llama_grammar* (*)(const llama_grammar_element**, size_t, size_t)) &llama_grammar_init, "", py::arg("rules"), py::arg("n_rules"), py::arg("start_rule_index"));
 
     // struct llama_grammar* llama_grammar_init(const llama_grammar_element** rules, size_t n_rules, size_t start_rule_index);
-
     // void llama_grammar_free(struct llama_grammar* grammar);
-
     // struct llama_grammar* llama_grammar_copy(const struct llama_grammar* grammar);
     // void llama_grammar_sample(const struct llama_grammar* grammar, const struct llama_context* ctx, llama_token_data_array* candidates);
     // void llama_grammar_accept_token(struct llama_grammar* grammar, struct llama_context* ctx, llama_token token);
-    // void llama_set_rng_seed(struct llama_context* ctx, uint32_t seed);
 
-    // void llama_sample_repetition_penalties(struct llama_context* ctx, llama_token_data_array* candidates, const llama_token* last_tokens, size_t penalty_last_n, float penalty_repeat, float penalty_freq, float penalty_present);
+    m.def("llama_set_rng_seed", (void (*)(const struct llama_context *, uint32_t)) &llama_set_rng_seed, "", py::arg("ctx"), py::arg("seed"));
 
-    // void llama_sample_apply_guidance(struct llama_context* ctx, float* logits, float* logits_guidance, float scale);
+    m.def("llama_sample_repetition_penalties", (void (*)(const struct llama_context *, llama_token_data_array *, const llama_token *, size_t, float, float, float)) &llama_sample_repetition_penalties, "", py::arg("ctx"), py::arg("candidates"), py::arg("last_tokens"), py::arg("penalty_last_n"), py::arg("penalty_repeat"), py::arg("penalty_freq"), py::arg("penalty_present"));
+
+    m.def("llama_sample_apply_guidance", (void (*)(const struct llama_context *, float *, float *, float)) &llama_sample_apply_guidance, "", py::arg("ctx"), py::arg("logits"), py::arg("logits_guidance"), py::arg("scale"));
 
     m.def("llama_sample_softmax", (void (*)(const struct llama_context *, llama_token_data_array *)) &llama_sample_softmax, "", py::arg("ctx"), py::arg("candidates"));
 
