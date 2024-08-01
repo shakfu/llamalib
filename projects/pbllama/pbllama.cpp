@@ -283,11 +283,9 @@ PYBIND11_MODULE(pbllama, m) {
 
     m.def("llama_free", (void (*)(struct llama_context *)) &llama_free, "Free context", py::arg("ctx"));
 
-// void llama_free(struct llama_context* ctx);
+    m.def("llama_time_us", (int64_t (*)()) &llama_time_us, "C++: llama_time_us() --> int");
 
-    m.def("llama_time_us", (int (*)()) &llama_time_us, "C++: llama_time_us() --> int");
-
-    m.def("llama_max_devices", (int (*)()) &llama_max_devices, "C++: llama_max_devices() --> int");
+    m.def("llama_max_devices", (size_t (*)()) &llama_max_devices, "C++: llama_max_devices() --> int");
 
     m.def("llama_supports_mmap", (bool (*)()) &llama_supports_mmap, "C++: llama_supports_mmap() --> bool");
 
@@ -295,7 +293,55 @@ PYBIND11_MODULE(pbllama, m) {
 
     m.def("llama_supports_gpu_offload", (bool (*)()) &llama_supports_gpu_offload, "C++: llama_supports_gpu_offload() --> bool");
 
+    m.def("llama_get_model", (const struct llama_model (*)(const struct llama_context *)) &llama_get_model, "get model from context", py::arg("ctx"));
+
+    m.def("llama_n_ctx", (uint32_t (*)(const struct llama_context *)) &llama_n_ctx, "get n_ctx from context", py::arg("ctx"));
+    m.def("llama_n_batch", (uint32_t (*)(const struct llama_context *)) &llama_n_batch, "get n_batch from context", py::arg("ctx"));
+    m.def("llama_n_ubatch", (uint32_t (*)(const struct llama_context *)) &llama_n_ubatch, "get n_ubatch from context", py::arg("ctx"));
+    m.def("llama_n_seq_max", (uint32_t (*)(const struct llama_context *)) &llama_n_seq_max, "get n_seq_max from context", py::arg("ctx"));
+
+    m.def("get_llama_pooling_type", (enum llama_pooling_type (*)(const struct llama_context *)) &llama_pooling_type, "get pooling_type from context", py::arg("ctx"));
+
+    m.def("get_llama_vocab_type", (enum llama_vocab_type (*)(const struct llama_model *)) &llama_vocab_type, "get vocab_type from model", py::arg("model"));
+    m.def("get_llama_rope_type", (enum llama_rope_type (*)(const struct llama_model *)) &llama_rope_type, "get rope_type from model", py::arg("model"));
+
+    m.def("llama_n_vocab", (int32_t (*)(const struct llama_model *)) &llama_n_vocab, "get n_vocab from model", py::arg("model"));
+    m.def("llama_n_ctx_train", (int32_t (*)(const struct llama_model *)) &llama_n_ctx_train, "get n_ctx_train from model", py::arg("model"));
+    m.def("llama_n_embd", (int32_t (*)(const struct llama_model *)) &llama_n_embd, "get n_embed from model", py::arg("model"));
+    m.def("llama_n_layer", (int32_t (*)(const struct llama_model *)) &llama_n_layer, "get n_layer from model", py::arg("model"));
+
+    m.def("llama_rope_freq_scale_train", (float (*)(const struct llama_model *)) &llama_rope_freq_scale_train, "get rope_freq_scale_train from model", py::arg("model"));
+
+    m.def("llama_model_meta_val_str", (int32_t (*)(const struct llama_model *, const char *, char *, size_t)) &llama_model_meta_val_str, "get meta_val_str from model", py::arg("model"), py::arg("key"), py::arg("buf"), py::arg("buf_size"));
+    m.def("llama_model_meta_count", (int32_t (*)(const struct llama_model *)) &llama_model_meta_count, "get meta_count from model", py::arg("model"));
+    m.def("llama_model_meta_key_by_index", (int32_t (*)(const struct llama_model *, int32_t, char *, size_t)) &llama_model_meta_key_by_index, "get meta_key_by_index from model", py::arg("model"), py::arg("i"), py::arg("buf"), py::arg("buf_size"));
+    m.def("llama_model_meta_val_str_by_index", (int32_t (*)(const struct llama_model *, int32_t, char *, size_t)) &llama_model_meta_val_str_by_index, "get meta_val_str_by_index from model", py::arg("model"), py::arg("i"), py::arg("buf"), py::arg("buf_size"));
+    m.def("llama_model_desc", (int32_t (*)(const struct llama_model *, char *, size_t)) &llama_model_desc, "get model_desc from model", py::arg("model"), py::arg("buf"), py::arg("buf_size"));
+
+    m.def("llama_model_size", (uint64_t (*)(const struct llama_model *)) &llama_model_size, "get model_size from model", py::arg("model"));
+    m.def("llama_model_n_params", (uint64_t (*)(const struct llama_model *)) &llama_model_n_params, "get model_n_params from model", py::arg("model"));
+
+    // struct ggml_tensor* llama_get_model_tensor(struct llama_model* model, const char* name);
+
+    m.def("llama_model_has_encoder", (bool (*)(const struct llama_model *)) &llama_model_has_encoder, "model has encoder?", py::arg("model"));
+
+    m.def("llama_model_decoder_start_token", (llama_token (*)(const struct llama_model *)) &llama_model_decoder_start_token, "get decoder_start_token from model", py::arg("model"));
+
     m.def("llama_model_quantize", (int (*)(const char *, const char *, const struct llama_model_quantize_params *)) &llama_model_quantize, "C++: llama_model_quantize(const char *, const char *, const struct llama_model_quantize_params *) --> int", pybind11::arg("fname_inp"), pybind11::arg("fname_out"), pybind11::arg("params"));
+
+
+
+    // struct llama_lora_adapter* llama_lora_adapter_init(struct llama_model* model, const char* path_lora);
+
+    // int32_t llama_lora_adapter_set(struct llama_context* ctx, struct llama_lora_adapter* adapter, float scale);
+
+    // int32_t llama_lora_adapter_remove(struct llama_context* ctx, struct llama_lora_adapter* adapter);
+    // void llama_lora_adapter_clear(struct llama_context* ctx);
+
+    // void llama_lora_adapter_free(struct llama_lora_adapter* adapter);
+
+    // int32_t llama_control_vector_apply(struct llama_context* lctx, const float* data, size_t len, int32_t n_embd, int32_t il_start, int32_t il_end);
+
 
     py::class_<llama_kv_cache_view_cell, std::shared_ptr<llama_kv_cache_view_cell>>(m, "llama_kv_cache_view_cell")
         .def( py::init( [](){ return new llama_kv_cache_view_cell(); } ))
