@@ -386,18 +386,13 @@ void llama_kv_cache_defrag(struct llama_context* ctx);
 void llama_kv_cache_update(struct llama_context* ctx);
 
 size_t llama_state_get_size(struct llama_context* ctx);
-size_t llama_get_state_size(struct llama_context* ctx) __attribute__((deprecated("use llama_state_get_size instead")));
 
 size_t llama_state_get_data(struct llama_context* ctx, uint8_t* dst, size_t size);
-size_t llama_copy_state_data(struct llama_context* ctx, uint8_t* dst) __attribute__((deprecated("use llama_state_get_data instead")));
 size_t llama_state_set_data(struct llama_context* ctx, const uint8_t* src, size_t size);
-size_t llama_set_state_data(struct llama_context* ctx, const uint8_t* src) __attribute__((deprecated("use llama_state_set_data instead")));
 
 bool llama_state_load_file(struct llama_context* ctx, const char* path_session, llama_token* tokens_out, size_t n_token_capacity, size_t* n_token_count_out);
-bool llama_load_session_file(struct llama_context* ctx, const char* path_session, llama_token* tokens_out, size_t n_token_capacity, size_t* n_token_count_out) __attribute__((deprecated("use llama_state_load_file instead")));
 
 bool llama_state_save_file(struct llama_context* ctx, const char* path_session, const llama_token* tokens, size_t n_token_count);
-bool llama_save_session_file(struct llama_context* ctx, const char* path_session, const llama_token* tokens, size_t n_token_count) __attribute__((deprecated("use llama_state_save_file instead")));
 
 size_t llama_state_seq_get_size(struct llama_context* ctx, llama_seq_id seq_id);
 size_t llama_state_seq_get_data(struct llama_context* ctx, uint8_t* dst, size_t size, llama_seq_id seq_id);
