@@ -239,8 +239,31 @@ PYBIND11_MODULE(pbllama, m) {
         .export_values();
 
 
+    py::class_<llama_grammar_element, std::shared_ptr<llama_grammar_element>> (m, "llama_grammar_element", "")
+        .def( py::init( [](){ return new llama_grammar_element(); } ) )
+        .def_readwrite("type", &llama_grammar_element::type)
+        .def_readwrite("value", &llama_grammar_element::value);
+
+    py::class_<llama_timings, std::shared_ptr<llama_timings>> (m, "llama_timings", "")
+        .def( py::init( [](){ return new llama_timings(); } ) )
+        .def_readwrite("t_start_ms", &llama_timings::t_start_ms)
+        .def_readwrite("t_end_ms", &llama_timings::t_end_ms)
+        .def_readwrite("t_load_ms", &llama_timings::t_load_ms)
+        .def_readwrite("t_sample_ms", &llama_timings::t_sample_ms)
+        .def_readwrite("t_p_eval_ms", &llama_timings::t_p_eval_ms)
+        .def_readwrite("t_eval_ms", &llama_timings::t_eval_ms)
+        .def_readwrite("n_sample", &llama_timings::n_sample)
+        .def_readwrite("n_p_eval", &llama_timings::n_p_eval)
+        .def_readwrite("n_eval", &llama_timings::n_eval);
+
+    py::class_<llama_chat_message, std::shared_ptr<llama_chat_message>> (m, "llama_chat_message", "")
+        .def( py::init( [](){ return new llama_chat_message(); } ) )
+        .def_readwrite("role", &llama_chat_message::role)
+        .def_readwrite("content", &llama_chat_message::content);
 
 
+
+    m.def("llama_model_default_params", (struct llama_model_params (*)()) &llama_model_default_params, "C++: llama_model_default_params() --> struct llama_model_params");
 
     m.def("llama_context_default_params", (struct llama_context_params (*)()) &llama_context_default_params, "C++: llama_context_default_params() --> struct llama_context_params");
 
@@ -252,7 +275,15 @@ PYBIND11_MODULE(pbllama, m) {
 
     m.def("llama_backend_free", (void (*)()) &llama_backend_free, "C++: llama_backend_free() --> void");
 
-    m.def("load_model_from_file", (struct llama_model (*)(const char *, struct llama_model_params *)) &llama_load_model_from_file, "Load a model from file", py::arg("path_model"), py::arg("params"));
+    m.def("llama_load_model_from_file", (struct llama_model (*)(const char *, struct llama_model_params *)) &llama_load_model_from_file, "Load a model from file", py::arg("path_model"), py::arg("params"));
+
+    m.def("llama_free_model", (void (*)(struct llama_model *)) &llama_free_model, "Free a model", py::arg("model"));
+
+    m.def("llama_new_context_with_model", (struct llama_context (*)(struct llama_model *, struct llama_context_params)) &llama_new_context_with_model, "New context with model", py::arg("model"), py::arg("params"));
+
+    m.def("llama_free", (void (*)(struct llama_context *)) &llama_free, "Free context", py::arg("ctx"));
+
+// void llama_free(struct llama_context* ctx);
 
     m.def("llama_time_us", (int (*)()) &llama_time_us, "C++: llama_time_us() --> int");
 

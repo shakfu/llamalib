@@ -36,6 +36,7 @@ bind: # add --suppress-errors if needed
 		--suppress-errors \
 		$(ALL_INCLUDES) \
 		-- $(STDVER) \
+		-std=c++14 \
 		-I$(PWD)/include \
 		-isysroot $(shell xcrun --show-sdk-path) \
 		-DNDEBUG
