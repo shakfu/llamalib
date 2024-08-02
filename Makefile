@@ -36,8 +36,17 @@ bind:
 	@rm -rf bind
 	@make -f scripts/bind/bind.mk bind
 
-test: test_cyllama test_pbllama test_nbllama prep_tests
+test: test_simple test_cyllama test_pbllama test_nbllama prep_tests
 	@echo "DONE"
+
+test_simple:
+	@g++ -std=c++14 -o build/simple \
+		-I./include \
+		-L./lib  \
+		-framework Foundation -framework Accelerate \
+		-framework Metal -framework MetalKit \
+		lib/libllama.a lib/libggml.a lib/libcommon.a \
+		tests/simple.cpp
 
 test_cyllama: cmake prep_tests
 	@python3 tests/test_cyllama.py

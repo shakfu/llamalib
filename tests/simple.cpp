@@ -1,3 +1,38 @@
+/* common:
+ *  gpt_params
+ *  gpt_params_parse
+ *  llama_model_params_from_gpt_params
+ *  llama_context_params_from_gpt_params
+ *  
+ * llama:
+ *  llama_backend_init
+ *  llama_numa_init
+ *  llama_tokenize
+ *  llama_n_ctx
+ *  llama_token_to_piece
+ *  llama_batch_init
+ *  llama_batch_add
+ *  llama_decode
+ *  llama_n_vocab
+ *  llama_get_logits_ith
+ *  llama_token_data
+ *  llama_sample_token_greedy
+ *  llama_token_is_eog
+ *  llama_token_to_piece
+ *  llama_batch_clear
+ *  llama_batch_add
+ *  llama_print_timings
+ *  llama_batch_free
+ *  llama_free
+ *  llama_free_model
+ *  llama_backend_free
+ *
+ * ggml:
+ *  ggml_time_us
+ *
+ *
+ */
+
 #include "common.h"
 #include "llama.h"
 

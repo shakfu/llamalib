@@ -13,12 +13,14 @@ get_llamacpp() {
 		cd llama.cpp && \
 		cp common/*.h ${INCLUDE} && \
 		cp common/*.hpp ${INCLUDE} && \
+		cp examples/llava/*.h ${INCLUDE} && \
 		mkdir -p build && \
 		cd build && \
 		cmake .. -DBUILD_SHARED_LIBS=OFF && \
 		cmake --build . --config Release && \
 		cmake --install . --prefix ${CWD} && \
-		cp common/libcommon.a ${LIB}
+		cp common/libcommon.a ${LIB} && \
+		cp examples/llava/libllava_static.a ${LIB}/libllava.a
 }
 
 remove_current() {

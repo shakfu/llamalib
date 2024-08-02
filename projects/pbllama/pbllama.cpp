@@ -1,8 +1,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+// #include <common.h>
 #include <llama.h>
-#include <ggml.h>
+
 
 // #include <vector>
 
@@ -401,9 +402,19 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_token_suffix", (llama_token (*)(const struct llama_model *)) &llama_token_suffix, "", py::arg("model"));
     m.def("llama_token_eot", (llama_token (*)(const struct llama_model *)) &llama_token_eot, "", py::arg("model"));
 
+    // std::vector<llama_token> llama_tokenize(
+    //   const struct llama_context * ctx,
+    //            const std::string & text,
+    //                         bool   add_special,
+    //                         bool   parse_special = false);
+
+    // m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("ctx"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false);
+
     m.def("llama_tokenize", (int32_t (*)(const struct llama_model *, const char*, int32_t, llama_token*, int32_t, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("text_len"), py::arg("tokens"), py::arg("n_tokens_max"), py::arg("add_special"), py::arg("parse_special"));
     m.def("llama_token_to_piece", (int32_t (*)(const struct llama_model *, llama_token, char*, int32_t, int32_t, bool)) &llama_token_to_piece, "", py::arg("model"), py::arg("token"), py::arg("buf"), py::arg("length"), py::arg("lstrip"), py::arg("special"));
     m.def("llama_detokenize", (int32_t (*)(const struct llama_model *, const llama_token*, int32_t, char*, int32_t, bool, bool)) &llama_detokenize, "", py::arg("model"), py::arg("tokens"), py::arg("n_tokens"), py::arg("text"), py::arg("text_len_max"), py::arg("remove_special"), py::arg("unparse_special"));
+
+
 
     m.def("llama_chat_apply_template", (int32_t (*)(const struct llama_model *, const char*, const struct llama_chat_message*, size_t, bool, char*, int32_t)) &llama_chat_apply_template, "", py::arg("model"), py::arg("tmpl"), py::arg("chat"), py::arg("n_msg"), py::arg("add_ass"), py::arg("buf"), py::arg("length"));
 
