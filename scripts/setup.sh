@@ -5,20 +5,20 @@ LLAMACPP_VERSION="0832de7"
 
 get_llamacpp() {
 	echo "update from llama.cpp main repo"
-	mkdir -p build && \
+	mkdir -p build include && \
 		cd build && \
 		# git clone --depth 1 --branch ${LLAMACPP_VERSION} --recursive https://github.com/ggerganov/llama.cpp.git && \
 		git clone --depth 1 --recursive https://github.com/ggerganov/llama.cpp.git && \
 		# git reset --hard ${LLAMACPP_VERSION} && \
 		cd llama.cpp && \
+		cp common/*.h ${INCLUDE} && \
+		cp common/*.hpp ${INCLUDE} && \
 		mkdir -p build && \
 		cd build && \
 		cmake .. -DBUILD_SHARED_LIBS=OFF && \
 		cmake --build . --config Release && \
 		cmake --install . --prefix ${CWD} && \
-		cp llama.cpp/build/common/libcommon.a ${LIB} && \
-		cp llama.cpp/common/*.h ${INCLUDE} && \
-		cp llama.cpp/common/*.hpp ${INCLUDE}
+		cp common/libcommon.a ${LIB}
 }
 
 remove_current() {
