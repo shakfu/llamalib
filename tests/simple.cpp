@@ -3,6 +3,8 @@
  *  gpt_params_parse
  *  llama_model_params_from_gpt_params
  *  llama_context_params_from_gpt_params
+ *  llama_tokenize (overloaded)
+ *  llama_tokenize (overloaded)
  *  
  * llama:
  *  llama_backend_init
