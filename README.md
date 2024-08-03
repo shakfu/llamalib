@@ -6,7 +6,7 @@ Not yet sure how this project will evolve beyond that, but the aim for each of t
 
 Given that there is a fairly mature ctypes based wrapper provided by @abetlen's [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) project, this all seems quite redundant.
 
-Nonetheless, there may be some performance benefits from the use of compiled wrappers. A future development idea may be to just replace the ctypes wrapper in `llama-cpp-python` with one of compiled python wrappers and contribute it back as a PR.
+Nonetheless, there may be some performance benefits from the use of compiled wrappers an some incidental benefit to learning more about the underlying system. A future development idea may be to just replace the ctypes wrapper in `llama-cpp-python` with one of compiled python wrappers and contribute it back as a PR.
 
 
 ## Status
@@ -15,11 +15,11 @@ Development on macOS to keep things simpler.
 
 Still early days. The initial milestone will be enabling for  each wrapper variant a version of the `simple.cpp` test to be run.
 
-- cython: `llama.pxd` is done.
+- cython: `llama.pxd` is done. Work paused pending tests the pybind11 wrapper.
 
-- pybind11: first wrapper interation almost there.
+- pybind11: first wrapper interation done. A test to replicate `simple.cpp` using the wrapper is revealing some remaining parts to be wrapped. (WIP)
 
-- nanobind: follows pybind11 implementation as they are quite similar. First wrapper still not complete.
+- nanobind: follows pybind11 implementation as they are quite similar. First wrapper far from complete.
 
 
 

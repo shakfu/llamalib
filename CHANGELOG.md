@@ -17,4 +17,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Added `pbllama.cpp` pybind11 wrapper.
 - Added `llama.pxd` file for `cyllama`
