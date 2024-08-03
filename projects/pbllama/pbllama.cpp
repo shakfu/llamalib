@@ -10,6 +10,7 @@ namespace py = pybind11;
 struct llama_model {};
 struct llama_context {};
 struct llama_grammar {};
+struct llama_lora_adapter {};
 
 
 PYBIND11_MODULE(pbllama, m) {
@@ -307,8 +308,7 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_model_n_params", (uint64_t (*)(const struct llama_model *)) &llama_model_n_params, "get model_n_params from model", py::arg("model"));
 
     m.def("llama_get_model_tensor", (struct ggml_tensor* (*)(struct llama_model *)) &llama_get_model_tensor, "get model tensor from model", py::arg("model"));
-
-    // struct ggml_tensor* llama_get_model_tensor(struct llama_model* model, const char* name);
+    m.def("llama_get_model_tensor", (struct ggml_tensor* (*)(struct llama_model *, const char *)) &llama_get_model_tensor, "get named model tensor from model", py::arg("model"), py::arg("name"));
 
     m.def("llama_model_has_encoder", (bool (*)(const struct llama_model *)) &llama_model_has_encoder, "model has encoder?", py::arg("model"));
 
@@ -316,15 +316,13 @@ PYBIND11_MODULE(pbllama, m) {
 
     m.def("llama_model_quantize", (int (*)(const char *, const char *, const struct llama_model_quantize_params *)) &llama_model_quantize, "C++: llama_model_quantize(const char *, const char *, const struct llama_model_quantize_params *) --> int", py::arg("fname_inp"), py::arg("fname_out"), py::arg("params"));
 
-    // m.def("llama_lora_adapter_init", (struct llama_lora_adapter (*)(const struct llama_model *, const char *)) &llama_lora_adapter_init, "", py::arg("model"), py::arg("path_lora"));
-
-    // int32_t llama_lora_adapter_set(struct llama_context* ctx, struct llama_lora_adapter* adapter, float scale);
-    // int32_t llama_lora_adapter_remove(struct llama_context* ctx, struct llama_lora_adapter* adapter);
-    // void llama_lora_adapter_clear(struct llama_context* ctx);
-    // void llama_lora_adapter_free(struct llama_lora_adapter* adapter);
+    m.def("llama_lora_adapter_init", (struct llama_lora_adapter (*)(const struct llama_model *, const char *)) &llama_lora_adapter_init, "", py::arg("model"), py::arg("path_lora"));
+    m.def("llama_lora_adapter_set", (int32_t (*)(struct llama_context*, struct llama_lora_adapter*, float)) &llama_lora_adapter_set, "", py::arg("ctx"), py::arg("adapter"), py::arg("scale"));
+    m.def("llama_lora_adapter_remove", (int32_t (*)(struct llama_context*, struct llama_lora_adapter*)) &llama_lora_adapter_remove, "", py::arg("ctx"), py::arg("adapter"));
+    m.def("llama_lora_adapter_clear", (void (*)(struct llama_context*)) &llama_lora_adapter_clear, "", py::arg("ctx"));
+    m.def("llama_lora_adapter_free", (void (*)(struct llama_lora_adapter*)) &llama_lora_adapter_free, "", py::arg("adapter"));
 
     m.def("llama_control_vector_apply", (int32_t (*)(struct llama_context * , const float*, size_t, int32_t, int32_t, int32_t)) &llama_model_quantize, "", py::arg("lctx"), py::arg("data"), py::arg("len"), py::arg("n_embd"), py::arg("il_start"), py::arg("il_end"));
-
 
     py::class_<llama_kv_cache_view_cell, std::shared_ptr<llama_kv_cache_view_cell>>(m, "llama_kv_cache_view_cell")
         .def( py::init( [](){ return new llama_kv_cache_view_cell(); } ))
@@ -598,5 +596,69 @@ PYBIND11_MODULE(pbllama, m) {
     // overloaded
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("ctx"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false);
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false);
+
+    m.def("gpt_params_handle_hf_token", (void (*)(struct gpt_params &)) &gpt_params_handle_hf_token, "C++: gpt_params_handle_hf_token(struct gpt_params &) --> void", py::arg("params"));
+    m.def("gpt_params_handle_model_default", (void (*)(struct gpt_params &)) &gpt_params_handle_model_default, "C++: gpt_params_handle_model_default(struct gpt_params &) --> void", py::arg("params"));
+    m.def("gpt_params_get_system_info", (std::string (*)(const struct gpt_params &)) &gpt_params_get_system_info, "C++: gpt_params_get_system_info(const struct gpt_params &) --> std::string", py::arg("params"));
+
+    m.def("string_split", (class std::vector<std::string> (*)(std::string, char)) &string_split, "C++: string_split(std::string, char) --> class std::vector<std::string>", py::arg("input"), py::arg("separator"));
+    m.def("string_strip", (std::string (*)(const std::string &)) &string_strip, "C++: string_strip(const std::string &) --> std::string", py::arg("str"));
+    m.def("string_get_sortable_timestamp", (std::string (*)()) &string_get_sortable_timestamp, "C++: string_get_sortable_timestamp() --> std::string");
+    m.def("string_parse_kv_override", (bool (*)(const char *, class std::vector<struct llama_model_kv_override> &)) &string_parse_kv_override, "C++: string_parse_kv_override(const char *, class std::vector<struct llama_model_kv_override> &) --> bool", py::arg("data"), py::arg("overrides"));
+    m.def("string_process_escapes", (void (*)(std::string &)) &string_process_escapes, "C++: string_process_escapes(std::string &) --> void", py::arg("input"));
+
+    m.def("fs_validate_filename", (bool (*)(const std::string &)) &fs_validate_filename, "C++: fs_validate_filename(const std::string &) --> bool", py::arg("filename"));
+    m.def("fs_create_directory_with_parents", (bool (*)(const std::string &)) &fs_create_directory_with_parents, "C++: fs_create_directory_with_parents(const std::string &) --> bool", py::arg("path"));
+    m.def("fs_get_cache_directory", (std::string (*)()) &fs_get_cache_directory, "C++: fs_get_cache_directory() --> std::string");
+    m.def("fs_get_cache_file", (std::string (*)(const std::string &)) &fs_get_cache_file, "C++: fs_get_cache_file(const std::string &) --> std::string", py::arg("filename"));
+
+    m.def("llama_init_from_gpt_params", (class std::tuple<struct llama_model *, struct llama_context *> (*)(struct gpt_params &)) &llama_init_from_gpt_params, "C++: llama_init_from_gpt_params(struct gpt_params &) --> class std::tuple<struct llama_model *, struct llama_context *>", py::arg("params"));
+
+    m.def("llama_model_params_from_gpt_params", (struct llama_model_params (*)(const struct gpt_params &)) &llama_model_params_from_gpt_params, "C++: llama_model_params_from_gpt_params(const struct gpt_params &) --> struct llama_model_params", py::arg("params"));
+
+    m.def("llama_context_params_from_gpt_params", (struct llama_context_params (*)(const struct gpt_params &)) &llama_context_params_from_gpt_params, "C++: llama_context_params_from_gpt_params(const struct gpt_params &) --> struct llama_context_params", py::arg("params"));
+
+    m.def("llama_batch_clear", (void (*)(struct llama_batch &)) &llama_batch_clear, "C++: llama_batch_clear(struct llama_batch &) --> void", py::arg("batch"));
+    m.def("llama_batch_add", (void (*)(struct llama_batch &, int, int, const class std::vector<int> &, bool)) &llama_batch_add, "C++: llama_batch_add(struct llama_batch &, int, int, const class std::vector<int> &, bool) --> void", py::arg("batch"), py::arg("id"), py::arg("pos"), py::arg("seq_ids"), py::arg("logits"));
+
+    py::class_<llama_chat_msg, std::shared_ptr<llama_chat_msg>> (m, "llama_chat_msg", "")
+        .def( py::init( [](){ return new llama_chat_msg(); } ) )
+        .def( py::init( [](llama_chat_msg const &o){ return new llama_chat_msg(o); } ) )
+        .def_readwrite("role", &llama_chat_msg::role)
+        .def_readwrite("content", &llama_chat_msg::content)
+        .def("assign", (struct llama_chat_msg & (llama_chat_msg::*)(const struct llama_chat_msg &)) &llama_chat_msg::operator=, "", py::return_value_policy::automatic, py::arg(""));
+
+    m.def("llama_chat_verify_template", (bool (*)(const std::string &)) &llama_chat_verify_template, "C++: llama_chat_verify_template(const std::string &) --> bool", py::arg("tmpl"));
+
+    m.def("llama_kv_cache_dump_view", [](const struct llama_kv_cache_view & a0) -> void { return llama_kv_cache_dump_view(a0); }, "", py::arg("view"));
+    m.def("llama_kv_cache_dump_view", (void (*)(const struct llama_kv_cache_view &, int)) &llama_kv_cache_dump_view, "C++: llama_kv_cache_dump_view(const struct llama_kv_cache_view &, int) --> void", py::arg("view"), py::arg("row_size"));
+
+    m.def("llama_kv_cache_dump_view_seqs", [](const struct llama_kv_cache_view & a0) -> void { return llama_kv_cache_dump_view_seqs(a0); }, "", py::arg("view"));
+    m.def("llama_kv_cache_dump_view_seqs", (void (*)(const struct llama_kv_cache_view &, int)) &llama_kv_cache_dump_view_seqs, "C++: llama_kv_cache_dump_view_seqs(const struct llama_kv_cache_view &, int) --> void", py::arg("view"), py::arg("row_size"));
+
+    m.def("llama_embd_normalize", [](const float * a0, float * a1, int const & a2) -> void { return llama_embd_normalize(a0, a1, a2); }, "", py::arg("inp"), py::arg("out"), py::arg("n"));
+    m.def("llama_embd_normalize", (void (*)(const float *, float *, int, int)) &llama_embd_normalize, "C++: llama_embd_normalize(const float *, float *, int, int) --> void", py::arg("inp"), py::arg("out"), py::arg("n"), py::arg("embd_norm"));
+
+    m.def("llama_embd_similarity_cos", (float (*)(const float *, const float *, int)) &llama_embd_similarity_cos, "C++: llama_embd_similarity_cos(const float *, const float *, int) --> float", py::arg("embd1"), py::arg("embd2"), py::arg("n"));
+
+    py::class_<llama_control_vector_data, std::shared_ptr<llama_control_vector_data>> (m, "llama_control_vector_data", "")
+        .def( py::init( [](){ return new llama_control_vector_data(); } ) )
+        .def( py::init( [](llama_control_vector_data const &o){ return new llama_control_vector_data(o); } ) )
+        .def_readwrite("n_embd", &llama_control_vector_data::n_embd)
+        .def_readwrite("data", &llama_control_vector_data::data)
+        .def("assign", (struct llama_control_vector_data & (llama_control_vector_data::*)(const struct llama_control_vector_data &)) &llama_control_vector_data::operator=, "", py::return_value_policy::automatic, py::arg(""));
+
+    py::class_<llama_control_vector_load_info, std::shared_ptr<llama_control_vector_load_info>> (m, "llama_control_vector_load_info", "")
+        .def( py::init( [](){ return new llama_control_vector_load_info(); } ) )
+        .def( py::init( [](llama_control_vector_load_info const &o){ return new llama_control_vector_load_info(o); } ) )
+        .def_readwrite("strength", &llama_control_vector_load_info::strength)
+        .def_readwrite("fname", &llama_control_vector_load_info::fname)
+        .def("assign", (struct llama_control_vector_load_info & (llama_control_vector_load_info::*)(const struct llama_control_vector_load_info &)) &llama_control_vector_load_info::operator=, "C++: llama_control_vector_load_info::operator=(const struct llama_control_vector_load_info &) --> struct llama_control_vector_load_info &", py::return_value_policy::automatic, py::arg(""));
+
+    m.def("llama_control_vector_load", (struct llama_control_vector_data (*)(const class std::vector<struct llama_control_vector_load_info> &)) &llama_control_vector_load, "C++: llama_control_vector_load(const class std::vector<struct llama_control_vector_load_info> &) --> struct llama_control_vector_data", py::arg("load_infos"));
+
+    m.def("yaml_dump_vector_float", (void (*)(struct __sFILE *, const char *, const class std::vector<float> &)) &yaml_dump_vector_float, "C++: yaml_dump_vector_float(struct __sFILE *, const char *, const class std::vector<float> &) --> void", py::arg("stream"), py::arg("prop_name"), py::arg("data"));
+    m.def("yaml_dump_vector_int", (void (*)(struct __sFILE *, const char *, const class std::vector<int> &)) &yaml_dump_vector_int, "C++: yaml_dump_vector_int(struct __sFILE *, const char *, const class std::vector<int> &) --> void", py::arg("stream"), py::arg("prop_name"), py::arg("data"));
+    m.def("yaml_dump_string_multiline", (void (*)(struct __sFILE *, const char *, const char *)) &yaml_dump_string_multiline, "C++: yaml_dump_string_multiline(struct __sFILE *, const char *, const char *) --> void", py::arg("stream"), py::arg("prop_name"), py::arg("data"));
 
 }

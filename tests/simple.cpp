@@ -1,6 +1,6 @@
 /* common:
  *  gpt_params
- *  gpt_params_parse
+ *  gpt_params_parse (for commandline parsing: so not needed)
  *  llama_model_params_from_gpt_params
  *  llama_context_params_from_gpt_params
  *  llama_tokenize (overloaded)
