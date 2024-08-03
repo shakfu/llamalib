@@ -1,6 +1,9 @@
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'build'))
+ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT / 'build'))
+
+MODEL = ROOT / 'models' / 'gemma-2-9b-it-IQ4_XS.gguf'
 
 import pbllama as pb
 
@@ -18,32 +21,40 @@ def test_simple():
     pb.llama_backend_init()
     pb.llama_numa_init(params.numa)
 
-    # # initialize the model
+    # initialize the model
 
     # llama_model_params model_params = llama_model_params_from_gpt_params(params)
+    model_params = pb.llama_model_params_from_gpt_params(params)
+
+    # set local test model
+    params.model = str(MODEL)
 
     # llama_model * model = llama_load_model_from_file(params.model, model_params)
+    model = pb.llama_load_model_from_file(params.model, model_params)
 
     # if (model == NULL) {
     #     fprintf(stderr , "%s: error: unable to load model\n" , __func__)
     #     return 1
     # }
 
-    # # initialize the context
+    # initialize the context
 
     # llama_context_params ctx_params = llama_context_params_from_gpt_params(params)
+    ctx_params = pb.llama_context_params_from_gpt_params(params)
 
     # llama_context * ctx = llama_new_context_with_model(model, ctx_params)
+    ctx = pb.llama_new_context_with_model(model, ctx_params)
 
     # if (ctx == NULL) {
     #     fprintf(stderr , "%s: error: failed to create the llama_context\n" , __func__)
     #     return 1
     # }
 
-    # # tokenize the prompt
+    # tokenize the prompt
 
     # std::vector<llama_token> tokens_list
     # tokens_list = ::llama_tokenize(ctx, params.prompt, true)
+    tokens_list = pb.llama_tokenize(ctx, params.prompt, True) # CRASH!!
 
     # const int n_ctx    = llama_n_ctx(ctx)
     # const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size())

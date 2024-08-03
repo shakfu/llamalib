@@ -18,7 +18,31 @@ PYBIND11_MODULE(pbllama, m) {
     m.attr("__version__") = "0.0.1";
 
     // -----------------------------------------------------------------------
+    // ggml.h
+
+    py::enum_<ggml_numa_strategy>(m, "ggml_numa_strategy", py::arithmetic(), "")
+        .value("GGML_NUMA_STRATEGY_DISABLED", GGML_NUMA_STRATEGY_DISABLED)
+        .value("GGML_NUMA_STRATEGY_DISTRIBUTE", GGML_NUMA_STRATEGY_DISTRIBUTE)
+        .value("GGML_NUMA_STRATEGY_ISOLATE", GGML_NUMA_STRATEGY_ISOLATE)
+        .value("GGML_NUMA_STRATEGY_NUMACTL", GGML_NUMA_STRATEGY_NUMACTL)
+        .value("GGML_NUMA_STRATEGY_MIRROR", GGML_NUMA_STRATEGY_MIRROR)
+        .value("GGML_NUMA_STRATEGY_COUNT", GGML_NUMA_STRATEGY_COUNT)
+        .export_values();
+
+    // -----------------------------------------------------------------------
     // llama.h
+
+    py::class_<llama_model> (m, "llama_model", "")
+        .def(py::init<>());
+
+    py::class_<llama_context> (m, "llama_context", "")
+        .def(py::init<>());
+
+    py::class_<llama_grammar> (m, "llama_grammar", "")
+        .def(py::init<>());
+
+    py::class_<llama_lora_adapter> (m, "llama_lora_adapter", "")
+        .def(py::init<>());
 
     py::enum_<enum llama_vocab_type>(m, "llama_vocab_type", py::arithmetic(), "")
         .value("LLAMA_VOCAB_TYPE_NONE", LLAMA_VOCAB_TYPE_NONE)
@@ -590,7 +614,7 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("cvector_negative_file", &gpt_params::cvector_negative_file)
         .def_readwrite("spm_infill", &gpt_params::spm_infill)
         .def_readwrite("lora_outfile", &gpt_params::lora_outfile)
-        .def("assign", (struct gpt_params & (gpt_params::*)(const struct gpt_params &)) &gpt_params::operator=, "C++: gpt_params::operator=(const struct gpt_params &) --> struct gpt_params &", py::return_value_policy::automatic, pybind11::arg(""));
+        .def("assign", (struct gpt_params & (gpt_params::*)(const struct gpt_params &)) &gpt_params::operator=, "C++: gpt_params::operator=(const struct gpt_params &) --> struct gpt_params &", py::return_value_policy::automatic, py::arg(""));
 
 
     // overloaded
