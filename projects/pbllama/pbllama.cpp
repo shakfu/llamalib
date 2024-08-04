@@ -1,6 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+
 #include <common.h>
 #include <llama.h>
 
@@ -12,10 +13,24 @@ struct llama_context {};
 struct llama_grammar {};
 struct llama_lora_adapter {};
 
+// PYBIND11_MAKE_OPAQUE(std::vector<llama_token>);
+
+
+std::vector<llama_token> demo(void)
+{
+    std::vector<llama_token> v = {8, 4, 5, 9};
+    return v;
+}
+
 
 PYBIND11_MODULE(pbllama, m) {
     m.doc() = "pbllama: pybind11 llama.cpp wrapper"; // optional module docstring
     m.attr("__version__") = "0.0.1";
+
+    // -----------------------------------------------------------------------
+    // scratch
+    
+     m.def("demo", (std::vector<llama_token> (*)()) &demo);
 
     // -----------------------------------------------------------------------
     // ggml.h
@@ -294,9 +309,11 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_backend_init", (void (*)()) &llama_backend_init, "Initialize the llama + ggml backend.");
     m.def("llama_numa_init", (void (*)(enum ggml_numa_strategy)) &llama_numa_init, "C++: llama_numa_init(enum ggml_numa_strategy) --> void", py::arg("numa"));
     m.def("llama_backend_free", (void (*)()) &llama_backend_free, "Call once at the end of the program.");
-    m.def("llama_load_model_from_file", (struct llama_model (*)(const char *, struct llama_model_params *)) &llama_load_model_from_file, "Load a model from file", py::arg("path_model"), py::arg("params"));
+    m.def("llama_load_model_from_file", (struct llama_model (*)(const char *, struct llama_model_params *)) &llama_load_model_from_file, "Load a model from file", py::arg("path_model"), py::arg("params"), py::return_value_policy::reference);
     m.def("llama_free_model", (void (*)(struct llama_model *)) &llama_free_model, "Free a model", py::arg("model"));
-    m.def("llama_new_context_with_model", (struct llama_context (*)(struct llama_model *, struct llama_context_params)) &llama_new_context_with_model, "New context with model", py::arg("model"), py::arg("params"));
+
+    m.def("llama_new_context_with_model", (struct llama_context (*)(struct llama_model *, struct llama_context_params)) &llama_new_context_with_model, "New context with model", py::arg("model"), py::arg("params"), py::return_value_policy::reference);
+    
     m.def("llama_free", (void (*)(struct llama_context *)) &llama_free, "Free context", py::arg("ctx"));
     m.def("llama_time_us", (int64_t (*)()) &llama_time_us, "C++: llama_time_us() --> int");
     m.def("llama_max_devices", (size_t (*)()) &llama_max_devices, "C++: llama_max_devices() --> int");
@@ -423,7 +440,7 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_token_suffix", (llama_token (*)(const struct llama_model *)) &llama_token_suffix, "", py::arg("model"));
     m.def("llama_token_eot", (llama_token (*)(const struct llama_model *)) &llama_token_eot, "", py::arg("model"));
 
-    m.def("llama_tokenize", (int32_t (*)(const struct llama_model *, const char*, int32_t, llama_token*, int32_t, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("text_len"), py::arg("tokens"), py::arg("n_tokens_max"), py::arg("add_special"), py::arg("parse_special"));
+    m.def("llama_tokenize", (int32_t (*)(const struct llama_model *, const char*, int32_t, llama_token*, int32_t, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("text_len"), py::arg("tokens"), py::arg("n_tokens_max"), py::arg("add_special"), py::arg("parse_special"), py::return_value_policy::reference_internal);
     m.def("llama_token_to_piece", (int32_t (*)(const struct llama_model *, llama_token, char*, int32_t, int32_t, bool)) &llama_token_to_piece, "", py::arg("model"), py::arg("token"), py::arg("buf"), py::arg("length"), py::arg("lstrip"), py::arg("special"));
     m.def("llama_detokenize", (int32_t (*)(const struct llama_model *, const llama_token*, int32_t, char*, int32_t, bool, bool)) &llama_detokenize, "", py::arg("model"), py::arg("tokens"), py::arg("n_tokens"), py::arg("text"), py::arg("text_len_max"), py::arg("remove_special"), py::arg("unparse_special"));
 
@@ -618,8 +635,13 @@ PYBIND11_MODULE(pbllama, m) {
 
 
     // overloaded
-    m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("ctx"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false);
-    m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false);
+    // m.def("llama_tokenize", [](const struct llama_context * ctx, const std::string & text, bool add_special, bool parse_special = false) -> std::vector<llama_token> {
+    //     std::vector<llama_token> tokens_list;
+    //     tokens_list = llama_tokenize(ctx, text, add_special, parse_special);
+    //     return tokens_list;
+    // });
+    m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("ctx"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
+    m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
 
     m.def("gpt_params_handle_hf_token", (void (*)(struct gpt_params &)) &gpt_params_handle_hf_token, "C++: gpt_params_handle_hf_token(struct gpt_params &) --> void", py::arg("params"));
     m.def("gpt_params_handle_model_default", (void (*)(struct gpt_params &)) &gpt_params_handle_model_default, "C++: gpt_params_handle_model_default(struct gpt_params &) --> void", py::arg("params"));

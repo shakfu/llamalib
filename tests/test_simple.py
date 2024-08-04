@@ -54,7 +54,7 @@ def test_simple():
 
     # std::vector<llama_token> tokens_list
     # tokens_list = ::llama_tokenize(ctx, params.prompt, true)
-    tokens_list = pb.llama_tokenize(ctx, params.prompt, True) # CRASH!!
+    # tokens_list = pb.llama_tokenize(ctx, params.prompt, True) # CRASH!!
 
     # const int n_ctx    = llama_n_ctx(ctx)
     # const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size())

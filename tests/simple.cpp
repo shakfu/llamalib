@@ -97,6 +97,11 @@ int main(int argc, char ** argv) {
     std::vector<llama_token> tokens_list;
     tokens_list = ::llama_tokenize(ctx, params.prompt, true);
 
+    std::cout << "List of Tokens:" << std::endl;
+    for (auto i : tokens_list) {
+        std::cout << i << std::endl;
+    }
+
     const int n_ctx    = llama_n_ctx(ctx);
     const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size());
 
