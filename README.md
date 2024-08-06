@@ -8,20 +8,17 @@ Given that there is a fairly mature ctypes based wrapper provided by @abetlen's 
 
 Nonetheless, there may be some performance benefits from the use of compiled wrappers an some incidental benefit to learning more about the underlying system. A future development idea may be to just replace the ctypes wrapper in `llama-cpp-python` with one of compiled python wrappers and contribute it back as a PR.
 
-
 ## Status
 
 Development on macOS to keep things simpler.
 
-Still early days. The initial milestone will be enabling for  each wrapper variant a version of the `simple.cpp` test to be run.
+Still early days. The initial milestone will be enabling for each wrapper variant a version of the `simple.cpp` test to be run.
 
 - cython: `llama.pxd` is done. Work paused pending tests the pybind11 wrapper.
 
-- pybind11: first wrapper interation done. A test to replicate `simple.cpp` using the wrapper is revealing some remaining parts to be wrapped. (WIP)
+- pybind11: first wrapper interation done. A test to replicate `simple.cpp` using the wrapper is revealing some remaining parts to be wrapped. Crashing bugs still in test. (WIP)
 
-- nanobind: follows pybind11 implementation as they are quite similar. First wrapper far from complete.
-
-
+- nanobind: follows pybind11 implementation as they are quite similar. First wrapper implemented with some gaps. Tests will follow pybind11 testing
 
 
 ## Usage
@@ -38,3 +35,11 @@ This will:
 4. Build pbllama (pybind11 wrapper)
 5. Build nbllama (nanobind wrapper)
 
+
+## Links
+
+- [Tutorial: How to convert HuggingFace model to GGUF format](https://github.com/ggerganov/llama.cpp/discussions/2948)
+
+- [datacamp llama.cpp tutorial](https://www.datacamp.com/tutorial/llama-cpp-tutorial)
+
+- 

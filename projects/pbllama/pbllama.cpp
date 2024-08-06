@@ -303,6 +303,9 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("content", &llama_chat_message::content);
 
 
+    // m.def("llama_model_default_params", (struct llama_model_params (*)()) &llama_model_default_params, R"pbdoc(
+    //     multiline docs here
+    // )pbdoc");
     m.def("llama_model_default_params", (struct llama_model_params (*)()) &llama_model_default_params, "C++: llama_model_default_params() --> struct llama_model_params");
     m.def("llama_context_default_params", (struct llama_context_params (*)()) &llama_context_default_params, "C++: llama_context_default_params() --> struct llama_context_params");
     m.def("llama_model_quantize_default_params", (struct llama_model_quantize_params (*)()) &llama_model_quantize_default_params, "C++: llama_model_quantize_default_params() --> struct llama_model_quantize_params");

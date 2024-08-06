@@ -35,8 +35,11 @@ bind:
 	@rm -rf bind
 	@make -f scripts/bind/bind.mk bind
 
-test: test_simple test_cyllama test_pbllama test_nbllama prep_tests
-	@echo "DONE"
+
+.PHONY: test test_simple test_cy test_pb test_nb prep_tests
+
+test:
+	@pytest
 
 test_simple:
 	@g++ -std=c++14 -o build/simple \
@@ -47,14 +50,14 @@ test_simple:
 		lib/libllama.a lib/libggml.a lib/libcommon.a \
 		tests/simple.cpp
 
-test_cyllama: cmake prep_tests
-	@python3 tests/test_cyllama.py
+test_cy:
+	@cd tests && python3 cy_simple.py
 
-test_pbllama: cmake prep_tests
-	@python3 tests/test_pbllama.py
+test_pb:
+	@cd tests && python3 pb_simple.py
 
-test_nbllama: cmake prep_tests
-	@python3 tests/test_nbllama.py
+test_nb:
+	@cd tests && python3 nb_simple.py
 
 clean:
 	@rm -rf build dist *.egg-info
