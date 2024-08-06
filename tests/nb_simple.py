@@ -43,7 +43,7 @@ model = pb.llama_load_model_from_file(params.model, model_params)
 ctx_params = pb.llama_context_params_from_gpt_params(params)
 
 # llama_context * ctx = llama_new_context_with_model(model, ctx_params)
-# ctx = pb.llama_new_context_with_model(model, ctx_params)
+# ctx = pb.llama_new_context_with_model(model, ctx_params) # CRASH
 
 # if (ctx == NULL) {
 #     fprintf(stderr , "%s: error: failed to create the llama_context\n" , __func__)

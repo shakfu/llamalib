@@ -35,11 +35,3 @@ This will:
 4. Build pbllama (pybind11 wrapper)
 5. Build nbllama (nanobind wrapper)
 
-
-## Links
-
-- [Tutorial: How to convert HuggingFace model to GGUF format](https://github.com/ggerganov/llama.cpp/discussions/2948)
-
-- [datacamp llama.cpp tutorial](https://www.datacamp.com/tutorial/llama-cpp-tutorial)
-
-- 

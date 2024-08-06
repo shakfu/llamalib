@@ -1,4 +1,15 @@
-# Opaque Pointers in Pybind11
+# Research
+
+## Links
+
+- [Tutorial: How to convert HuggingFace model to GGUF format](https://github.com/ggerganov/llama.cpp/discussions/2948)
+
+- [datacamp llama.cpp tutorial](https://www.datacamp.com/tutorial/llama-cpp-tutorial)
+
+
+
+
+## Opaque Pointers in Pybind11
 
 
 - [Dealing with Opaque Pointers in Pybind11](https://stackoverflow.com/questions/50641461/dealing-with-opaque-pointers-in-pybind11)
