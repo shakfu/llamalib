@@ -529,7 +529,7 @@ NB_MODULE(nbllama, m) {
         .def_rw("in_files", &gpt_params::in_files)
         .def_rw("antiprompt", &gpt_params::antiprompt)
         .def_rw("kv_overrides", &gpt_params::kv_overrides)
-        .def_rw("lora_adapter", &gpt_params::lora_adapter)
+        .def_rw("lora_adapters", &gpt_params::lora_adapters)
         .def_rw("control_vectors", &gpt_params::control_vectors)
         .def_rw("verbosity", &gpt_params::verbosity)
         .def_rw("control_vector_layer_start", &gpt_params::control_vector_layer_start)

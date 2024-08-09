@@ -547,7 +547,7 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("in_files", &gpt_params::in_files)
         .def_readwrite("antiprompt", &gpt_params::antiprompt)
         .def_readwrite("kv_overrides", &gpt_params::kv_overrides)
-        .def_readwrite("lora_adapter", &gpt_params::lora_adapter)
+        .def_readwrite("lora_adapters", &gpt_params::lora_adapters)
         .def_readwrite("control_vectors", &gpt_params::control_vectors)
         .def_readwrite("verbosity", &gpt_params::verbosity)
         .def_readwrite("control_vector_layer_start", &gpt_params::control_vector_layer_start)

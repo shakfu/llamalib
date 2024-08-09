@@ -345,7 +345,7 @@ extern "C" {
         int32_t nthread;                     // number of threads to use for quantizing, if <=0 will use std::thread::hardware_concurrency()
         enum llama_ftype ftype;              // quantize to this llama_ftype
         enum ggml_type output_tensor_type;   // output tensor type
-        enum ggml_type token_embedding_type; // itoken embeddings tensor type
+        enum ggml_type token_embedding_type; // token embeddings tensor type
         bool allow_requantize;               // allow quantizing non-f32/f16 tensors
         bool quantize_output_tensor;         // quantize output.weight
         bool only_copy;                      // only copy tensors - ftype, allow_requantize and quantize_output_tensor are ignored
@@ -716,6 +716,13 @@ extern "C" {
                      llama_token * tokens_out,
                           size_t   n_token_capacity,
                           size_t * n_token_count_out);
+    LLAMA_API DEPRECATED(bool llama_load_session_file(
+            struct llama_context * ctx,
+                      const char * path_session,
+                     llama_token * tokens_out,
+                          size_t   n_token_capacity,
+                          size_t * n_token_count_out),
+        "use llama_state_load_file instead");
 
     LLAMA_API bool llama_state_save_file(
             struct llama_context * ctx,
