@@ -6,7 +6,7 @@ Not yet sure how this project will evolve beyond that, but the aim for each of t
 
 Given that there is a fairly mature ctypes based wrapper provided by @abetlen's [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) project, this all seems quite redundant.
 
-Nonetheless, there may be some performance benefits from the use of compiled wrappers an some incidental benefit to learning more about the underlying system. A future development idea may be to just replace the ctypes wrapper in `llama-cpp-python` with one of compiled python wrappers and contribute it back as a PR.
+Nonetheless, there may be some performance benefits from the use of compiled wrappers and some incidental benefits such as learning more about the underlying system. A future development idea may be to just replace the ctypes wrapper in `llama-cpp-python` with one of compiled python wrappers and contribute it back as a PR.
 
 ## Status
 
