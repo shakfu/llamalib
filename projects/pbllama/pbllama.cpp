@@ -97,7 +97,6 @@ PYBIND11_MODULE(pbllama, m) {
         .value("LLAMA_ROPE_TYPE_NONE", LLAMA_ROPE_TYPE_NONE)
         .value("LLAMA_ROPE_TYPE_NORM", LLAMA_ROPE_TYPE_NORM)
         .value("LLAMA_ROPE_TYPE_NEOX", LLAMA_ROPE_TYPE_NEOX)
-        .value("LLAMA_ROPE_TYPE_GLM", LLAMA_ROPE_TYPE_GLM)
         .export_values();
 
     py::enum_<enum llama_token_type>(m, "llama_token_type", py::arithmetic(), "")
