@@ -1,5 +1,6 @@
 # set path so `llama-cli` etc.. be in path
 export PATH := $(PWD)/bin:$(PATH)
+MODEL := models/gemma-2-9b-it-IQ4_XS.gguf
 
 WITH_DYLIB=0
 
@@ -43,12 +44,12 @@ test:
 
 test_simple:
 	@g++ -std=c++14 -o build/simple \
-		-I./include \
-		-L./lib  \
+		-I./include -L./lib  \
 		-framework Foundation -framework Accelerate \
 		-framework Metal -framework MetalKit \
 		lib/libllama.a lib/libggml.a lib/libcommon.a \
 		tests/simple.cpp
+	@./build/simple -m $(MODEL) -p "What caused the French Revolution?" -n 512
 
 test_cy:
 	@cd tests && python3 cy_simple.py

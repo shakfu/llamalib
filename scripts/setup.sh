@@ -8,7 +8,9 @@ get_llamacpp() {
 	mkdir -p build include && \
 		cd build && \
 		# git clone --depth 1 --branch ${LLAMACPP_VERSION} --recursive https://github.com/ggerganov/llama.cpp.git && \
-		git clone --depth 1 --recursive https://github.com/ggerganov/llama.cpp.git && \
+		if [ ! -d "llama.cpp" ]; then
+			git clone --depth 1 --recursive https://github.com/ggerganov/llama.cpp.git
+		fi && \
 		# git reset --hard ${LLAMACPP_VERSION} && \
 		cd llama.cpp && \
 		cp common/*.h ${INCLUDE} && \

@@ -693,6 +693,8 @@ extern "C" {
     // (rng, logits, embedding and kv_cache)
     // Only use when saving the state, not when restoring it, otherwise the size may be too small.
     LLAMA_API size_t llama_state_get_size(struct llama_context * ctx);
+    LLAMA_API DEPRECATED(size_t llama_get_state_size(struct llama_context * ctx),
+        "use llama_state_get_size instead");
 
     // Copies the state to the specified destination address.
     // Destination needs to have allocated enough memory.
@@ -701,6 +703,10 @@ extern "C" {
             struct llama_context * ctx,
                          uint8_t * dst,
                           size_t   size);
+    LLAMA_API DEPRECATED(size_t llama_copy_state_data(
+            struct llama_context * ctx,
+                         uint8_t * dst),
+        "use llama_state_get_data instead");
 
     // Set the state reading from the specified address
     // Returns the number of bytes read
@@ -708,6 +714,10 @@ extern "C" {
             struct llama_context * ctx,
                    const uint8_t * src,
                           size_t   size);
+    LLAMA_API DEPRECATED(size_t llama_set_state_data(
+            struct llama_context * ctx,
+                   const uint8_t * src),
+        "use llama_state_set_data instead");
 
     // Save/load session file
     LLAMA_API bool llama_state_load_file(
@@ -729,6 +739,12 @@ extern "C" {
                       const char * path_session,
                const llama_token * tokens,
                           size_t   n_token_count);
+    LLAMA_API DEPRECATED(bool llama_save_session_file(
+            struct llama_context * ctx,
+                      const char * path_session,
+               const llama_token * tokens,
+                          size_t   n_token_count),
+        "use llama_state_save_file instead");
 
     // Get the exact size needed to copy the KV cache of a single sequence
     LLAMA_API size_t llama_state_seq_get_size(
@@ -1003,6 +1019,11 @@ extern "C" {
             const struct llama_grammar * grammar,
             const struct llama_context * ctx,
                 llama_token_data_array * candidates);
+    LLAMA_API DEPRECATED(void llama_sample_grammar(
+            struct llama_context * ctx,
+          llama_token_data_array * candidates,
+      const struct llama_grammar * grammar),
+        "use llama_grammar_sample instead");
 
     /// @details Accepts the sampled token into the grammar
     LLAMA_API void llama_grammar_accept_token(
