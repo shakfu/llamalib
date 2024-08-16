@@ -37,7 +37,7 @@ bind:
 	@make -f scripts/bind/bind.mk bind
 
 
-.PHONY: test test_simple test_cy test_pb test_nb prep_tests bench_cy bench_nb bench_pb
+.PHONY: test test_simple test_cy test_pb test_nb prep_tests bench_cy bench_nb bench_pb bump
 
 test:
 	@pytest
@@ -68,6 +68,10 @@ bench_nb:
 
 bench_cy:
 	@cd tests && hyperfine 'python3 cy_simple.py'
+
+bump:
+	@scripts/bump.sh
+
 
 clean:
 	@rm -rf build dist *.egg-info

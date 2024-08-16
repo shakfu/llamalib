@@ -5,10 +5,9 @@ sys.path.insert(0, str(ROOT / 'build'))
 
 MODEL = ROOT / 'models' / 'gemma-2-9b-it-IQ4_XS.gguf'
 
-import pbllama as pb
+import nbllama as nb
 
-
-params = pb.gpt_params()
+params = nb.gpt_params()
 params.prompt = "Hello my name is"
 params.n_predict = 32
 
@@ -18,19 +17,22 @@ n_predict = params.n_predict
 
 # init LLM
 
-pb.llama_backend_init()
-pb.llama_numa_init(params.numa)
+nb.llama_backend_init()
+nb.llama_numa_init(params.numa)
 
 # initialize the model
 
 # llama_model_params model_params = llama_model_params_from_gpt_params(params)
-model_params = pb.llama_model_params_from_gpt_params(params)
+model_params = nb.llama_model_params_from_gpt_params(params)
 
 # set local test model
 params.model = str(MODEL)
 
 # llama_model * model = llama_load_model_from_file(params.model, model_params)
-model = pb.llama_load_model_from_file(params.model, model_params)
+model = nb.llama_load_model_from_file(params.model, model_params)
+
+if not model:
+	raise SystemExit(f"Unable to load model: {params.model}")
 
 # if (model == NULL) {
 #     fprintf(stderr , "%s: error: unable to load model\n" , __func__)
@@ -40,10 +42,13 @@ model = pb.llama_load_model_from_file(params.model, model_params)
 # initialize the context
 
 # llama_context_params ctx_params = llama_context_params_from_gpt_params(params)
-ctx_params = pb.llama_context_params_from_gpt_params(params)
+ctx_params = nb.llama_context_params_from_gpt_params(params)
 
 # llama_context * ctx = llama_new_context_with_model(model, ctx_params)
-# ctx = pb.llama_new_context_with_model(model, ctx_params) # CRASH
+ctx = nb.llama_new_context_with_model(model, ctx_params)
+
+if not ctx:
+	raise SystemExit("Failed to create the llama context")
 
 # if (ctx == NULL) {
 #     fprintf(stderr , "%s: error: failed to create the llama_context\n" , __func__)
@@ -54,10 +59,13 @@ ctx_params = pb.llama_context_params_from_gpt_params(params)
 
 # std::vector<llama_token> tokens_list
 # tokens_list = ::llama_tokenize(ctx, params.prompt, true)
-# tokens_list = pb.llama_tokenize(ctx, params.prompt, True) # CRASH!!
+tokens_list = nb.llama_tokenize(ctx, params.prompt, True) # CRASH!!
 
 # const int n_ctx    = llama_n_ctx(ctx)
+n_ctx = nb.llama_n_ctx(ctx)
+
 # const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size())
+n_kv_req = len(tokens_list) + (n_predict - len(tokens_list))
 
 # LOG_TEE("\n%s: n_predict = %d, n_ctx = %d, n_kv_req = %d\n", __func__, n_predict, n_ctx, n_kv_req)
 
@@ -67,29 +75,37 @@ ctx_params = pb.llama_context_params_from_gpt_params(params)
 #     LOG_TEE("%s:        either reduce n_predict or increase n_ctx\n", __func__)
 #     return 1
 # }
+if (n_kv_req > n_ctx):
+    raise SystemExit("error: n_kv_req > n_ctx, the required KV cache size is not big enough\neither reduce n_predict or increase n_ctx.")
 
-# # print the prompt token-by-token
+
+# print the prompt token-by-token
 
 # fprintf(stderr, "\n")
 
-# for (auto id : tokens_list) {
-#     fprintf(stderr, "%s", llama_token_to_piece(ctx, id).c_str())
-# }
+for i in tokens_list:
+	print(nb.llama_token_to_piece(ctx, i))
+
 
 # fflush(stderr)
 
-# # create a llama_batch with size 512
-# # we use this object to submit token data for decoding
+# create a llama_batch with size 512
+# we use this object to submit token data for decoding
 
 # llama_batch batch = llama_batch_init(512, 0, 1)
+batch = nb.llama_batch_init(512, 0, 1)
 
-# # evaluate the initial prompt
+# evaluate the initial prompt
 # for (size_t i = 0 i < tokens_list.size() i++) {
 #     llama_batch_add(batch, tokens_list[i], i, { 0 }, false)
 # }
 
-# # llama_decode will output logits only for the last token of the prompt
+for i, token in enumerate(tokens_list):
+    nb.llama_batch_add(batch, token, i, [], False)
+
+# llama_decode will output logits only for the last token of the prompt
 # batch.logits[batch.n_tokens - 1] = true
+# batch.logits[batch.n_tokens - 1] = True
 
 # if (llama_decode(ctx, batch) != 0) {
 #     LOG_TEE("%s: llama_decode() failed\n", __func__)

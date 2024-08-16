@@ -84,29 +84,29 @@ if (n_kv_req > n_ctx):
 
 # fprintf(stderr, "\n")
 
-# for (auto id : tokens_list) {
-#     fprintf(stderr, "%s", llama_token_to_piece(ctx, id).c_str())
-# }
-
 for i in tokens_list:
-	s = pb.llama_token_to_piece(ctx, i).c_str()
-	print(s)
+	print(pb.llama_token_to_piece(ctx, i))
 
 
 # fflush(stderr)
 
-# # create a llama_batch with size 512
-# # we use this object to submit token data for decoding
+# create a llama_batch with size 512
+# we use this object to submit token data for decoding
 
 # llama_batch batch = llama_batch_init(512, 0, 1)
+batch = pb.llama_batch_init(512, 0, 1)
 
-# # evaluate the initial prompt
+# evaluate the initial prompt
 # for (size_t i = 0 i < tokens_list.size() i++) {
 #     llama_batch_add(batch, tokens_list[i], i, { 0 }, false)
 # }
 
-# # llama_decode will output logits only for the last token of the prompt
+for i, token in enumerate(tokens_list):
+    pb.llama_batch_add(batch, token, i, [], False)
+
+# llama_decode will output logits only for the last token of the prompt
 # batch.logits[batch.n_tokens - 1] = true
+# batch.logits[batch.n_tokens - 1] = True
 
 # if (llama_decode(ctx, batch) != 0) {
 #     LOG_TEE("%s: llama_decode() failed\n", __func__)

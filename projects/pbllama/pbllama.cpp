@@ -203,10 +203,38 @@ PYBIND11_MODULE(pbllama, m) {
     py::class_<llama_batch, std::shared_ptr<llama_batch>> (m, "llama_batch", "")
         .def( py::init( [](){ return new llama_batch(); } ) )
         .def_readwrite("n_tokens", &llama_batch::n_tokens)
+        .def_readwrite("token", &llama_batch::token)
+        .def_readwrite("embd", &llama_batch::embd)
+        .def_readwrite("pos", &llama_batch::pos)
+        .def_readwrite("n_seq_id", &llama_batch::n_seq_id)
+        // .def_readwrite("seq_id", &llama_batch::seq_id)
+        .def_readwrite("logits", &llama_batch::logits)
         .def_readwrite("all_pos_0", &llama_batch::all_pos_0)
         .def_readwrite("all_pos_1", &llama_batch::all_pos_1)
         .def_readwrite("all_seq_id", &llama_batch::all_seq_id);
-    
+
+    // typedef struct llama_batch {
+    //     int32_t n_tokens;
+
+    //     llama_token  *  token;
+    //     float        *  embd;
+    //     llama_pos    *  pos;
+    //     int32_t      *  n_seq_id;
+    //     llama_seq_id ** seq_id;
+    //     int8_t       *  logits; // TODO: rename this to "output"
+
+    //     // NOTE: helpers for smooth API transition - can be deprecated in the future
+    //     //       for future-proof code, use the above fields instead and ignore everything below
+    //     //
+    //     // pos[i] = all_pos_0 + i*all_pos_1
+    //     //
+    //     llama_pos    all_pos_0;  // used if pos == NULL
+    //     llama_pos    all_pos_1;  // used if pos == NULL
+    //     llama_seq_id all_seq_id; // used if seq_id == NULL
+    // } llama_batch;
+
+
+
     py::enum_<llama_model_kv_override_type>(m, "llama_model_kv_override_type", py::arithmetic(), "")
         .value("LLAMA_KV_OVERRIDE_TYPE_INT", LLAMA_KV_OVERRIDE_TYPE_INT)
         .value("LLAMA_KV_OVERRIDE_TYPE_FLOAT", LLAMA_KV_OVERRIDE_TYPE_FLOAT)
@@ -635,6 +663,8 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("lora_outfile", &gpt_params::lora_outfile)
         .def("assign", (struct gpt_params & (gpt_params::*)(const struct gpt_params &)) &gpt_params::operator=, "C++: gpt_params::operator=(const struct gpt_params &) --> struct gpt_params &", py::return_value_policy::automatic, py::arg(""));
 
+
+    m.def("llama_token_to_piece", (std::string (*)(const struct llama_context *, llama_token, bool)) &llama_token_to_piece, "", py::arg("ctx"), py::arg("token"), py::arg("special") = true);
 
     // overloaded
     // m.def("llama_tokenize", [](const struct llama_context * ctx, const std::string & text, bool add_special, bool parse_special = false) -> std::vector<llama_token> {

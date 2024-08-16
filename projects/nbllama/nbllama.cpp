@@ -618,6 +618,9 @@ NB_MODULE(nbllama, m) {
 
 
     // overloaded
+
+    m.def("llama_token_to_piece", (std::string (*)(const struct llama_context *, llama_token, bool)) &llama_token_to_piece, "", nb::arg("ctx"), nb::arg("token"), nb::arg("special") = true);
+
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", nb::arg("ctx"), nb::arg("text"), nb::arg("add_special"), nb::arg("parse_special") = false);
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &llama_tokenize, "", nb::arg("model"), nb::arg("text"), nb::arg("add_special"), nb::arg("parse_special") = false);
 

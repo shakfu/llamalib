@@ -7,6 +7,14 @@
 - [datacamp llama.cpp tutorial](https://www.datacamp.com/tutorial/llama-cpp-tutorial)
 
 
+## raw pointers and pybind11
+
+- [How to bind c structure with an array of another structure as a member in pybind11?](https://stackoverflow.com/questions/60950999/how-to-bind-c-structure-with-an-array-of-another-structure-as-a-member-using-py)
+
+
+## numpy and pybind11
+
+- [pybind11-numpy-example](https://github.com/ssciwr/pybind11-numpy-example)
 
 
 ## Opaque Pointers in Pybind11
