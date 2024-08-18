@@ -57,6 +57,7 @@ set(LLAMA_LINK_LIBS
 )
 
 if(Python_FOUND)
+	add_subdirectory(scratch)
 	add_subdirectory(cyllama)
 	add_subdirectory(nbllama)
 	add_subdirectory(pbllama)
