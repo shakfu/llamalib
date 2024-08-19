@@ -80,9 +80,6 @@ def test_nb_simple():
 
     # main loop
 
-    # int n_cur    = batch.n_tokens
-    # int n_decode = 0
-
     n_cur: int    = batch.n_tokens
     n_decode: int = 0
 

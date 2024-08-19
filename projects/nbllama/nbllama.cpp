@@ -33,6 +33,8 @@ NB_MODULE(nbllama, m) {
         .value("GGML_NUMA_STRATEGY_MIRROR", GGML_NUMA_STRATEGY_MIRROR)
         .value("GGML_NUMA_STRATEGY_COUNT", GGML_NUMA_STRATEGY_COUNT);
 
+    m.def("ggml_time_us", (int64_t (*)(void)) &ggml_time_us);
+
     // -----------------------------------------------------------------------
     // llama.h
     
@@ -195,6 +197,10 @@ NB_MODULE(nbllama, m) {
     nb::class_<llama_batch> (m, "llama_batch")
         .def(nb::init<>())
         .def_rw("n_tokens", &llama_batch::n_tokens)
+        .def_prop_ro("logits", [](llama_batch& self) -> std::vector<int8_t> {
+            std::vector<int8_t> result(self.logits, self.logits + self.n_tokens);
+            return result;
+        })
         .def_rw("all_pos_0", &llama_batch::all_pos_0)
         .def_rw("all_pos_1", &llama_batch::all_pos_1)
         .def_rw("all_seq_id", &llama_batch::all_seq_id);
@@ -469,6 +475,21 @@ NB_MODULE(nbllama, m) {
     // m.def("llama_split_prefix", (int (*)(char *, int, const char *, int, int)) &llama_split_prefix, "Extract the path prefix from the split_path if and only if the split_no and split_count match.", nb::arg("split_prefix"), nb::arg("maxlen"), nb::arg("split_path"), nb::arg("split_no"), nb::arg("split_count"));
 
     m.def("llama_print_system_info", (const char * (*)()) &llama_print_system_info, "C++: llama_print_system_info() --> const char *");
+
+    // Performance information
+    m.def("llama_get_timings", (struct llama_timings (*)(struct llama_context *)) &llama_get_timings, "", nb::arg("ctx"));
+
+    m.def("llama_print_timings", (void (*)(struct llama_context *)) &llama_print_timings, "", nb::arg("ctx"));
+    m.def("llama_reset_timings", (void (*)(struct llama_context *)) &llama_reset_timings, "", nb::arg("ctx"));
+
+    // Print system information
+    m.def("llama_print_system_info", (const char * (*)(void)) &llama_print_system_info, "");
+
+    // Set callback for all future logging events.
+    // If this is not called, or NULL is supplied, everything is output on stderr.
+    // LLAMA_API void llama_log_set(ggml_log_callback log_callback, void * user_data);
+
+    // LLAMA_API void llama_dump_timing_info_yaml(FILE * stream, const struct llama_context * ctx);
 
 
     nb::class_<gpt_params> (m, "gpt_params", "")
