@@ -200,15 +200,27 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("size", &llama_token_data_array::size)
         .def_readwrite("sorted", &llama_token_data_array::sorted);
 
+        // llama_token  *  token;
+        // float        *  embd;
+        // llama_pos    *  pos;
+        // int32_t      *  n_seq_id;
+        // llama_seq_id ** seq_id;
+        // int8_t       *  logits; // TODO: rename this to "output"
+
+
     py::class_<llama_batch, std::shared_ptr<llama_batch>> (m, "llama_batch", "")
         .def( py::init( [](){ return new llama_batch(); } ) )
         .def_readwrite("n_tokens", &llama_batch::n_tokens)
-        .def_readwrite("token", &llama_batch::token)
-        .def_readwrite("embd", &llama_batch::embd)
-        .def_readwrite("pos", &llama_batch::pos)
-        .def_readwrite("n_seq_id", &llama_batch::n_seq_id)
+        // .def_readwrite("token", &llama_batch::token)
+        // .def_readwrite("embd", &llama_batch::embd)
+        // .def_readwrite("pos", &llama_batch::pos)
+        // .def_readwrite("n_seq_id", &llama_batch::n_seq_id)
         // .def_readwrite("seq_id", &llama_batch::seq_id)
-        .def_readwrite("logits", &llama_batch::logits)
+        // .def_readwrite("logits", &llama_batch::logits)
+        .def_property_readonly("logits", [](llama_batch& self) -> std::vector<int8_t> {
+            std::vector<int8_t> result(self.logits, self.logits + self.n_tokens);
+            return result;
+        })
         .def_readwrite("all_pos_0", &llama_batch::all_pos_0)
         .def_readwrite("all_pos_1", &llama_batch::all_pos_1)
         .def_readwrite("all_seq_id", &llama_batch::all_seq_id);
