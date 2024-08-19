@@ -22,110 +22,127 @@ def test_nb_simple():
 
     # initialize the model
 
-    # llama_model_params model_params = llama_model_params_from_gpt_params(params)
-    model_params = pb.llama_model_params_from_gpt_params(params)
+    model_params: llama_model_params = pb.llama_model_params_from_gpt_params(params)
 
     # set local test model
     params.model = str(MODEL)
 
-    # llama_model * model = llama_load_model_from_file(params.model, model_params)
-    model = pb.llama_load_model_from_file(params.model, model_params)
+    model: llama_model = pb.llama_load_model_from_file(params.model, model_params)
 
     if not model:
         raise SystemExit(f"Unable to load model: {params.model}")
 
-    # if (model == NULL) {
-    #     fprintf(stderr , "%s: error: unable to load model\n" , __func__)
-    #     return 1
-    # }
-
     # initialize the context
 
-    # llama_context_params ctx_params = llama_context_params_from_gpt_params(params)
-    ctx_params = pb.llama_context_params_from_gpt_params(params)
+    ctx_params: llama_context_params = pb.llama_context_params_from_gpt_params(params)
 
-    # llama_context * ctx = llama_new_context_with_model(model, ctx_params)
-    ctx = pb.llama_new_context_with_model(model, ctx_params)
-
-    # if (ctx == NULL) {
-    #     fprintf(stderr , "%s: error: failed to create the llama_context\n" , __func__)
-    #     return 1
-    # }
+    ctx: llama_context = pb.llama_new_context_with_model(model, ctx_params)
 
     if not ctx:
         raise SystemExit("Failed to create the llama context")
 
     # tokenize the prompt
 
-    # std::vector<llama_token> tokens_list
-    # tokens_list = ::llama_tokenize(ctx, params.prompt, true)
-    tokens_list = pb.llama_tokenize(ctx, params.prompt, True) # CRASH!!
+    tokens_list: list[int] = pb.llama_tokenize(ctx, params.prompt, True)
 
-    # const int n_ctx    = llama_n_ctx(ctx)
-    n_ctx = pb.llama_n_ctx(ctx)
+    n_ctx: int = pb.llama_n_ctx(ctx)
 
-    # const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size())
-    n_kv_req = len(tokens_list) + (n_predict - len(tokens_list))
+    n_kv_req: int = len(tokens_list) + (n_predict - len(tokens_list))
 
-    # LOG_TEE("\n%s: n_predict = %d, n_ctx = %d, n_kv_req = %d\n", __func__, n_predict, n_ctx, n_kv_req)
+    print("n_predict = %d, n_ctx = %d, n_kv_req = %d", n_predict, n_ctx, n_kv_req)
 
-    # # make sure the KV cache is big enough to hold all the prompt and generated tokens
-    # if (n_kv_req > n_ctx) {
-    #     LOG_TEE("%s: error: n_kv_req > n_ctx, the required KV cache size is not big enough\n", __func__)
-    #     LOG_TEE("%s:        either reduce n_predict or increase n_ctx\n", __func__)
-    #     return 1
-    # }
     if (n_kv_req > n_ctx):
-        raise SystemExit("error: n_kv_req > n_ctx, the required KV cache size is not big enough\neither reduce n_predict or increase n_ctx.")
+        raise SystemExit(
+            "error: n_kv_req > n_ctx, the required KV cache size is not big enough\n"
+            "either reduce n_predict or increase n_ctx.")
 
     # print the prompt token-by-token
-
-    # fprintf(stderr, "\n")
-
-    # for (auto id : tokens_list) {
-    #     fprintf(stderr, "%s", llama_token_to_piece(ctx, id).c_str())
-    # }
 
     for i in tokens_list:
         print(pb.llama_token_to_piece(ctx, i))
 
-    # fflush(stderr)
-
     # create a llama_batch with size 512
     # we use this object to submit token data for decoding
 
-    # llama_batch batch = llama_batch_init(512, 0, 1)
-    batch = pb.llama_batch_init(512, 0, 1)
+    batch: llama_batch = pb.llama_batch_init(512, 0, 1)
 
-    # # evaluate the initial prompt
-    # for (size_t i = 0 i < tokens_list.size() i++) {
-    #     llama_batch_add(batch, tokens_list[i], i, { 0 }, false)
-    # }
+    # evaluate the initial prompt
 
     for i, token in enumerate(tokens_list):
         pb.llama_batch_add(batch, token, i, [], False)
 
 
     # llama_decode will output logits only for the last token of the prompt
-    # batch.logits[batch.n_tokens - 1] = true
     batch.logits[batch.n_tokens - 1] = True
-
-    # if (llama_decode(ctx, batch) != 0) {
-    #     LOG_TEE("%s: llama_decode() failed\n", __func__)
-    #     return 1
-    # }
 
     if pb.llama_decode(ctx, batch) != 0:
         raise SystemExit("llama_decode() failed.")
-
-
 
     # main loop
 
     # int n_cur    = batch.n_tokens
     # int n_decode = 0
 
-    # const auto t_main_start = ggml_time_us()
+    n_cur: int    = batch.n_tokens
+    n_decode: int = 0
+
+    t_main_start: int = pb.ggml_time_us()
+
+    # while (n_cur <= n_predict):
+    #     # sample the next token
+    #     n_vocab = pb.llama_n_vocab(model)
+    #     logits  = pb.llama_get_logits_ith(ctx, batch.n_tokens - 1)
+
+    #     candidates: list[llama_token_data] = []
+    #     # candidates.reserve(n_vocab)
+
+    #     for i in range(n_vocab):
+    #         c = pb.llama_token_data(i, logits[i], 0.0)
+    #         candidates.append(c)
+
+    #     candidates_p: llama_token_data_array = pb.llama_token_data_array(candidates.data(), len(candidates), False)
+
+    #     # sample the most likely token
+    #     new_token_id: llama_token = pb.llama_sample_token_greedy(ctx, &candidates_p)
+
+    #     if (pb.llama_token_is_eog(model, new_token_id) || n_cur == n_predict):
+    #         break
+
+    #     print(pb.llama_token_to_piece(ctx, new_token_id))
+
+    #     # prepare the next batch
+    #     pb.llama_batch_clear(batch)
+
+
+
+    #     # push this new token for next evaluation
+    #     pb.llama_batch_add(batch, new_token_id, n_cur, [], False)
+
+    #     n_decode += 1
+
+
+    #     n_cur += 1
+
+    #     # evaluate the current batch with the transformer model
+
+    #     if (pb.llama_decode(ctx, batch)):
+    #         raise SystemExit("failed to eval, return code.")
+
+    t_main_end: int = pb.ggml_time_us()
+
+    print("decoded %d tokens in %.2f s, speed: %.2f t/s",
+            n_decode, (t_main_end - t_main_start) / 1000000.0, n_decode / ((t_main_end - t_main_start) / 1000000.0))
+
+    pb.llama_print_timings(ctx)
+
+    pb.llama_batch_free(batch)
+
+    pb.llama_free(ctx)
+    pb.llama_free_model(model)
+
+    pb.llama_backend_free()
+
+
 
     # while (n_cur <= n_predict) {
     #     # sample the next token
