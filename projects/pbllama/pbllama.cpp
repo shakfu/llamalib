@@ -218,7 +218,6 @@ PYBIND11_MODULE(pbllama, m) {
         // .def_readwrite("pos", &llama_batch::pos)
         // .def_readwrite("n_seq_id", &llama_batch::n_seq_id)
         // .def_readwrite("seq_id", &llama_batch::seq_id)
-        // .def_readwrite("logits", &llama_batch::logits)
         .def_property_readonly("logits", [](llama_batch& self) -> std::vector<int8_t> {
             std::vector<int8_t> result(self.logits, self.logits + self.n_tokens);
             return result;
@@ -457,6 +456,13 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_synchronize", (void (*)(const struct llama_context *)) &llama_synchronize, "", py::arg("ctx"));
     m.def("llama_get_logits", (float* (*)(const struct llama_context *)) &llama_get_logits, "", py::arg("ctx"));
     m.def("llama_get_logits_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_logits_ith, "", py::arg("ctx"), py::arg("i"));
+    // m.def("llama_get_logits_ith_vec", [](const struct llama_context * ctx, int32_t i) -> std::vector<float> {
+    //     // float * result_ptr = |new float[i];
+    //     // float * logits = llama_get_logits_ith(ctx, i);
+    //     auto * logits  = llama_get_logits_ith(ctx, i);
+    //     std::vector<float> result(logits, logits + i);
+    //     return result;2
+    // }, "", py::arg("ctx"), py::arg("i"));
 
     m.def("llama_get_embeddings", (float* (*)(const struct llama_context *)) &llama_get_embeddings, "", py::arg("ctx"));
     m.def("llama_get_embeddings_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_embeddings_ith, "", py::arg("ctx"), py::arg("i"));

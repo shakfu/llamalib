@@ -13,7 +13,7 @@ def test_nb_simple():
     params.n_predict = 32
 
     # total length of the sequence including the prompt
-    n_predict = params.n_predict
+    n_predict: int = params.n_predict
 
     # init LLM
 
@@ -85,45 +85,42 @@ def test_nb_simple():
 
     t_main_start: int = nb.ggml_time_us()
 
-    # while (n_cur <= n_predict):
-    #     # sample the next token
-    #     n_vocab = nb.llama_n_vocab(model)
-    #     logits  = nb.llama_get_logits_ith(ctx, batch.n_tokens - 1)
+    while (n_cur <= n_predict):
+        # sample the next token
+        n_vocab: int = nb.llama_n_vocab(model)
+        # logits: list[float] = nb.llama_get_logits_ith(ctx, batch.n_tokens - 1)
 
-    #     candidates: list[llama_token_data] = []
-    #     # candidates.reserve(n_vocab)
+        # candidates: list[llama_token_data] = []
+        # # candidates.reserve(n_vocab)
 
-    #     for i in range(n_vocab):
-    #         c = nb.llama_token_data(i, logits[i], 0.0)
-    #         candidates.append(c)
+        # for i in range(n_vocab):
+        #     c = nb.llama_token_data(i, logits[i], 0.0)
+        #     candidates.append(c)
 
-    #     candidates_p: llama_token_data_array = nb.llama_token_data_array(candidates.data(), len(candidates), False)
+        # candidates_p: llama_token_data_array = nb.llama_token_data_array(candidates.data(), len(candidates), False)
 
-    #     # sample the most likely token
-    #     new_token_id: llama_token = nb.llama_sample_token_greedy(ctx, &candidates_p)
+        # # sample the most likely token
+        # new_token_id: llama_token = nb.llama_sample_token_greedy(ctx, &candidates_p)
 
-    #     if (nb.llama_token_is_eog(model, new_token_id) || n_cur == n_predict):
-    #         break
+        # if (nb.llama_token_is_eog(model, new_token_id) || n_cur == n_predict):
+        #     break
 
-    #     print(nb.llama_token_to_piece(ctx, new_token_id))
+        # print(nb.llama_token_to_piece(ctx, new_token_id))
 
-    #     # prepare the next batch
-    #     nb.llama_batch_clear(batch)
+        # # prepare the next batch
+        # nb.llama_batch_clear(batch)
 
+        # # push this new token for next evaluation
+        # nb.llama_batch_add(batch, new_token_id, n_cur, [], False)
 
+        n_decode += 1
 
-    #     # push this new token for next evaluation
-    #     nb.llama_batch_add(batch, new_token_id, n_cur, [], False)
+        n_cur += 1
 
-    #     n_decode += 1
+        # evaluate the current batch with the transformer model
 
-
-    #     n_cur += 1
-
-    #     # evaluate the current batch with the transformer model
-
-    #     if (nb.llama_decode(ctx, batch)):
-    #         raise SystemExit("failed to eval, return code.")
+        if (nb.llama_decode(ctx, batch)):
+            raise SystemExit("failed to eval, return code.")
 
     t_main_end: int = nb.ggml_time_us()
 
@@ -134,8 +131,8 @@ def test_nb_simple():
 
     nb.llama_batch_free(batch)
 
-    # nb.llama_free(ctx)            # CRASH!
-    # nb.llama_free_model(model)    # CRASH!
+    nb.llama_free(ctx)
+    nb.llama_free_model(model)
 
     nb.llama_backend_free()
 
