@@ -89,9 +89,10 @@ def test_nb_simple():
         # sample the next token
         n_vocab: int = pb.llama_n_vocab(model)
         # logits: list[float] = pb.llama_get_logits_ith(ctx, batch.n_tokens - 1)
+        # logits = pb.llama_get_logits_ith(ctx, batch.n_tokens - 1)
 
         # candidates: list[llama_token_data] = []
-        # # candidates.reserve(n_vocab)
+        # # # candidates.reserve(n_vocab)
 
         # for i in range(n_vocab):
         #     c = pb.llama_token_data(i, logits[i], 0.0)
