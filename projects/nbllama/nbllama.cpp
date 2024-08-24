@@ -83,6 +83,9 @@ NB_MODULE(nbllama, m) {
         .value("LLAMA_VOCAB_PRE_TYPE_TEKKEN", LLAMA_VOCAB_PRE_TYPE_TEKKEN)
         .value("LLAMA_VOCAB_PRE_TYPE_SMOLLM", LLAMA_VOCAB_PRE_TYPE_SMOLLM)
         .value("LLAMA_VOCAB_PRE_TYPE_CODESHELL", LLAMA_VOCAB_PRE_TYPE_CODESHELL)
+        .value("LLAMA_VOCAB_PRE_TYPE_BLOOM", LLAMA_VOCAB_PRE_TYPE_BLOOM)
+        .value("LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH", LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH)
+        .value("LLAMA_VOCAB_PRE_TYPE_EXAONE", LLAMA_VOCAB_PRE_TYPE_EXAONE)
         .export_values();
 
     nb::enum_<enum llama_rope_type>(m, "llama_rope_type")
@@ -351,6 +354,8 @@ NB_MODULE(nbllama, m) {
     m.def("llama_model_has_encoder", (bool (*)(const struct llama_model *)) &llama_model_has_encoder, "model has encoder?", nb::arg("model"));
 
     m.def("llama_model_decoder_start_token", (llama_token (*)(const struct llama_model *)) &llama_model_decoder_start_token, "get decoder_start_token from model", nb::arg("model"));
+
+    m.def("llama_model_is_recurrent", (bool (*)(const struct llama_model *)) &llama_model_is_recurrent, "check if model is recurrent", nb::arg("model"));
 
     m.def("llama_model_quantize", (int (*)(const char *, const char *, const struct llama_model_quantize_params *)) &llama_model_quantize, "C++: llama_model_quantize(const char *, const char *, const struct llama_model_quantize_params *) --> int", nb::arg("fname_inp"), nb::arg("fname_out"), nb::arg("params"));
 
@@ -645,7 +650,7 @@ NB_MODULE(nbllama, m) {
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", nb::arg("ctx"), nb::arg("text"), nb::arg("add_special"), nb::arg("parse_special") = false);
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &llama_tokenize, "", nb::arg("model"), nb::arg("text"), nb::arg("add_special"), nb::arg("parse_special") = false);
 
-    m.def("gpt_params_handle_hf_token", (void (*)(struct gpt_params &)) &gpt_params_handle_hf_token, "C++: gpt_params_handle_hf_token(struct gpt_params &) --> void", nb::arg("params"));
+    m.def("gpt_params_parse_from_env", (void (*)(struct gpt_params &)) &gpt_params_parse_from_env, "", nb::arg("params"));
     m.def("gpt_params_handle_model_default", (void (*)(struct gpt_params &)) &gpt_params_handle_model_default, "C++: gpt_params_handle_model_default(struct gpt_params &) --> void", nb::arg("params"));
     m.def("gpt_params_get_system_info", (std::string (*)(const struct gpt_params &)) &gpt_params_get_system_info, "C++: gpt_params_get_system_info(const struct gpt_params &) --> std::string", nb::arg("params"));
 

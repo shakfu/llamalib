@@ -93,6 +93,9 @@ PYBIND11_MODULE(pbllama, m) {
         .value("LLAMA_VOCAB_PRE_TYPE_TEKKEN", LLAMA_VOCAB_PRE_TYPE_TEKKEN)
         .value("LLAMA_VOCAB_PRE_TYPE_SMOLLM", LLAMA_VOCAB_PRE_TYPE_SMOLLM)
         .value("LLAMA_VOCAB_PRE_TYPE_CODESHELL", LLAMA_VOCAB_PRE_TYPE_CODESHELL)
+        .value("LLAMA_VOCAB_PRE_TYPE_BLOOM", LLAMA_VOCAB_PRE_TYPE_BLOOM)
+        .value("LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH", LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH)
+        .value("LLAMA_VOCAB_PRE_TYPE_EXAONE", LLAMA_VOCAB_PRE_TYPE_EXAONE)
         .export_values();
 
     py::enum_<enum llama_rope_type>(m, "llama_rope_type", py::arithmetic(), "")
@@ -398,6 +401,8 @@ PYBIND11_MODULE(pbllama, m) {
 
     m.def("llama_model_decoder_start_token", (llama_token (*)(const struct llama_model *)) &llama_model_decoder_start_token, "get decoder_start_token from model", py::arg("model"));
 
+    m.def("llama_model_is_recurrent", (bool (*)(const struct llama_model *)) &llama_model_is_recurrent, "check if model is recurrent", py::arg("model"));
+
     m.def("llama_model_quantize", (int (*)(const char *, const char *, const struct llama_model_quantize_params *)) &llama_model_quantize, "C++: llama_model_quantize(const char *, const char *, const struct llama_model_quantize_params *) --> int", py::arg("fname_inp"), py::arg("fname_out"), py::arg("params"));
 
     m.def("llama_lora_adapter_init", (struct llama_lora_adapter (*)(const struct llama_model *, const char *)) &llama_lora_adapter_init, "", py::arg("model"), py::arg("path_lora"));
@@ -455,15 +460,7 @@ PYBIND11_MODULE(pbllama, m) {
 
     m.def("llama_synchronize", (void (*)(const struct llama_context *)) &llama_synchronize, "", py::arg("ctx"));
     m.def("llama_get_logits", (float* (*)(const struct llama_context *)) &llama_get_logits, "", py::arg("ctx"));
-    // m.def("llama_get_logits_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_logits_ith, "", py::arg("ctx"), py::arg("i"));
-    m.def("llama_get_logits_ith", [](struct llama_context * ctx, int32_t i) -> std::vector<float> {
-        float * result_ptr = |new float[i];
-        float * logits = llama_get_logits_ith(ctx, i);
-        float * logits  = llama_get_logits_ith(ctx, i);
-        std::vector<float> result(logits - i, logits);
-        std::vector<float> result(logits, logits + i);
-        return result;
-    }, "", py::arg("ctx"), py::arg("i"));
+    m.def("llama_get_logits_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_logits_ith, "", py::arg("ctx"), py::arg("i"));
 
     m.def("llama_get_embeddings", (float* (*)(const struct llama_context *)) &llama_get_embeddings, "", py::arg("ctx"));
     m.def("llama_get_embeddings_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_embeddings_ith, "", py::arg("ctx"), py::arg("i"));
@@ -711,7 +708,9 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("ctx"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
 
-    m.def("gpt_params_handle_hf_token", (void (*)(struct gpt_params &)) &gpt_params_handle_hf_token, "C++: gpt_params_handle_hf_token(struct gpt_params &) --> void", py::arg("params"));
+    // m.def("gpt_params_handle_hf_token", (void (*)(struct gpt_params &)) &gpt_params_handle_hf_token, "C++: gpt_params_handle_hf_token(struct gpt_params &) --> void", py::arg("params"));
+
+    m.def("gpt_params_parse_from_env", (void (*)(struct gpt_params &)) &gpt_params_parse_from_env, "", py::arg("params"));
     m.def("gpt_params_handle_model_default", (void (*)(struct gpt_params &)) &gpt_params_handle_model_default, "C++: gpt_params_handle_model_default(struct gpt_params &) --> void", py::arg("params"));
     m.def("gpt_params_get_system_info", (std::string (*)(const struct gpt_params &)) &gpt_params_get_system_info, "C++: gpt_params_get_system_info(const struct gpt_params &) --> std::string", py::arg("params"));
 
