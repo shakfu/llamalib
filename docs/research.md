@@ -6,6 +6,12 @@
 
 - [datacamp llama.cpp tutorial](https://www.datacamp.com/tutorial/llama-cpp-tutorial)
 
+## Releated Projects
+
+- [llama.py](https://github.com/daskol/llama.py)
+
+- [pyllamacpp](https://github.com/abdeladim-s/pyllamacpp)
+
 
 ## raw pointers and pybind11
 

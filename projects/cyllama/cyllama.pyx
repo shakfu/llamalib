@@ -1,12 +1,14 @@
 # distutils: language = c++
 
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport malloc, calloc, realloc, free
 from libcpp.vector cimport vector
+from libcpp.string cimport string
 
 cimport llama_cpp
 
 import os
 from typing import Optional
+
 
 cdef class GGMLTensor:
     cdef llama_cpp.ggml_tensor * ptr
@@ -189,6 +191,25 @@ cdef class LlamaModel:
     # def get_tensor(self, name: str) -> ctypes.c_void_p:
     #     return llama_cpp.llama_get_model_tensor(self.model, name.encode("utf-8"))
 
+    # def apply_lora_from_file(
+    #     self,
+    #     lora_path: str,
+    #     scale: float,
+    #     path_base_model: Optional[str],
+    #     n_threads: int,
+    # ):
+    #     return llama_cpp.llama_model_apply_lora_from_file(
+    #         self.model,
+    #         lora_path.encode("utf-8"),
+    #         scale,
+    #         (
+    #             path_base_model.encode("utf-8")
+    #             if path_base_model is not None
+    #             else ctypes.c_char_p(0)
+    #         ),
+    #         n_threads,
+    #     )
+
 #     def apply_lora_from_file(
 #         self,
 #         lora_path: str,
@@ -303,37 +324,38 @@ cdef class LlamaModel:
         )
 
     # Extra
-#     def metadata(self) -> Dict[str, str]:
-#         assert self.model is not None
-#         metadata: Dict[str, str] = {}
-#         buffer_size = 1024
-#         buffer = ctypes.create_string_buffer(buffer_size)
-#         # zero the buffer
-#         buffer.value = b"\0" * buffer_size
-#         # iterate over model keys
-#         for i in range(llama_cpp.llama_model_meta_count(self.model)):
-#             nbytes = llama_cpp.llama_model_meta_key_by_index(
-#                 self.model, i, buffer, buffer_size
-#             )
-#             if nbytes > buffer_size:
-#                 buffer_size = nbytes + 1
-#                 buffer = ctypes.create_string_buffer(buffer_size)
-#                 nbytes = llama_cpp.llama_model_meta_key_by_index(
-#                     self.model, i, buffer, buffer_size
-#                 )
-#             key = buffer.value.decode("utf-8")
-#             nbytes = llama_cpp.llama_model_meta_val_str_by_index(
-#                 self.model, i, buffer, buffer_size
-#             )
-#             if nbytes > buffer_size:
-#                 buffer_size = nbytes + 1
-#                 buffer = ctypes.create_string_buffer(buffer_size)
-#                 nbytes = llama_cpp.llama_model_meta_val_str_by_index(
-#                     self.model, i, buffer, buffer_size
-#                 )
-#             value = buffer.value.decode("utf-8")
-#             metadata[key] = value
-#         return metadata
+
+    def metadata(self) -> dict[str, str]:
+        metadata: dict[str, str] = {}
+        buffer_size = 1024
+        cdef int nbytes
+        cdef char * buffer = <char*>calloc(buffer_size, sizeof(char))
+        # iterate over model keys
+        for i in range(llama_cpp.llama_model_meta_count(self.model)):
+            nbytes = llama_cpp.llama_model_meta_key_by_index(
+                self.model, i, buffer, buffer_size
+            )
+            if nbytes > buffer_size:
+                buffer_size = nbytes + 1
+                buffer = <char*>realloc(buffer, buffer_size * sizeof(char));
+                nbytes = llama_cpp.llama_model_meta_key_by_index(
+                    self.model, i, buffer, buffer_size
+                )
+            key = buffer.decode("utf-8")
+            nbytes = llama_cpp.llama_model_meta_val_str_by_index(
+                self.model, i, buffer, buffer_size
+            )
+            if nbytes > buffer_size:
+                buffer_size = nbytes + 1
+                buffer = <char*>realloc(buffer, buffer_size * sizeof(char));
+                nbytes = llama_cpp.llama_model_meta_val_str_by_index(
+                    self.model, i, buffer, buffer_size
+                )
+            value = buffer.decode("utf-8")
+            metadata[key] = value
+        free(buffer)
+        return metadata
+
 
     @staticmethod
     def default_params() -> ModelParams:
@@ -341,3 +363,341 @@ cdef class LlamaModel:
         # return llama_cpp.llama_model_default_params()
         return ModelParams()
 
+
+
+cdef class ContextParams:
+    cdef llama_cpp.llama_context_params p
+
+    def __init__(self):
+        self.p = llama_cpp.llama_context_default_params()
+
+    @property
+    def seed(self) -> int:
+        """RNG seed, -1 for random."""
+        return self.p.seed
+
+    @seed.setter
+    def seed(self, value: int):
+        self.p.seed = value
+
+    @property
+    def n_ctx(self) -> int:
+        """text context, 0 = from model."""
+        return self.p.n_ctx
+
+    @n_ctx.setter
+    def n_ctx(self, value: int):
+        self.p.n_ctx = value
+
+    @property
+    def n_batch(self) -> int:
+        """logical maximum batch size that can be submitted to llama_decode."""
+        return self.p.n_batch
+
+    @n_batch.setter
+    def n_batch(self, value: int):
+        self.p.n_batch = value
+
+    @property
+    def n_ubatch(self) -> int:
+        """physical maximum batch size."""
+        return self.p.n_ubatch
+
+    @n_ubatch.setter
+    def n_ubatch(self, value: int):
+        self.p.n_ubatch = value
+
+    @property
+    def n_seq_max(self) -> int:
+        """max number of sequences (i.e. distinct states for recurrent models)."""
+        return self.p.n_seq_max
+
+    @n_seq_max.setter
+    def n_seq_max(self, value: int):
+        self.p.n_seq_max = value
+
+    @property
+    def n_threads(self) -> int:
+        """number of threads to use for generation."""
+        return self.p.n_threads
+
+    @n_threads.setter
+    def n_threads(self, value: int):
+        self.p.n_threads = value
+
+    @property
+    def n_threads_batch(self) -> int:
+        """number of threads to use for batch processing"""
+        return self.p.n_threads_batch
+
+    @n_threads_batch.setter
+    def n_threads_batch(self, value: int):
+        self.p.n_threads_batch = value
+
+    @property
+    def rope_scaling_type(self) -> llama_cpp.llama_rope_scaling_type:
+        """number of threads to use for batch processing"""
+        return <llama_cpp.llama_rope_scaling_type>self.p.rope_scaling_type
+
+    @rope_scaling_type.setter
+    def rope_scaling_type(self, llama_cpp.llama_rope_scaling_type value):
+        self.p.rope_scaling_type = value
+
+
+cdef class LlamaContext:
+    """Intermediate Python wrapper for a llama.cpp llama_context."""
+    cdef llama_cpp.llama_context * ctx
+    cdef public LlamaModel model
+    cdef public ContextParams params
+    cdef public bint verbose
+    cdef bint owner
+
+    def __cinit__(self):
+        self.ctx = NULL
+        self.owner = True
+
+    def __init__(
+        self,
+        *,
+        model: LlamaModel,
+        # params: llama_cpp.llama_context_params,
+        params: Optional[ContextParams] = None,
+        verbose: bool = True,
+    ):
+        self.model = model
+        self.params = params if params else ContextParams()
+        self.verbose = verbose
+
+        # self.ctx = None
+
+        assert self.model.model is not NULL
+
+        self.ctx = llama_cpp.llama_new_context_with_model(self.model.model, self.params.p)
+
+        if self.ctx is NULL:
+            raise ValueError("Failed to create llama_context")
+
+    def __dealloc__(self):
+        if self.ctx is not NULL and self.owner is True:
+            llama_cpp.llama_free(self.ctx)
+            self.ctx = NULL
+
+    def close(self):
+        self.__dealloc__()
+
+    def n_ctx(self) -> int:
+        assert self.ctx is not NULL
+        return llama_cpp.llama_n_ctx(self.ctx)
+
+    # FIXME: name collision
+    # def pooling_type(self) -> int:
+    #     assert self.ctx is not NULL
+    #     return llama_cpp.llama_pooling_type(self.ctx)
+
+    def kv_cache_clear(self):
+        assert self.ctx is not NULL
+        llama_cpp.llama_kv_cache_clear(self.ctx)
+
+    def kv_cache_seq_rm(self, seq_id: int, p0: int, p1: int):
+        assert self.ctx is not NULL
+        llama_cpp.llama_kv_cache_seq_rm(self.ctx, seq_id, p0, p1)
+
+    def kv_cache_seq_cp(self, seq_id_src: int, seq_id_dst: int, p0: int, p1: int):
+        assert self.ctx is not NULL
+        llama_cpp.llama_kv_cache_seq_cp(self.ctx, seq_id_src, seq_id_dst, p0, p1)
+
+    def kv_cache_seq_keep(self, seq_id: int):
+        assert self.ctx is not NULL
+        llama_cpp.llama_kv_cache_seq_keep(self.ctx, seq_id)
+
+    def kv_cache_seq_shift(self, seq_id: int, p0: int, p1: int, shift: int):
+        assert self.ctx is not NULL
+        llama_cpp.llama_kv_cache_seq_add(self.ctx, seq_id, p0, p1, shift)
+
+    # def get_state_size(self) -> int:
+    #     assert self.ctx is not NULL
+    #     return llama_cpp.llama_get_state_size(self.ctx)
+
+    # # TODO: copy_state_data
+
+    # # TODO: set_state_data
+
+    # # TODO: llama_load_session_file
+
+    # # TODO: llama_save_session_file
+
+    # def decode(self, batch: "_LlamaBatch"):
+    #     assert self.ctx is not None
+    #     assert batch.batch is not None
+    #     return_code = llama_cpp.llama_decode(
+    #         self.ctx,
+    #         batch.batch,
+    #     )
+    #     if return_code != 0:
+    #         raise RuntimeError(f"llama_decode returned {return_code}")
+
+    def set_n_threads(self, n_threads: int, n_threads_batch: int):
+        assert self.ctx is not NULL
+        llama_cpp.llama_set_n_threads(self.ctx, n_threads, n_threads_batch)
+
+    # def get_logits(self):
+    #     assert self.ctx is not NULL
+    #     return llama_cpp.llama_get_logits(self.ctx)
+
+    # def get_logits_ith(self, i: int):
+    #     assert self.ctx is not NULL
+    #     return llama_cpp.llama_get_logits_ith(self.ctx, i)
+
+    # def get_embeddings(self):
+    #     assert self.ctx is not NULL
+    #     return llama_cpp.llama_get_embeddings(self.ctx)
+
+    # # Sampling functions
+
+    # def set_rng_seed(self, seed: int):
+    #     assert self.ctx is not NULL
+    #     llama_cpp.llama_set_rng_seed(self.ctx, seed)
+
+    # def sample_repetition_penalties(
+    #     self,
+    #     candidates: "_LlamaTokenDataArray",
+    #     last_tokens_data: "llama_cpp.Array[llama_cpp.llama_token]",
+    #     penalty_last_n: int,
+    #     penalty_repeat: float,
+    #     penalty_freq: float,
+    #     penalty_present: float,
+    # ):
+    #     assert self.ctx is not None
+    #     llama_cpp.llama_sample_repetition_penalties(
+    #         self.ctx,
+    #         llama_cpp.byref(candidates.candidates),
+    #         last_tokens_data,
+    #         penalty_last_n,
+    #         penalty_repeat,
+    #         penalty_freq,
+    #         penalty_present,
+    #     )
+
+    # def sample_softmax(self, candidates: "_LlamaTokenDataArray"):
+    #     assert self.ctx is not None
+    #     llama_cpp.llama_sample_softmax(
+    #         self.ctx,
+    #         llama_cpp.byref(candidates.candidates),
+    #     )
+
+    # def sample_top_k(self, candidates: "_LlamaTokenDataArray", k: int, min_keep: int):
+    #     assert self.ctx is not None
+    #     llama_cpp.llama_sample_top_k(
+    #         self.ctx, llama_cpp.byref(candidates.candidates), k, min_keep
+    #     )
+
+    # def sample_top_p(self, candidates: "_LlamaTokenDataArray", p: float, min_keep: int):
+    #     assert self.ctx is not None
+    #     llama_cpp.llama_sample_top_p(
+    #         self.ctx, llama_cpp.byref(candidates.candidates), p, min_keep
+    #     )
+
+    # def sample_min_p(self, candidates: "_LlamaTokenDataArray", p: float, min_keep: int):
+    #     assert self.ctx is not None
+    #     llama_cpp.llama_sample_min_p(
+    #         self.ctx, llama_cpp.byref(candidates.candidates), p, min_keep
+    #     )
+
+    # def sample_tail_free(
+    #     self, candidates: "_LlamaTokenDataArray", z: float, min_keep: int
+    # ):
+    #     assert self.ctx is not None
+    #     llama_cpp.llama_sample_tail_free(
+    #         self.ctx, llama_cpp.byref(candidates.candidates), z, min_keep
+    #     )
+
+    # def sample_typical(
+    #     self, candidates: "_LlamaTokenDataArray", p: float, min_keep: int
+    # ):
+    #     assert self.ctx is not None
+    #     llama_cpp.llama_sample_typical(
+    #         self.ctx, llama_cpp.byref(candidates.candidates), p, min_keep
+    #     )
+
+    # def sample_temp(self, candidates: "_LlamaTokenDataArray", temp: float):
+    #     assert self.ctx is not None
+    #     llama_cpp.llama_sample_temp(
+    #         self.ctx, llama_cpp.byref(candidates.candidates), temp
+    #     )
+
+    # def sample_grammar(self, candidates: "_LlamaTokenDataArray", grammar: LlamaGrammar):
+    #     assert self.ctx is not None
+    #     assert grammar.grammar is not None
+    #     llama_cpp.llama_sample_grammar(
+    #         self.ctx,
+    #         llama_cpp.byref(candidates.candidates),
+    #         grammar.grammar,
+    #     )
+
+    # def sample_token_mirostat(
+    #     self,
+    #     candidates: "_LlamaTokenDataArray",
+    #     tau: float,
+    #     eta: float,
+    #     m: int,
+    #     mu: llama_cpp.CtypesPointerOrRef[ctypes.c_float],
+    # ) -> int:
+    #     assert self.ctx is not None
+    #     return llama_cpp.llama_sample_token_mirostat(
+    #         self.ctx,
+    #         llama_cpp.byref(candidates.candidates),
+    #         tau,
+    #         eta,
+    #         m,
+    #         mu,
+    #     )
+
+    # def sample_token_mirostat_v2(
+    #     self,
+    #     candidates: "_LlamaTokenDataArray",
+    #     tau: float,
+    #     eta: float,
+    #     mu: llama_cpp.CtypesPointerOrRef[ctypes.c_float],
+    # ) -> int:
+    #     assert self.ctx is not None
+    #     return llama_cpp.llama_sample_token_mirostat_v2(
+    #         self.ctx,
+    #         llama_cpp.byref(candidates.candidates),
+    #         tau,
+    #         eta,
+    #         mu,
+    #     )
+
+    # def sample_token_greedy(self, candidates: "_LlamaTokenDataArray") -> int:
+    #     assert self.ctx is not None
+    #     return llama_cpp.llama_sample_token_greedy(
+    #         self.ctx,
+    #         llama_cpp.byref(candidates.candidates),
+    #     )
+
+    # def sample_token(self, candidates: "_LlamaTokenDataArray") -> int:
+    #     assert self.ctx is not None
+    #     return llama_cpp.llama_sample_token(
+    #         self.ctx,
+    #         llama_cpp.byref(candidates.candidates),
+    #     )
+
+    # # Grammar
+    # def grammar_accept_token(self, grammar: LlamaGrammar, token: int):
+    #     assert self.ctx is not None
+    #     assert grammar.grammar is not None
+    #     llama_cpp.llama_grammar_accept_token(grammar.grammar, self.ctx, token)
+
+    # def reset_timings(self):
+    #     assert self.ctx is not None
+    #     llama_cpp.llama_reset_timings(self.ctx)
+
+    # def print_timings(self):
+    #     assert self.ctx is not None
+    #     llama_cpp.llama_print_timings(self.ctx)
+
+    # # Utility functions
+    # @staticmethod
+    # def default_params():
+    #     """Get the default llama_context_params."""
+    #     return llama_cpp.llama_context_default_params()
