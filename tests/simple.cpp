@@ -155,6 +155,10 @@ int main(int argc, char ** argv) {
             auto   n_vocab = llama_n_vocab(model);
             auto * logits  = llama_get_logits_ith(ctx, batch.n_tokens - 1);
 
+            // for (int i=0; i < n_vocab; ++i) {
+            //     printf("logits[%d] = %f\n", i, logits[i]);
+            // }
+
             std::vector<llama_token_data> candidates;
             candidates.reserve(n_vocab);
 

@@ -184,6 +184,9 @@ cdef extern from "ggml-backend.h":
 
 
 cdef extern from "llama.h":
+
+    long LLAMA_DEFAULT_SEED
+
     ctypedef struct llama_model
     ctypedef struct llama_context
 
@@ -506,7 +509,7 @@ cdef extern from "llama.h":
     cdef uint32_t llama_n_seq_max  (const llama_context * ctx)
 
     cdef llama_pooling_type get_llama_pooling_type(const llama_context * ctx)
-    cdef llama_vocab_type   get_llama_vocab_type  (const llama_model * model)
+    cdef llama_vocab_type get_llama_vocab_type(const llama_model * model)
     cdef llama_rope_type    get_llama_rope_type   (const llama_model * model)
 
     cdef int32_t llama_n_vocab    (const llama_model * model)
@@ -1032,9 +1035,9 @@ cdef extern from "llama.h":
 
     # @details Apply constraints from grammar
     cdef void llama_grammar_sample(
-            const  llama_grammar * grammar,
-            const  llama_context * ctx,
-                llama_token_data_array * candidates)
+            const llama_grammar * grammar,
+            const llama_context * ctx,
+            llama_token_data_array * candidates)
 
     # @details Accepts the sampled token into the grammar
     cdef void llama_grammar_accept_token(

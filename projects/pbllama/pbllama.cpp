@@ -13,8 +13,6 @@ struct llama_context {};
 struct llama_grammar {};
 struct llama_lora_adapter {};
 
-// PYBIND11_MAKE_OPAQUE(std::vector<llama_token>);
-
 
 std::vector<llama_token> demo(void)
 {
@@ -27,7 +25,14 @@ PYBIND11_MODULE(pbllama, m) {
     m.doc() = "pbllama: pybind11 llama.cpp wrapper"; // optional module docstring
     m.attr("__version__") = "0.0.1";
 
+
     // -----------------------------------------------------------------------
+    // attributes
+    m.attr("LLAMA_DEFAULT_SEED") = 0xFFFFFFFF;
+
+    // -------
+    // 
+    // ----------------------------------------------------------------
     // scratch
     
      m.def("demo", (std::vector<llama_token> (*)()) &demo);
@@ -249,8 +254,6 @@ PYBIND11_MODULE(pbllama, m) {
     //     llama_seq_id all_seq_id; // used if seq_id == NULL
     // } llama_batch;
 
-
-
     py::enum_<llama_model_kv_override_type>(m, "llama_model_kv_override_type", py::arithmetic(), "")
         .value("LLAMA_KV_OVERRIDE_TYPE_INT", LLAMA_KV_OVERRIDE_TYPE_INT)
         .value("LLAMA_KV_OVERRIDE_TYPE_FLOAT", LLAMA_KV_OVERRIDE_TYPE_FLOAT)
@@ -459,12 +462,55 @@ PYBIND11_MODULE(pbllama, m) {
     // void llama_set_abort_callback(struct llama_context* ctx, ggml_abort_callback abort_callback, void* abort_callback_data);
 
     m.def("llama_synchronize", (void (*)(const struct llama_context *)) &llama_synchronize, "", py::arg("ctx"));
-    m.def("llama_get_logits", (float* (*)(const struct llama_context *)) &llama_get_logits, "", py::arg("ctx"));
-    m.def("llama_get_logits_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_logits_ith, "", py::arg("ctx"), py::arg("i"));
+    
+    m.def("llama_get_logits", (float* (*)(const struct llama_context *)) &llama_get_logits, R"pbdoc(
+        Token logits obtained from the last call to llama_decode()
 
-    m.def("llama_get_embeddings", (float* (*)(const struct llama_context *)) &llama_get_embeddings, "", py::arg("ctx"));
-    m.def("llama_get_embeddings_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_embeddings_ith, "", py::arg("ctx"), py::arg("i"));
-    m.def("llama_get_embeddings_seq", (float* (*)(const struct llama_context *, llama_seq_id)) &llama_get_embeddings_seq, "", py::arg("ctx"), py::arg("seq_id"));
+        The logits for which llama_batch.logits[i] != 0 are stored contiguously 
+        in the order they have appeared in the batch.
+
+        Rows: number of tokens for which llama_batch.logits[i] != 0
+        Cols: n_vocab
+    )pbdoc", py::arg("ctx"));
+
+    m.def("llama_get_logits_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_logits_ith, R"pbdoc(
+        Logits for the ith token. 
+
+        For positive indices, Equivalent to:
+
+            llama_get_logits(ctx) + ctx->output_ids[i] * n_vocab
+        
+        Negative indicies can be used to access logits in reverse order, -1 is the last logit.
+        returns NULL for invalid ids.
+    )pbdoc", py::arg("ctx"), py::arg("i"));
+
+    // m.def("llama_get_logits_ith", [](struct llama_context * ctx, int32_t i) ->py::capsule<float> {
+    //     // const struct llama_model * model = llama_get_model(ctx);
+    //     // int32_t n_vocab = llama_n_vocab(model);
+    //     float * ptr = llama_get_logits_ith(ctx, i);
+    //     // std::vector<float> vec = { 0.1, 1.1, 2.1 };
+    //     std::vector<float> vec(ptr, ptr + i);
+    //     return vec;
+    // });
+
+    m.def("llama_get_embeddings", (float* (*)(const struct llama_context *)) &llama_get_embeddings, R"pbdoc(
+        Get all output token embeddings.
+
+        when pooling_type == LLAMA_POOLING_TYPE_NONE or when using a generative model,
+        the embeddings for which llama_batch.logits[i] != 0 are stored contiguously
+        in the order they have appeared in the batch.
+        shape: [n_outputs*n_embd]
+
+        Otherwise, returns NULL.
+    )pbdoc", py::arg("ctx"));
+
+
+    m.def("llama_get_embeddings_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_embeddings_ith, R"pbdoc(
+        Get the embeddings for the ith token. For positive indices, Equivalent to:
+
+        llama_get_embeddings(ctx) + ctx->output_ids[i]*n_embd
+        Negative indicies can be used to access embeddings in reverse order, -1 is th=
+    )pbdoc", py::arg("ctx"), py::arg("seq_id"));
 
     m.def("llama_token_get_text", (const char* (*)(const struct llama_model *, llama_token)) &llama_token_get_text, "", py::arg("model"), py::arg("token"));
     m.def("llama_token_get_score", (float (*)(const struct llama_model *, llama_token)) &llama_token_get_score, "", py::arg("model"), py::arg("token"));
@@ -707,8 +753,6 @@ PYBIND11_MODULE(pbllama, m) {
     // });
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("ctx"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
-
-    // m.def("gpt_params_handle_hf_token", (void (*)(struct gpt_params &)) &gpt_params_handle_hf_token, "C++: gpt_params_handle_hf_token(struct gpt_params &) --> void", py::arg("params"));
 
     m.def("gpt_params_parse_from_env", (void (*)(struct gpt_params &)) &gpt_params_parse_from_env, "", py::arg("params"));
     m.def("gpt_params_handle_model_default", (void (*)(struct gpt_params &)) &gpt_params_handle_model_default, "C++: gpt_params_handle_model_default(struct gpt_params &) --> void", py::arg("params"));

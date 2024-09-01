@@ -49,7 +49,7 @@ test_simple:
 		-framework Metal -framework MetalKit \
 		lib/libllama.a lib/libggml.a lib/libcommon.a \
 		tests/simple.cpp
-	@./build/simple -m $(MODEL) -p "What caused the French Revolution?" -n 512
+	@./build/simple -m $(MODEL) -p "Who invented algebra" -n 512
 
 test_cy:
 	@cd tests && python3 cy_simple.py
@@ -71,7 +71,6 @@ bench_cy:
 
 bump:
 	@scripts/bump.sh
-
 
 clean:
 	@rm -rf build dist *.egg-info

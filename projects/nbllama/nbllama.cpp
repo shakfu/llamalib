@@ -17,10 +17,25 @@ struct llama_grammar {};
 struct llama_lora_adapter {};
 
 
+std::vector<llama_token> demo(void)
+{
+    std::vector<llama_token> v = {8, 4, 5, 9};
+    return v;
+}
+
 NB_MODULE(nbllama, m) {
     m.doc() = "nanobind nbllama wrapper"; // optional module docstring
     m.attr("__version__") = "0.0.1";
 
+    // -----------------------------------------------------------------------
+    // attributes
+    m.attr("LLAMA_DEFAULT_SEED") = 0xFFFFFFFF;
+
+    m.def("demo", &demo, R"nbdoc(
+        Return a list
+
+        Some other explanation about the demo function.
+    )nbdoc");
 
     // -----------------------------------------------------------------------
     // ggml.h

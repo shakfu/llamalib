@@ -1,5 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/numpy.h>
 
 
 namespace py = pybind11;
@@ -75,6 +76,32 @@ private:
 };
 
 
+py::array_t<float> to_matrix()
+{
+    std::vector<std::vector<float>> vals = {
+        {1, 2, 3, 4, 5},
+        {6, 7, 8, 9, 10},
+        {11, 12, 13, 14, 15}
+    };
+
+    size_t N = vals.size();
+    size_t M = vals[0].size();
+
+    py::array_t<float, py::array::c_style> arr({N, M});
+
+    auto ra = arr.mutable_unchecked();
+
+    for (size_t i = 0; i < N; i++)
+    {
+        for (size_t j = 0; j < M; j++)
+        {
+            ra(i, j) = vals[i][j];
+        };
+    };
+
+    return arr;
+};
+
 
 
 PYBIND11_MODULE(scratch, m) {
@@ -85,6 +112,8 @@ PYBIND11_MODULE(scratch, m) {
     // scratch
     
     m.def("demo", (std::vector<int> (*)()) &demo);
+
+    m.def("to_matrix", &to_matrix);
 
     py::class_<WrappedPerson>(m, "WrappedPerson")
         .def(py::init<>())
