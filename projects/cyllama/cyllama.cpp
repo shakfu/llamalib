@@ -1525,6 +1525,7 @@ struct __pyx_obj_7cyllama_ModelParams;
 struct __pyx_obj_7cyllama_LlamaModel;
 struct __pyx_obj_7cyllama_ContextParams;
 struct __pyx_obj_7cyllama_LlamaContext;
+struct __pyx_obj_7cyllama_LlamaBatch;
 struct __pyx_opt_args_7cyllama_10GGMLTensor_from_ptr;
 
 /* "cyllama.pyx":33
@@ -1584,7 +1585,7 @@ struct __pyx_obj_7cyllama_LlamaModel {
 };
 
 
-/* "cyllama.pyx":369
+/* "cyllama.pyx":392
  * 
  * 
  * cdef class ContextParams:             # <<<<<<<<<<<<<<
@@ -1597,7 +1598,7 @@ struct __pyx_obj_7cyllama_ContextParams {
 };
 
 
-/* "cyllama.pyx":448
+/* "cyllama.pyx":471
  * 
  * 
  * cdef class LlamaContext:             # <<<<<<<<<<<<<<
@@ -1609,6 +1610,24 @@ struct __pyx_obj_7cyllama_LlamaContext {
   llama_context *ctx;
   struct __pyx_obj_7cyllama_LlamaModel *model;
   struct __pyx_obj_7cyllama_ContextParams *params;
+  int verbose;
+  int owner;
+};
+
+
+/* "cyllama.pyx":730
+ * 
+ * 
+ * cdef class LlamaBatch:             # <<<<<<<<<<<<<<
+ *     """Intermediate Python wrapper for a llama.cpp llama_context."""
+ *     cdef llama_cpp.llama_batch * batch
+ */
+struct __pyx_obj_7cyllama_LlamaBatch {
+  PyObject_HEAD
+  llama_batch *batch;
+  int _n_tokens;
+  int embd;
+  int n_seq_max;
   int verbose;
   int owner;
 };
@@ -1970,6 +1989,37 @@ static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name);
 /* PyObjectCallOneArg.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
 
+/* AssertionsEnabled.proto */
+#if CYTHON_COMPILING_IN_PYPY && PY_VERSION_HEX < 0x02070600 && !defined(Py_OptimizeFlag)
+  #define __Pyx_init_assertions_enabled()  (0)
+  #define __pyx_assertions_enabled()  (1)
+#elif CYTHON_COMPILING_IN_LIMITED_API  ||  (CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030C0000)
+  static int __pyx_assertions_enabled_flag;
+  #define __pyx_assertions_enabled() (__pyx_assertions_enabled_flag)
+  static int __Pyx_init_assertions_enabled(void) {
+    PyObject *builtins, *debug, *debug_str;
+    int flag;
+    builtins = PyEval_GetBuiltins();
+    if (!builtins) goto bad;
+    debug_str = PyUnicode_FromStringAndSize("__debug__", 9);
+    if (!debug_str) goto bad;
+    debug = PyObject_GetItem(builtins, debug_str);
+    Py_DECREF(debug_str);
+    if (!debug) goto bad;
+    flag = PyObject_IsTrue(debug);
+    Py_DECREF(debug);
+    if (flag == -1) goto bad;
+    __pyx_assertions_enabled_flag = flag;
+    return 0;
+  bad:
+    __pyx_assertions_enabled_flag = 1;
+    return -1;
+  }
+#else
+  #define __Pyx_init_assertions_enabled()  (0)
+  #define __pyx_assertions_enabled()  (!Py_OptimizeFlag)
+#endif
+
 /* RaiseUnexpectedTypeError.proto */
 static int __Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj);
 
@@ -2010,37 +2060,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_GetSlice(
         PyObject** py_start, PyObject** py_stop, PyObject** py_slice,
         int has_cstart, int has_cstop, int wraparound);
 
-/* AssertionsEnabled.proto */
-#if CYTHON_COMPILING_IN_PYPY && PY_VERSION_HEX < 0x02070600 && !defined(Py_OptimizeFlag)
-  #define __Pyx_init_assertions_enabled()  (0)
-  #define __pyx_assertions_enabled()  (1)
-#elif CYTHON_COMPILING_IN_LIMITED_API  ||  (CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030C0000)
-  static int __pyx_assertions_enabled_flag;
-  #define __pyx_assertions_enabled() (__pyx_assertions_enabled_flag)
-  static int __Pyx_init_assertions_enabled(void) {
-    PyObject *builtins, *debug, *debug_str;
-    int flag;
-    builtins = PyEval_GetBuiltins();
-    if (!builtins) goto bad;
-    debug_str = PyUnicode_FromStringAndSize("__debug__", 9);
-    if (!debug_str) goto bad;
-    debug = PyObject_GetItem(builtins, debug_str);
-    Py_DECREF(debug_str);
-    if (!debug) goto bad;
-    flag = PyObject_IsTrue(debug);
-    Py_DECREF(debug);
-    if (flag == -1) goto bad;
-    __pyx_assertions_enabled_flag = flag;
-    return 0;
-  bad:
-    __pyx_assertions_enabled_flag = 1;
-    return -1;
-  }
-#else
-  #define __Pyx_init_assertions_enabled()  (0)
-  #define __pyx_assertions_enabled()  (!Py_OptimizeFlag)
-#endif
-
 /* GetItemInt.proto */
 #define __Pyx_GetItemInt(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck)\
     (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
@@ -2065,6 +2084,21 @@ static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i,
 
 /* ExtTypeTest.proto */
 static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type);
+
+/* ObjectGetItem.proto */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject *__Pyx_PyObject_GetItem(PyObject *obj, PyObject *key);
+#else
+#define __Pyx_PyObject_GetItem(obj, key)  PyObject_GetItem(obj, key)
+#endif
+
+/* PyIntBinop.proto */
+#if !CYTHON_COMPILING_IN_PYPY
+static PyObject* __Pyx_PyInt_SubtractObjC(PyObject *op1, PyObject *op2, long intval, int inplace, int zerodivision_check);
+#else
+#define __Pyx_PyInt_SubtractObjC(op1, op2, intval, inplace, zerodivision_check)\
+    (inplace ? PyNumber_InPlaceSubtract(op1, op2) : PyNumber_Subtract(op1, op2))
+#endif
 
 /* IncludeStructmemberH.proto */
 #include <structmember.h>
@@ -2394,6 +2428,9 @@ static CYTHON_INLINE uint32_t __Pyx_PyInt_As_uint32_t(PyObject *);
 /* CIntToPy.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_llama_rope_scaling_type(llama_rope_scaling_type value);
 
+/* CIntFromPy.proto */
+static CYTHON_INLINE int8_t __Pyx_PyInt_As_int8_t(PyObject *);
+
 /* FormatTypeName.proto */
 #if CYTHON_COMPILING_IN_LIMITED_API
 typedef PyObject *__Pyx_TypeName;
@@ -2466,11 +2503,12 @@ static PyObject *__pyx_builtin_staticmethod;
 static PyObject *__pyx_builtin_TypeError;
 static PyObject *__pyx_builtin_MemoryError;
 static PyObject *__pyx_builtin_ValueError;
-static PyObject *__pyx_builtin_RuntimeError;
 static PyObject *__pyx_builtin_AssertionError;
+static PyObject *__pyx_builtin_RuntimeError;
 static PyObject *__pyx_builtin_range;
 /* #### Code section: string_decls ### */
 static const char __pyx_k_i[] = "i";
+static const char __pyx_k_j[] = "j";
 static const char __pyx_k_n[] = "n";
 static const char __pyx_k__2[] = "";
 static const char __pyx_k__3[] = " ";
@@ -2480,7 +2518,7 @@ static const char __pyx_k_gc[] = "gc";
 static const char __pyx_k_os[] = "os";
 static const char __pyx_k_p0[] = "p0";
 static const char __pyx_k_p1[] = "p1";
-static const char __pyx_k__67[] = "?";
+static const char __pyx_k__81[] = "?";
 static const char __pyx_k_buf[] = "buf";
 static const char __pyx_k_int[] = "int";
 static const char __pyx_k_key[] = "key";
@@ -2488,20 +2526,24 @@ static const char __pyx_k_str[] = "str";
 static const char __pyx_k_bool[] = "bool";
 static const char __pyx_k_desc[] = "desc";
 static const char __pyx_k_dict[] = "__dict__";
+static const char __pyx_k_embd[] = "embd";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "name";
 static const char __pyx_k_path[] = "path";
+static const char __pyx_k_seed[] = "seed";
 static const char __pyx_k_self[] = "self";
 static const char __pyx_k_size[] = "size";
 static const char __pyx_k_spec[] = "__spec__";
 static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_text[] = "text";
+static const char __pyx_k_batch[] = "batch";
 static const char __pyx_k_bytes[] = "bytes";
 static const char __pyx_k_close[] = "close";
 static const char __pyx_k_float[] = "float";
 static const char __pyx_k_model[] = "model";
 static const char __pyx_k_n_ctx[] = "n_ctx";
 static const char __pyx_k_range[] = "range";
+static const char __pyx_k_reset[] = "reset";
 static const char __pyx_k_shift[] = "shift";
 static const char __pyx_k_token[] = "token";
 static const char __pyx_k_value[] = "value";
@@ -2510,6 +2552,7 @@ static const char __pyx_k_enable[] = "enable";
 static const char __pyx_k_exists[] = "exists";
 static const char __pyx_k_import[] = "__import__";
 static const char __pyx_k_n_embd[] = "n_embd";
+static const char __pyx_k_n_past[] = "n_past";
 static const char __pyx_k_name_2[] = "__name__";
 static const char __pyx_k_nbytes[] = "nbytes";
 static const char __pyx_k_output[] = "output";
@@ -2528,6 +2571,7 @@ static const char __pyx_k_n_vocab[] = "n_vocab";
 static const char __pyx_k_special[] = "special";
 static const char __pyx_k_verbose[] = "verbose";
 static const char __pyx_k_Optional[] = "Optional";
+static const char __pyx_k_Sequence[] = "Sequence";
 static const char __pyx_k_getstate[] = "__getstate__";
 static const char __pyx_k_list_int[] = "list[int]";
 static const char __pyx_k_metadata[] = "metadata";
@@ -2538,19 +2582,24 @@ static const char __pyx_k_token_nl[] = "token_nl";
 static const char __pyx_k_tokenize[] = "tokenize";
 static const char __pyx_k_TypeError[] = "TypeError";
 static const char __pyx_k_isenabled[] = "isenabled";
+static const char __pyx_k_n_seq_max[] = "n_seq_max";
 static const char __pyx_k_n_threads[] = "n_threads";
+static const char __pyx_k_n_tokens0[] = "n_tokens0";
 static const char __pyx_k_pyx_state[] = "__pyx_state";
 static const char __pyx_k_reduce_ex[] = "__reduce_ex__";
+static const char __pyx_k_set_batch[] = "set_batch";
 static const char __pyx_k_token_bos[] = "token_bos";
 static const char __pyx_k_token_cls[] = "token_cls";
 static const char __pyx_k_token_eos[] = "token_eos";
 static const char __pyx_k_token_eot[] = "token_eot";
 static const char __pyx_k_token_sep[] = "token_sep";
 static const char __pyx_k_GGMLTensor[] = "GGMLTensor";
+static const char __pyx_k_LlamaBatch[] = "LlamaBatch";
 static const char __pyx_k_LlamaModel[] = "LlamaModel";
 static const char __pyx_k_ValueError[] = "ValueError";
 static const char __pyx_k_detokenize[] = "detokenize";
 static const char __pyx_k_get_tensor[] = "get_tensor";
+static const char __pyx_k_logits_all[] = "logits_all";
 static const char __pyx_k_path_model[] = "path_model";
 static const char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
 static const char __pyx_k_seq_id_dst[] = "seq_id_dst";
@@ -2562,9 +2611,12 @@ static const char __pyx_k_cyllama_pyx[] = "cyllama.pyx";
 static const char __pyx_k_n_ctx_train[] = "n_ctx_train";
 static const char __pyx_k_LlamaContext[] = "LlamaContext";
 static const char __pyx_k_RuntimeError[] = "RuntimeError";
+static const char __pyx_k_Sequence_int[] = "Sequence[int]";
+static const char __pyx_k_add_sequence[] = "add_sequence";
 static const char __pyx_k_dict_str_str[] = "dict[str, str]";
 static const char __pyx_k_initializing[] = "_initializing";
 static const char __pyx_k_is_coroutine[] = "_is_coroutine";
+static const char __pyx_k_set_rng_seed[] = "set_rng_seed";
 static const char __pyx_k_staticmethod[] = "staticmethod";
 static const char __pyx_k_stringsource[] = "<stringsource>";
 static const char __pyx_k_token_middle[] = "token_middle";
@@ -2573,7 +2625,10 @@ static const char __pyx_k_token_suffix[] = "token_suffix";
 static const char __pyx_k_ContextParams[] = "ContextParams";
 static const char __pyx_k_add_bos_token[] = "add_bos_token";
 static const char __pyx_k_add_eos_token[] = "add_eos_token";
+static const char __pyx_k_class_getitem[] = "__class_getitem__";
+static const char __pyx_k_print_timings[] = "print_timings";
 static const char __pyx_k_reduce_cython[] = "__reduce_cython__";
+static const char __pyx_k_reset_timings[] = "reset_timings";
 static const char __pyx_k_set_n_threads[] = "set_n_threads";
 static const char __pyx_k_AssertionError[] = "AssertionError";
 static const char __pyx_k_default_params[] = "default_params";
@@ -2588,6 +2643,8 @@ static const char __pyx_k_kv_cache_seq_rm[] = "kv_cache_seq_rm";
 static const char __pyx_k_n_threads_batch[] = "n_threads_batch";
 static const char __pyx_k_setstate_cython[] = "__setstate_cython__";
 static const char __pyx_k_token_get_score[] = "token_get_score";
+static const char __pyx_k_LlamaBatch_close[] = "LlamaBatch.close";
+static const char __pyx_k_LlamaBatch_reset[] = "LlamaBatch.reset";
 static const char __pyx_k_LlamaModel_n_embd[] = "LlamaModel.n_embd";
 static const char __pyx_k_kv_cache_seq_keep[] = "kv_cache_seq_keep";
 static const char __pyx_k_LlamaContext_close[] = "LlamaContext.close";
@@ -2596,10 +2653,12 @@ static const char __pyx_k_LlamaModel_n_vocab[] = "LlamaModel.n_vocab";
 static const char __pyx_k_asyncio_coroutines[] = "asyncio.coroutines";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_kv_cache_seq_shift[] = "kv_cache_seq_shift";
+static const char __pyx_k_LlamaBatch_n_tokens[] = "LlamaBatch.n_tokens";
 static const char __pyx_k_LlamaModel_metadata[] = "LlamaModel.metadata";
 static const char __pyx_k_LlamaModel_n_params[] = "LlamaModel.n_params";
 static const char __pyx_k_LlamaModel_token_nl[] = "LlamaModel.token_nl";
 static const char __pyx_k_LlamaModel_tokenize[] = "LlamaModel.tokenize";
+static const char __pyx_k_LlamaBatch_set_batch[] = "LlamaBatch.set_batch";
 static const char __pyx_k_LlamaModel_token_bos[] = "LlamaModel.token_bos";
 static const char __pyx_k_LlamaModel_token_cls[] = "LlamaModel.token_cls";
 static const char __pyx_k_LlamaModel_token_eos[] = "LlamaModel.token_eos";
@@ -2609,23 +2668,30 @@ static const char __pyx_k_LlamaModel_detokenize[] = "LlamaModel.detokenize";
 static const char __pyx_k_LlamaModel_get_tensor[] = "LlamaModel.get_tensor";
 static const char __pyx_k_rope_freq_scale_train[] = "rope_freq_scale_train";
 static const char __pyx_k_LlamaModel_n_ctx_train[] = "LlamaModel.n_ctx_train";
+static const char __pyx_k_LlamaBatch_add_sequence[] = "LlamaBatch.add_sequence";
 static const char __pyx_k_LlamaModel_token_middle[] = "LlamaModel.token_middle";
 static const char __pyx_k_LlamaModel_token_prefix[] = "LlamaModel.token_prefix";
 static const char __pyx_k_LlamaModel_token_suffix[] = "LlamaModel.token_suffix";
 static const char __pyx_k_LlamaModel_add_bos_token[] = "LlamaModel.add_bos_token";
 static const char __pyx_k_LlamaModel_add_eos_token[] = "LlamaModel.add_eos_token";
+static const char __pyx_k_LlamaContext_set_rng_seed[] = "LlamaContext.set_rng_seed";
 static const char __pyx_k_LlamaModel_default_params[] = "LlamaModel.default_params";
 static const char __pyx_k_LlamaModel_token_get_attr[] = "LlamaModel.token_get_attr";
 static const char __pyx_k_LlamaModel_token_get_text[] = "LlamaModel.token_get_text";
 static const char __pyx_k_LlamaModel_token_to_piece[] = "LlamaModel.token_to_piece";
 static const char __pyx_k_Model_path_does_not_exist[] = "Model path does not exist: ";
 static const char __pyx_k_GGMLTensor___reduce_cython[] = "GGMLTensor.__reduce_cython__";
+static const char __pyx_k_LlamaBatch___reduce_cython[] = "LlamaBatch.__reduce_cython__";
+static const char __pyx_k_LlamaContext_print_timings[] = "LlamaContext.print_timings";
+static const char __pyx_k_LlamaContext_reset_timings[] = "LlamaContext.reset_timings";
 static const char __pyx_k_LlamaContext_set_n_threads[] = "LlamaContext.set_n_threads";
 static const char __pyx_k_LlamaModel___reduce_cython[] = "LlamaModel.__reduce_cython__";
 static const char __pyx_k_LlamaModel_token_get_score[] = "LlamaModel.token_get_score";
+static const char __pyx_k_LlamaContext_default_params[] = "LlamaContext.default_params";
 static const char __pyx_k_LlamaContext_kv_cache_clear[] = "LlamaContext.kv_cache_clear";
 static const char __pyx_k_ModelParams___reduce_cython[] = "ModelParams.__reduce_cython__";
 static const char __pyx_k_GGMLTensor___setstate_cython[] = "GGMLTensor.__setstate_cython__";
+static const char __pyx_k_LlamaBatch___setstate_cython[] = "LlamaBatch.__setstate_cython__";
 static const char __pyx_k_LlamaContext___reduce_cython[] = "LlamaContext.__reduce_cython__";
 static const char __pyx_k_LlamaContext_kv_cache_seq_cp[] = "LlamaContext.kv_cache_seq_cp";
 static const char __pyx_k_LlamaContext_kv_cache_seq_rm[] = "LlamaContext.kv_cache_seq_rm";
@@ -2735,6 +2801,10 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_14kv_cache_seq_cp(struct __pyx
 static PyObject *__pyx_pf_7cyllama_12LlamaContext_16kv_cache_seq_keep(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self, PyObject *__pyx_v_seq_id); /* proto */
 static PyObject *__pyx_pf_7cyllama_12LlamaContext_18kv_cache_seq_shift(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self, PyObject *__pyx_v_seq_id, PyObject *__pyx_v_p0, PyObject *__pyx_v_p1, PyObject *__pyx_v_shift); /* proto */
 static PyObject *__pyx_pf_7cyllama_12LlamaContext_20set_n_threads(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self, PyObject *__pyx_v_n_threads, PyObject *__pyx_v_n_threads_batch); /* proto */
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_22set_rng_seed(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self, PyObject *__pyx_v_seed); /* proto */
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_24reset_timings(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_26print_timings(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_28default_params(void); /* proto */
 static PyObject *__pyx_pf_7cyllama_12LlamaContext_5model___get__(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self); /* proto */
 static int __pyx_pf_7cyllama_12LlamaContext_5model_2__set__(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
 static int __pyx_pf_7cyllama_12LlamaContext_5model_4__del__(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self); /* proto */
@@ -2743,13 +2813,30 @@ static int __pyx_pf_7cyllama_12LlamaContext_6params_2__set__(struct __pyx_obj_7c
 static int __pyx_pf_7cyllama_12LlamaContext_6params_4__del__(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_7cyllama_12LlamaContext_7verbose___get__(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self); /* proto */
 static int __pyx_pf_7cyllama_12LlamaContext_7verbose_2__set__(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
-static PyObject *__pyx_pf_7cyllama_12LlamaContext_22__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_7cyllama_12LlamaContext_24__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_30__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_32__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
+static int __pyx_pf_7cyllama_10LlamaBatch___cinit__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self); /* proto */
+static int __pyx_pf_7cyllama_10LlamaBatch_2__init__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_n_tokens, PyObject *__pyx_v_embd, PyObject *__pyx_v_n_seq_max, PyObject *__pyx_v_verbose); /* proto */
+static void __pyx_pf_7cyllama_10LlamaBatch_4__dealloc__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_6close(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_8n_tokens(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_10reset(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_12set_batch(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_batch, PyObject *__pyx_v_n_past, PyObject *__pyx_v_logits_all); /* proto */
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_14add_sequence(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_batch, PyObject *__pyx_v_seq_id, PyObject *__pyx_v_logits_all); /* proto */
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_4embd___get__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self); /* proto */
+static int __pyx_pf_7cyllama_10LlamaBatch_4embd_2__set__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_9n_seq_max___get__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self); /* proto */
+static int __pyx_pf_7cyllama_10LlamaBatch_9n_seq_max_2__set__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_7verbose___get__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self); /* proto */
+static int __pyx_pf_7cyllama_10LlamaBatch_7verbose_2__set__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_16__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_18__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
 static PyObject *__pyx_tp_new_7cyllama_GGMLTensor(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_7cyllama_ModelParams(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_7cyllama_LlamaModel(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_7cyllama_ContextParams(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_7cyllama_LlamaContext(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static PyObject *__pyx_tp_new_7cyllama_LlamaBatch(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 /* #### Code section: late_includes ### */
 /* #### Code section: module_state ### */
 typedef struct {
@@ -2797,12 +2884,14 @@ typedef struct {
   PyObject *__pyx_type_7cyllama_LlamaModel;
   PyObject *__pyx_type_7cyllama_ContextParams;
   PyObject *__pyx_type_7cyllama_LlamaContext;
+  PyObject *__pyx_type_7cyllama_LlamaBatch;
   #endif
   PyTypeObject *__pyx_ptype_7cyllama_GGMLTensor;
   PyTypeObject *__pyx_ptype_7cyllama_ModelParams;
   PyTypeObject *__pyx_ptype_7cyllama_LlamaModel;
   PyTypeObject *__pyx_ptype_7cyllama_ContextParams;
   PyTypeObject *__pyx_ptype_7cyllama_LlamaContext;
+  PyTypeObject *__pyx_ptype_7cyllama_LlamaBatch;
   PyObject *__pyx_n_s_AssertionError;
   PyObject *__pyx_n_s_ContextParams;
   PyObject *__pyx_n_s_ContextParams___reduce_cython;
@@ -2812,17 +2901,29 @@ typedef struct {
   PyObject *__pyx_n_s_GGMLTensor;
   PyObject *__pyx_n_s_GGMLTensor___reduce_cython;
   PyObject *__pyx_n_s_GGMLTensor___setstate_cython;
+  PyObject *__pyx_n_s_LlamaBatch;
+  PyObject *__pyx_n_s_LlamaBatch___reduce_cython;
+  PyObject *__pyx_n_s_LlamaBatch___setstate_cython;
+  PyObject *__pyx_n_s_LlamaBatch_add_sequence;
+  PyObject *__pyx_n_s_LlamaBatch_close;
+  PyObject *__pyx_n_s_LlamaBatch_n_tokens;
+  PyObject *__pyx_n_s_LlamaBatch_reset;
+  PyObject *__pyx_n_s_LlamaBatch_set_batch;
   PyObject *__pyx_n_s_LlamaContext;
   PyObject *__pyx_n_s_LlamaContext___reduce_cython;
   PyObject *__pyx_n_s_LlamaContext___setstate_cython;
   PyObject *__pyx_n_s_LlamaContext_close;
+  PyObject *__pyx_n_s_LlamaContext_default_params;
   PyObject *__pyx_n_s_LlamaContext_kv_cache_clear;
   PyObject *__pyx_n_s_LlamaContext_kv_cache_seq_cp;
   PyObject *__pyx_n_s_LlamaContext_kv_cache_seq_keep;
   PyObject *__pyx_n_s_LlamaContext_kv_cache_seq_rm;
   PyObject *__pyx_n_s_LlamaContext_kv_cache_seq_shift;
   PyObject *__pyx_n_s_LlamaContext_n_ctx;
+  PyObject *__pyx_n_s_LlamaContext_print_timings;
+  PyObject *__pyx_n_s_LlamaContext_reset_timings;
   PyObject *__pyx_n_s_LlamaContext_set_n_threads;
+  PyObject *__pyx_n_s_LlamaContext_set_rng_seed;
   PyObject *__pyx_n_s_LlamaModel;
   PyObject *__pyx_n_s_LlamaModel___reduce_cython;
   PyObject *__pyx_n_s_LlamaModel___setstate_cython;
@@ -2860,6 +2961,8 @@ typedef struct {
   PyObject *__pyx_kp_u_Model_path_does_not_exist;
   PyObject *__pyx_n_s_Optional;
   PyObject *__pyx_n_s_RuntimeError;
+  PyObject *__pyx_n_s_Sequence;
+  PyObject *__pyx_kp_s_Sequence_int;
   PyObject *__pyx_kp_u_This_class_cannot_be_instantiate;
   PyObject *__pyx_n_s_TypeError;
   PyObject *__pyx_n_s_ValueError;
@@ -2867,16 +2970,19 @@ typedef struct {
   PyObject *__pyx_kp_b__3;
   PyObject *__pyx_n_s__5;
   PyObject *__pyx_kp_u__6;
-  PyObject *__pyx_n_s__67;
+  PyObject *__pyx_n_s__81;
   PyObject *__pyx_n_s_add_bos;
   PyObject *__pyx_n_s_add_bos_token;
   PyObject *__pyx_n_s_add_eos_token;
+  PyObject *__pyx_n_s_add_sequence;
   PyObject *__pyx_n_s_asyncio_coroutines;
+  PyObject *__pyx_n_s_batch;
   PyObject *__pyx_n_s_bool;
   PyObject *__pyx_n_s_buf;
   PyObject *__pyx_n_s_buffer;
   PyObject *__pyx_n_s_buffer_size;
   PyObject *__pyx_n_s_bytes;
+  PyObject *__pyx_n_s_class_getitem;
   PyObject *__pyx_n_s_cline_in_traceback;
   PyObject *__pyx_n_s_close;
   PyObject *__pyx_n_s_cyllama;
@@ -2888,6 +2994,7 @@ typedef struct {
   PyObject *__pyx_n_s_dict;
   PyObject *__pyx_kp_s_dict_str_str;
   PyObject *__pyx_kp_u_disable;
+  PyObject *__pyx_n_s_embd;
   PyObject *__pyx_kp_u_enable;
   PyObject *__pyx_n_s_exists;
   PyObject *__pyx_n_s_float;
@@ -2900,6 +3007,7 @@ typedef struct {
   PyObject *__pyx_n_s_int;
   PyObject *__pyx_n_s_is_coroutine;
   PyObject *__pyx_kp_u_isenabled;
+  PyObject *__pyx_n_s_j;
   PyObject *__pyx_n_s_key;
   PyObject *__pyx_n_s_kv_cache_clear;
   PyObject *__pyx_n_s_kv_cache_seq_cp;
@@ -2907,6 +3015,7 @@ typedef struct {
   PyObject *__pyx_n_s_kv_cache_seq_rm;
   PyObject *__pyx_n_s_kv_cache_seq_shift;
   PyObject *__pyx_kp_s_list_int;
+  PyObject *__pyx_n_s_logits_all;
   PyObject *__pyx_n_s_main;
   PyObject *__pyx_n_s_metadata;
   PyObject *__pyx_n_s_model;
@@ -2915,9 +3024,12 @@ typedef struct {
   PyObject *__pyx_n_s_n_ctx_train;
   PyObject *__pyx_n_s_n_embd;
   PyObject *__pyx_n_s_n_params;
+  PyObject *__pyx_n_s_n_past;
+  PyObject *__pyx_n_s_n_seq_max;
   PyObject *__pyx_n_s_n_threads;
   PyObject *__pyx_n_s_n_threads_batch;
   PyObject *__pyx_n_s_n_tokens;
+  PyObject *__pyx_n_s_n_tokens0;
   PyObject *__pyx_n_s_n_vocab;
   PyObject *__pyx_n_s_name;
   PyObject *__pyx_n_s_name_2;
@@ -2930,20 +3042,26 @@ typedef struct {
   PyObject *__pyx_n_s_params;
   PyObject *__pyx_n_s_path;
   PyObject *__pyx_n_s_path_model;
+  PyObject *__pyx_n_s_print_timings;
   PyObject *__pyx_n_s_pyx_state;
   PyObject *__pyx_n_s_pyx_vtable;
   PyObject *__pyx_n_s_range;
   PyObject *__pyx_n_s_reduce;
   PyObject *__pyx_n_s_reduce_cython;
   PyObject *__pyx_n_s_reduce_ex;
+  PyObject *__pyx_n_s_reset;
+  PyObject *__pyx_n_s_reset_timings;
   PyObject *__pyx_n_s_return;
   PyObject *__pyx_n_s_rope_freq_scale_train;
+  PyObject *__pyx_n_s_seed;
   PyObject *__pyx_n_s_self;
   PyObject *__pyx_kp_s_self_p_cannot_be_converted_to_a;
   PyObject *__pyx_n_s_seq_id;
   PyObject *__pyx_n_s_seq_id_dst;
   PyObject *__pyx_n_s_seq_id_src;
+  PyObject *__pyx_n_s_set_batch;
   PyObject *__pyx_n_s_set_n_threads;
+  PyObject *__pyx_n_s_set_rng_seed;
   PyObject *__pyx_n_s_setstate;
   PyObject *__pyx_n_s_setstate_cython;
   PyObject *__pyx_n_s_shift;
@@ -2976,6 +3094,7 @@ typedef struct {
   PyObject *__pyx_n_s_value;
   PyObject *__pyx_n_s_verbose;
   PyObject *__pyx_int_0;
+  PyObject *__pyx_int_1;
   PyObject *__pyx_int_1024;
   PyObject *__pyx_tuple_;
   PyObject *__pyx_tuple__4;
@@ -2994,6 +3113,9 @@ typedef struct {
   PyObject *__pyx_tuple__59;
   PyObject *__pyx_tuple__61;
   PyObject *__pyx_tuple__63;
+  PyObject *__pyx_tuple__65;
+  PyObject *__pyx_tuple__75;
+  PyObject *__pyx_tuple__77;
   PyObject *__pyx_codeobj__8;
   PyObject *__pyx_codeobj__10;
   PyObject *__pyx_codeobj__11;
@@ -3037,8 +3159,19 @@ typedef struct {
   PyObject *__pyx_codeobj__60;
   PyObject *__pyx_codeobj__62;
   PyObject *__pyx_codeobj__64;
-  PyObject *__pyx_codeobj__65;
   PyObject *__pyx_codeobj__66;
+  PyObject *__pyx_codeobj__67;
+  PyObject *__pyx_codeobj__68;
+  PyObject *__pyx_codeobj__69;
+  PyObject *__pyx_codeobj__70;
+  PyObject *__pyx_codeobj__71;
+  PyObject *__pyx_codeobj__72;
+  PyObject *__pyx_codeobj__73;
+  PyObject *__pyx_codeobj__74;
+  PyObject *__pyx_codeobj__76;
+  PyObject *__pyx_codeobj__78;
+  PyObject *__pyx_codeobj__79;
+  PyObject *__pyx_codeobj__80;
 } __pyx_mstate;
 
 #if CYTHON_USE_MODULE_STATE
@@ -3091,6 +3224,8 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_type_7cyllama_ContextParams);
   Py_CLEAR(clear_module_state->__pyx_ptype_7cyllama_LlamaContext);
   Py_CLEAR(clear_module_state->__pyx_type_7cyllama_LlamaContext);
+  Py_CLEAR(clear_module_state->__pyx_ptype_7cyllama_LlamaBatch);
+  Py_CLEAR(clear_module_state->__pyx_type_7cyllama_LlamaBatch);
   Py_CLEAR(clear_module_state->__pyx_n_s_AssertionError);
   Py_CLEAR(clear_module_state->__pyx_n_s_ContextParams);
   Py_CLEAR(clear_module_state->__pyx_n_s_ContextParams___reduce_cython);
@@ -3100,17 +3235,29 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_GGMLTensor);
   Py_CLEAR(clear_module_state->__pyx_n_s_GGMLTensor___reduce_cython);
   Py_CLEAR(clear_module_state->__pyx_n_s_GGMLTensor___setstate_cython);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaBatch);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaBatch___reduce_cython);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaBatch___setstate_cython);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaBatch_add_sequence);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaBatch_close);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaBatch_n_tokens);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaBatch_reset);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaBatch_set_batch);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext___reduce_cython);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext___setstate_cython);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_close);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_default_params);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_kv_cache_clear);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_kv_cache_seq_cp);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_kv_cache_seq_keep);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_kv_cache_seq_rm);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_kv_cache_seq_shift);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_n_ctx);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_print_timings);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_reset_timings);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_set_n_threads);
+  Py_CLEAR(clear_module_state->__pyx_n_s_LlamaContext_set_rng_seed);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaModel);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaModel___reduce_cython);
   Py_CLEAR(clear_module_state->__pyx_n_s_LlamaModel___setstate_cython);
@@ -3148,6 +3295,8 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_kp_u_Model_path_does_not_exist);
   Py_CLEAR(clear_module_state->__pyx_n_s_Optional);
   Py_CLEAR(clear_module_state->__pyx_n_s_RuntimeError);
+  Py_CLEAR(clear_module_state->__pyx_n_s_Sequence);
+  Py_CLEAR(clear_module_state->__pyx_kp_s_Sequence_int);
   Py_CLEAR(clear_module_state->__pyx_kp_u_This_class_cannot_be_instantiate);
   Py_CLEAR(clear_module_state->__pyx_n_s_TypeError);
   Py_CLEAR(clear_module_state->__pyx_n_s_ValueError);
@@ -3155,16 +3304,19 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_kp_b__3);
   Py_CLEAR(clear_module_state->__pyx_n_s__5);
   Py_CLEAR(clear_module_state->__pyx_kp_u__6);
-  Py_CLEAR(clear_module_state->__pyx_n_s__67);
+  Py_CLEAR(clear_module_state->__pyx_n_s__81);
   Py_CLEAR(clear_module_state->__pyx_n_s_add_bos);
   Py_CLEAR(clear_module_state->__pyx_n_s_add_bos_token);
   Py_CLEAR(clear_module_state->__pyx_n_s_add_eos_token);
+  Py_CLEAR(clear_module_state->__pyx_n_s_add_sequence);
   Py_CLEAR(clear_module_state->__pyx_n_s_asyncio_coroutines);
+  Py_CLEAR(clear_module_state->__pyx_n_s_batch);
   Py_CLEAR(clear_module_state->__pyx_n_s_bool);
   Py_CLEAR(clear_module_state->__pyx_n_s_buf);
   Py_CLEAR(clear_module_state->__pyx_n_s_buffer);
   Py_CLEAR(clear_module_state->__pyx_n_s_buffer_size);
   Py_CLEAR(clear_module_state->__pyx_n_s_bytes);
+  Py_CLEAR(clear_module_state->__pyx_n_s_class_getitem);
   Py_CLEAR(clear_module_state->__pyx_n_s_cline_in_traceback);
   Py_CLEAR(clear_module_state->__pyx_n_s_close);
   Py_CLEAR(clear_module_state->__pyx_n_s_cyllama);
@@ -3176,6 +3328,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_dict);
   Py_CLEAR(clear_module_state->__pyx_kp_s_dict_str_str);
   Py_CLEAR(clear_module_state->__pyx_kp_u_disable);
+  Py_CLEAR(clear_module_state->__pyx_n_s_embd);
   Py_CLEAR(clear_module_state->__pyx_kp_u_enable);
   Py_CLEAR(clear_module_state->__pyx_n_s_exists);
   Py_CLEAR(clear_module_state->__pyx_n_s_float);
@@ -3188,6 +3341,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_int);
   Py_CLEAR(clear_module_state->__pyx_n_s_is_coroutine);
   Py_CLEAR(clear_module_state->__pyx_kp_u_isenabled);
+  Py_CLEAR(clear_module_state->__pyx_n_s_j);
   Py_CLEAR(clear_module_state->__pyx_n_s_key);
   Py_CLEAR(clear_module_state->__pyx_n_s_kv_cache_clear);
   Py_CLEAR(clear_module_state->__pyx_n_s_kv_cache_seq_cp);
@@ -3195,6 +3349,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_kv_cache_seq_rm);
   Py_CLEAR(clear_module_state->__pyx_n_s_kv_cache_seq_shift);
   Py_CLEAR(clear_module_state->__pyx_kp_s_list_int);
+  Py_CLEAR(clear_module_state->__pyx_n_s_logits_all);
   Py_CLEAR(clear_module_state->__pyx_n_s_main);
   Py_CLEAR(clear_module_state->__pyx_n_s_metadata);
   Py_CLEAR(clear_module_state->__pyx_n_s_model);
@@ -3203,9 +3358,12 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_n_ctx_train);
   Py_CLEAR(clear_module_state->__pyx_n_s_n_embd);
   Py_CLEAR(clear_module_state->__pyx_n_s_n_params);
+  Py_CLEAR(clear_module_state->__pyx_n_s_n_past);
+  Py_CLEAR(clear_module_state->__pyx_n_s_n_seq_max);
   Py_CLEAR(clear_module_state->__pyx_n_s_n_threads);
   Py_CLEAR(clear_module_state->__pyx_n_s_n_threads_batch);
   Py_CLEAR(clear_module_state->__pyx_n_s_n_tokens);
+  Py_CLEAR(clear_module_state->__pyx_n_s_n_tokens0);
   Py_CLEAR(clear_module_state->__pyx_n_s_n_vocab);
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
   Py_CLEAR(clear_module_state->__pyx_n_s_name_2);
@@ -3218,20 +3376,26 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_params);
   Py_CLEAR(clear_module_state->__pyx_n_s_path);
   Py_CLEAR(clear_module_state->__pyx_n_s_path_model);
+  Py_CLEAR(clear_module_state->__pyx_n_s_print_timings);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyx_state);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyx_vtable);
   Py_CLEAR(clear_module_state->__pyx_n_s_range);
   Py_CLEAR(clear_module_state->__pyx_n_s_reduce);
   Py_CLEAR(clear_module_state->__pyx_n_s_reduce_cython);
   Py_CLEAR(clear_module_state->__pyx_n_s_reduce_ex);
+  Py_CLEAR(clear_module_state->__pyx_n_s_reset);
+  Py_CLEAR(clear_module_state->__pyx_n_s_reset_timings);
   Py_CLEAR(clear_module_state->__pyx_n_s_return);
   Py_CLEAR(clear_module_state->__pyx_n_s_rope_freq_scale_train);
+  Py_CLEAR(clear_module_state->__pyx_n_s_seed);
   Py_CLEAR(clear_module_state->__pyx_n_s_self);
   Py_CLEAR(clear_module_state->__pyx_kp_s_self_p_cannot_be_converted_to_a);
   Py_CLEAR(clear_module_state->__pyx_n_s_seq_id);
   Py_CLEAR(clear_module_state->__pyx_n_s_seq_id_dst);
   Py_CLEAR(clear_module_state->__pyx_n_s_seq_id_src);
+  Py_CLEAR(clear_module_state->__pyx_n_s_set_batch);
   Py_CLEAR(clear_module_state->__pyx_n_s_set_n_threads);
+  Py_CLEAR(clear_module_state->__pyx_n_s_set_rng_seed);
   Py_CLEAR(clear_module_state->__pyx_n_s_setstate);
   Py_CLEAR(clear_module_state->__pyx_n_s_setstate_cython);
   Py_CLEAR(clear_module_state->__pyx_n_s_shift);
@@ -3264,6 +3428,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_value);
   Py_CLEAR(clear_module_state->__pyx_n_s_verbose);
   Py_CLEAR(clear_module_state->__pyx_int_0);
+  Py_CLEAR(clear_module_state->__pyx_int_1);
   Py_CLEAR(clear_module_state->__pyx_int_1024);
   Py_CLEAR(clear_module_state->__pyx_tuple_);
   Py_CLEAR(clear_module_state->__pyx_tuple__4);
@@ -3282,6 +3447,9 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_tuple__59);
   Py_CLEAR(clear_module_state->__pyx_tuple__61);
   Py_CLEAR(clear_module_state->__pyx_tuple__63);
+  Py_CLEAR(clear_module_state->__pyx_tuple__65);
+  Py_CLEAR(clear_module_state->__pyx_tuple__75);
+  Py_CLEAR(clear_module_state->__pyx_tuple__77);
   Py_CLEAR(clear_module_state->__pyx_codeobj__8);
   Py_CLEAR(clear_module_state->__pyx_codeobj__10);
   Py_CLEAR(clear_module_state->__pyx_codeobj__11);
@@ -3325,8 +3493,19 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_codeobj__60);
   Py_CLEAR(clear_module_state->__pyx_codeobj__62);
   Py_CLEAR(clear_module_state->__pyx_codeobj__64);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__65);
   Py_CLEAR(clear_module_state->__pyx_codeobj__66);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__67);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__68);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__69);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__70);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__71);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__72);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__73);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__74);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__76);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__78);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__79);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__80);
   return 0;
 }
 #endif
@@ -3357,6 +3536,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_type_7cyllama_ContextParams);
   Py_VISIT(traverse_module_state->__pyx_ptype_7cyllama_LlamaContext);
   Py_VISIT(traverse_module_state->__pyx_type_7cyllama_LlamaContext);
+  Py_VISIT(traverse_module_state->__pyx_ptype_7cyllama_LlamaBatch);
+  Py_VISIT(traverse_module_state->__pyx_type_7cyllama_LlamaBatch);
   Py_VISIT(traverse_module_state->__pyx_n_s_AssertionError);
   Py_VISIT(traverse_module_state->__pyx_n_s_ContextParams);
   Py_VISIT(traverse_module_state->__pyx_n_s_ContextParams___reduce_cython);
@@ -3366,17 +3547,29 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_GGMLTensor);
   Py_VISIT(traverse_module_state->__pyx_n_s_GGMLTensor___reduce_cython);
   Py_VISIT(traverse_module_state->__pyx_n_s_GGMLTensor___setstate_cython);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaBatch);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaBatch___reduce_cython);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaBatch___setstate_cython);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaBatch_add_sequence);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaBatch_close);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaBatch_n_tokens);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaBatch_reset);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaBatch_set_batch);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext___reduce_cython);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext___setstate_cython);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_close);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_default_params);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_kv_cache_clear);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_kv_cache_seq_cp);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_kv_cache_seq_keep);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_kv_cache_seq_rm);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_kv_cache_seq_shift);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_n_ctx);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_print_timings);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_reset_timings);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_set_n_threads);
+  Py_VISIT(traverse_module_state->__pyx_n_s_LlamaContext_set_rng_seed);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaModel);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaModel___reduce_cython);
   Py_VISIT(traverse_module_state->__pyx_n_s_LlamaModel___setstate_cython);
@@ -3414,6 +3607,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_kp_u_Model_path_does_not_exist);
   Py_VISIT(traverse_module_state->__pyx_n_s_Optional);
   Py_VISIT(traverse_module_state->__pyx_n_s_RuntimeError);
+  Py_VISIT(traverse_module_state->__pyx_n_s_Sequence);
+  Py_VISIT(traverse_module_state->__pyx_kp_s_Sequence_int);
   Py_VISIT(traverse_module_state->__pyx_kp_u_This_class_cannot_be_instantiate);
   Py_VISIT(traverse_module_state->__pyx_n_s_TypeError);
   Py_VISIT(traverse_module_state->__pyx_n_s_ValueError);
@@ -3421,16 +3616,19 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_kp_b__3);
   Py_VISIT(traverse_module_state->__pyx_n_s__5);
   Py_VISIT(traverse_module_state->__pyx_kp_u__6);
-  Py_VISIT(traverse_module_state->__pyx_n_s__67);
+  Py_VISIT(traverse_module_state->__pyx_n_s__81);
   Py_VISIT(traverse_module_state->__pyx_n_s_add_bos);
   Py_VISIT(traverse_module_state->__pyx_n_s_add_bos_token);
   Py_VISIT(traverse_module_state->__pyx_n_s_add_eos_token);
+  Py_VISIT(traverse_module_state->__pyx_n_s_add_sequence);
   Py_VISIT(traverse_module_state->__pyx_n_s_asyncio_coroutines);
+  Py_VISIT(traverse_module_state->__pyx_n_s_batch);
   Py_VISIT(traverse_module_state->__pyx_n_s_bool);
   Py_VISIT(traverse_module_state->__pyx_n_s_buf);
   Py_VISIT(traverse_module_state->__pyx_n_s_buffer);
   Py_VISIT(traverse_module_state->__pyx_n_s_buffer_size);
   Py_VISIT(traverse_module_state->__pyx_n_s_bytes);
+  Py_VISIT(traverse_module_state->__pyx_n_s_class_getitem);
   Py_VISIT(traverse_module_state->__pyx_n_s_cline_in_traceback);
   Py_VISIT(traverse_module_state->__pyx_n_s_close);
   Py_VISIT(traverse_module_state->__pyx_n_s_cyllama);
@@ -3442,6 +3640,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_dict);
   Py_VISIT(traverse_module_state->__pyx_kp_s_dict_str_str);
   Py_VISIT(traverse_module_state->__pyx_kp_u_disable);
+  Py_VISIT(traverse_module_state->__pyx_n_s_embd);
   Py_VISIT(traverse_module_state->__pyx_kp_u_enable);
   Py_VISIT(traverse_module_state->__pyx_n_s_exists);
   Py_VISIT(traverse_module_state->__pyx_n_s_float);
@@ -3454,6 +3653,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_int);
   Py_VISIT(traverse_module_state->__pyx_n_s_is_coroutine);
   Py_VISIT(traverse_module_state->__pyx_kp_u_isenabled);
+  Py_VISIT(traverse_module_state->__pyx_n_s_j);
   Py_VISIT(traverse_module_state->__pyx_n_s_key);
   Py_VISIT(traverse_module_state->__pyx_n_s_kv_cache_clear);
   Py_VISIT(traverse_module_state->__pyx_n_s_kv_cache_seq_cp);
@@ -3461,6 +3661,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_kv_cache_seq_rm);
   Py_VISIT(traverse_module_state->__pyx_n_s_kv_cache_seq_shift);
   Py_VISIT(traverse_module_state->__pyx_kp_s_list_int);
+  Py_VISIT(traverse_module_state->__pyx_n_s_logits_all);
   Py_VISIT(traverse_module_state->__pyx_n_s_main);
   Py_VISIT(traverse_module_state->__pyx_n_s_metadata);
   Py_VISIT(traverse_module_state->__pyx_n_s_model);
@@ -3469,9 +3670,12 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_n_ctx_train);
   Py_VISIT(traverse_module_state->__pyx_n_s_n_embd);
   Py_VISIT(traverse_module_state->__pyx_n_s_n_params);
+  Py_VISIT(traverse_module_state->__pyx_n_s_n_past);
+  Py_VISIT(traverse_module_state->__pyx_n_s_n_seq_max);
   Py_VISIT(traverse_module_state->__pyx_n_s_n_threads);
   Py_VISIT(traverse_module_state->__pyx_n_s_n_threads_batch);
   Py_VISIT(traverse_module_state->__pyx_n_s_n_tokens);
+  Py_VISIT(traverse_module_state->__pyx_n_s_n_tokens0);
   Py_VISIT(traverse_module_state->__pyx_n_s_n_vocab);
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
   Py_VISIT(traverse_module_state->__pyx_n_s_name_2);
@@ -3484,20 +3688,26 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_params);
   Py_VISIT(traverse_module_state->__pyx_n_s_path);
   Py_VISIT(traverse_module_state->__pyx_n_s_path_model);
+  Py_VISIT(traverse_module_state->__pyx_n_s_print_timings);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyx_state);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyx_vtable);
   Py_VISIT(traverse_module_state->__pyx_n_s_range);
   Py_VISIT(traverse_module_state->__pyx_n_s_reduce);
   Py_VISIT(traverse_module_state->__pyx_n_s_reduce_cython);
   Py_VISIT(traverse_module_state->__pyx_n_s_reduce_ex);
+  Py_VISIT(traverse_module_state->__pyx_n_s_reset);
+  Py_VISIT(traverse_module_state->__pyx_n_s_reset_timings);
   Py_VISIT(traverse_module_state->__pyx_n_s_return);
   Py_VISIT(traverse_module_state->__pyx_n_s_rope_freq_scale_train);
+  Py_VISIT(traverse_module_state->__pyx_n_s_seed);
   Py_VISIT(traverse_module_state->__pyx_n_s_self);
   Py_VISIT(traverse_module_state->__pyx_kp_s_self_p_cannot_be_converted_to_a);
   Py_VISIT(traverse_module_state->__pyx_n_s_seq_id);
   Py_VISIT(traverse_module_state->__pyx_n_s_seq_id_dst);
   Py_VISIT(traverse_module_state->__pyx_n_s_seq_id_src);
+  Py_VISIT(traverse_module_state->__pyx_n_s_set_batch);
   Py_VISIT(traverse_module_state->__pyx_n_s_set_n_threads);
+  Py_VISIT(traverse_module_state->__pyx_n_s_set_rng_seed);
   Py_VISIT(traverse_module_state->__pyx_n_s_setstate);
   Py_VISIT(traverse_module_state->__pyx_n_s_setstate_cython);
   Py_VISIT(traverse_module_state->__pyx_n_s_shift);
@@ -3530,6 +3740,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_value);
   Py_VISIT(traverse_module_state->__pyx_n_s_verbose);
   Py_VISIT(traverse_module_state->__pyx_int_0);
+  Py_VISIT(traverse_module_state->__pyx_int_1);
   Py_VISIT(traverse_module_state->__pyx_int_1024);
   Py_VISIT(traverse_module_state->__pyx_tuple_);
   Py_VISIT(traverse_module_state->__pyx_tuple__4);
@@ -3548,6 +3759,9 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_tuple__59);
   Py_VISIT(traverse_module_state->__pyx_tuple__61);
   Py_VISIT(traverse_module_state->__pyx_tuple__63);
+  Py_VISIT(traverse_module_state->__pyx_tuple__65);
+  Py_VISIT(traverse_module_state->__pyx_tuple__75);
+  Py_VISIT(traverse_module_state->__pyx_tuple__77);
   Py_VISIT(traverse_module_state->__pyx_codeobj__8);
   Py_VISIT(traverse_module_state->__pyx_codeobj__10);
   Py_VISIT(traverse_module_state->__pyx_codeobj__11);
@@ -3591,8 +3805,19 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_codeobj__60);
   Py_VISIT(traverse_module_state->__pyx_codeobj__62);
   Py_VISIT(traverse_module_state->__pyx_codeobj__64);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__65);
   Py_VISIT(traverse_module_state->__pyx_codeobj__66);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__67);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__68);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__69);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__70);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__71);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__72);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__73);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__74);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__76);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__78);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__79);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__80);
   return 0;
 }
 #endif
@@ -3641,12 +3866,14 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_type_7cyllama_LlamaModel __pyx_mstate_global->__pyx_type_7cyllama_LlamaModel
 #define __pyx_type_7cyllama_ContextParams __pyx_mstate_global->__pyx_type_7cyllama_ContextParams
 #define __pyx_type_7cyllama_LlamaContext __pyx_mstate_global->__pyx_type_7cyllama_LlamaContext
+#define __pyx_type_7cyllama_LlamaBatch __pyx_mstate_global->__pyx_type_7cyllama_LlamaBatch
 #endif
 #define __pyx_ptype_7cyllama_GGMLTensor __pyx_mstate_global->__pyx_ptype_7cyllama_GGMLTensor
 #define __pyx_ptype_7cyllama_ModelParams __pyx_mstate_global->__pyx_ptype_7cyllama_ModelParams
 #define __pyx_ptype_7cyllama_LlamaModel __pyx_mstate_global->__pyx_ptype_7cyllama_LlamaModel
 #define __pyx_ptype_7cyllama_ContextParams __pyx_mstate_global->__pyx_ptype_7cyllama_ContextParams
 #define __pyx_ptype_7cyllama_LlamaContext __pyx_mstate_global->__pyx_ptype_7cyllama_LlamaContext
+#define __pyx_ptype_7cyllama_LlamaBatch __pyx_mstate_global->__pyx_ptype_7cyllama_LlamaBatch
 #define __pyx_n_s_AssertionError __pyx_mstate_global->__pyx_n_s_AssertionError
 #define __pyx_n_s_ContextParams __pyx_mstate_global->__pyx_n_s_ContextParams
 #define __pyx_n_s_ContextParams___reduce_cython __pyx_mstate_global->__pyx_n_s_ContextParams___reduce_cython
@@ -3656,17 +3883,29 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_GGMLTensor __pyx_mstate_global->__pyx_n_s_GGMLTensor
 #define __pyx_n_s_GGMLTensor___reduce_cython __pyx_mstate_global->__pyx_n_s_GGMLTensor___reduce_cython
 #define __pyx_n_s_GGMLTensor___setstate_cython __pyx_mstate_global->__pyx_n_s_GGMLTensor___setstate_cython
+#define __pyx_n_s_LlamaBatch __pyx_mstate_global->__pyx_n_s_LlamaBatch
+#define __pyx_n_s_LlamaBatch___reduce_cython __pyx_mstate_global->__pyx_n_s_LlamaBatch___reduce_cython
+#define __pyx_n_s_LlamaBatch___setstate_cython __pyx_mstate_global->__pyx_n_s_LlamaBatch___setstate_cython
+#define __pyx_n_s_LlamaBatch_add_sequence __pyx_mstate_global->__pyx_n_s_LlamaBatch_add_sequence
+#define __pyx_n_s_LlamaBatch_close __pyx_mstate_global->__pyx_n_s_LlamaBatch_close
+#define __pyx_n_s_LlamaBatch_n_tokens __pyx_mstate_global->__pyx_n_s_LlamaBatch_n_tokens
+#define __pyx_n_s_LlamaBatch_reset __pyx_mstate_global->__pyx_n_s_LlamaBatch_reset
+#define __pyx_n_s_LlamaBatch_set_batch __pyx_mstate_global->__pyx_n_s_LlamaBatch_set_batch
 #define __pyx_n_s_LlamaContext __pyx_mstate_global->__pyx_n_s_LlamaContext
 #define __pyx_n_s_LlamaContext___reduce_cython __pyx_mstate_global->__pyx_n_s_LlamaContext___reduce_cython
 #define __pyx_n_s_LlamaContext___setstate_cython __pyx_mstate_global->__pyx_n_s_LlamaContext___setstate_cython
 #define __pyx_n_s_LlamaContext_close __pyx_mstate_global->__pyx_n_s_LlamaContext_close
+#define __pyx_n_s_LlamaContext_default_params __pyx_mstate_global->__pyx_n_s_LlamaContext_default_params
 #define __pyx_n_s_LlamaContext_kv_cache_clear __pyx_mstate_global->__pyx_n_s_LlamaContext_kv_cache_clear
 #define __pyx_n_s_LlamaContext_kv_cache_seq_cp __pyx_mstate_global->__pyx_n_s_LlamaContext_kv_cache_seq_cp
 #define __pyx_n_s_LlamaContext_kv_cache_seq_keep __pyx_mstate_global->__pyx_n_s_LlamaContext_kv_cache_seq_keep
 #define __pyx_n_s_LlamaContext_kv_cache_seq_rm __pyx_mstate_global->__pyx_n_s_LlamaContext_kv_cache_seq_rm
 #define __pyx_n_s_LlamaContext_kv_cache_seq_shift __pyx_mstate_global->__pyx_n_s_LlamaContext_kv_cache_seq_shift
 #define __pyx_n_s_LlamaContext_n_ctx __pyx_mstate_global->__pyx_n_s_LlamaContext_n_ctx
+#define __pyx_n_s_LlamaContext_print_timings __pyx_mstate_global->__pyx_n_s_LlamaContext_print_timings
+#define __pyx_n_s_LlamaContext_reset_timings __pyx_mstate_global->__pyx_n_s_LlamaContext_reset_timings
 #define __pyx_n_s_LlamaContext_set_n_threads __pyx_mstate_global->__pyx_n_s_LlamaContext_set_n_threads
+#define __pyx_n_s_LlamaContext_set_rng_seed __pyx_mstate_global->__pyx_n_s_LlamaContext_set_rng_seed
 #define __pyx_n_s_LlamaModel __pyx_mstate_global->__pyx_n_s_LlamaModel
 #define __pyx_n_s_LlamaModel___reduce_cython __pyx_mstate_global->__pyx_n_s_LlamaModel___reduce_cython
 #define __pyx_n_s_LlamaModel___setstate_cython __pyx_mstate_global->__pyx_n_s_LlamaModel___setstate_cython
@@ -3704,6 +3943,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_kp_u_Model_path_does_not_exist __pyx_mstate_global->__pyx_kp_u_Model_path_does_not_exist
 #define __pyx_n_s_Optional __pyx_mstate_global->__pyx_n_s_Optional
 #define __pyx_n_s_RuntimeError __pyx_mstate_global->__pyx_n_s_RuntimeError
+#define __pyx_n_s_Sequence __pyx_mstate_global->__pyx_n_s_Sequence
+#define __pyx_kp_s_Sequence_int __pyx_mstate_global->__pyx_kp_s_Sequence_int
 #define __pyx_kp_u_This_class_cannot_be_instantiate __pyx_mstate_global->__pyx_kp_u_This_class_cannot_be_instantiate
 #define __pyx_n_s_TypeError __pyx_mstate_global->__pyx_n_s_TypeError
 #define __pyx_n_s_ValueError __pyx_mstate_global->__pyx_n_s_ValueError
@@ -3711,16 +3952,19 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_kp_b__3 __pyx_mstate_global->__pyx_kp_b__3
 #define __pyx_n_s__5 __pyx_mstate_global->__pyx_n_s__5
 #define __pyx_kp_u__6 __pyx_mstate_global->__pyx_kp_u__6
-#define __pyx_n_s__67 __pyx_mstate_global->__pyx_n_s__67
+#define __pyx_n_s__81 __pyx_mstate_global->__pyx_n_s__81
 #define __pyx_n_s_add_bos __pyx_mstate_global->__pyx_n_s_add_bos
 #define __pyx_n_s_add_bos_token __pyx_mstate_global->__pyx_n_s_add_bos_token
 #define __pyx_n_s_add_eos_token __pyx_mstate_global->__pyx_n_s_add_eos_token
+#define __pyx_n_s_add_sequence __pyx_mstate_global->__pyx_n_s_add_sequence
 #define __pyx_n_s_asyncio_coroutines __pyx_mstate_global->__pyx_n_s_asyncio_coroutines
+#define __pyx_n_s_batch __pyx_mstate_global->__pyx_n_s_batch
 #define __pyx_n_s_bool __pyx_mstate_global->__pyx_n_s_bool
 #define __pyx_n_s_buf __pyx_mstate_global->__pyx_n_s_buf
 #define __pyx_n_s_buffer __pyx_mstate_global->__pyx_n_s_buffer
 #define __pyx_n_s_buffer_size __pyx_mstate_global->__pyx_n_s_buffer_size
 #define __pyx_n_s_bytes __pyx_mstate_global->__pyx_n_s_bytes
+#define __pyx_n_s_class_getitem __pyx_mstate_global->__pyx_n_s_class_getitem
 #define __pyx_n_s_cline_in_traceback __pyx_mstate_global->__pyx_n_s_cline_in_traceback
 #define __pyx_n_s_close __pyx_mstate_global->__pyx_n_s_close
 #define __pyx_n_s_cyllama __pyx_mstate_global->__pyx_n_s_cyllama
@@ -3732,6 +3976,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_dict __pyx_mstate_global->__pyx_n_s_dict
 #define __pyx_kp_s_dict_str_str __pyx_mstate_global->__pyx_kp_s_dict_str_str
 #define __pyx_kp_u_disable __pyx_mstate_global->__pyx_kp_u_disable
+#define __pyx_n_s_embd __pyx_mstate_global->__pyx_n_s_embd
 #define __pyx_kp_u_enable __pyx_mstate_global->__pyx_kp_u_enable
 #define __pyx_n_s_exists __pyx_mstate_global->__pyx_n_s_exists
 #define __pyx_n_s_float __pyx_mstate_global->__pyx_n_s_float
@@ -3744,6 +3989,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_int __pyx_mstate_global->__pyx_n_s_int
 #define __pyx_n_s_is_coroutine __pyx_mstate_global->__pyx_n_s_is_coroutine
 #define __pyx_kp_u_isenabled __pyx_mstate_global->__pyx_kp_u_isenabled
+#define __pyx_n_s_j __pyx_mstate_global->__pyx_n_s_j
 #define __pyx_n_s_key __pyx_mstate_global->__pyx_n_s_key
 #define __pyx_n_s_kv_cache_clear __pyx_mstate_global->__pyx_n_s_kv_cache_clear
 #define __pyx_n_s_kv_cache_seq_cp __pyx_mstate_global->__pyx_n_s_kv_cache_seq_cp
@@ -3751,6 +3997,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_kv_cache_seq_rm __pyx_mstate_global->__pyx_n_s_kv_cache_seq_rm
 #define __pyx_n_s_kv_cache_seq_shift __pyx_mstate_global->__pyx_n_s_kv_cache_seq_shift
 #define __pyx_kp_s_list_int __pyx_mstate_global->__pyx_kp_s_list_int
+#define __pyx_n_s_logits_all __pyx_mstate_global->__pyx_n_s_logits_all
 #define __pyx_n_s_main __pyx_mstate_global->__pyx_n_s_main
 #define __pyx_n_s_metadata __pyx_mstate_global->__pyx_n_s_metadata
 #define __pyx_n_s_model __pyx_mstate_global->__pyx_n_s_model
@@ -3759,9 +4006,12 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_n_ctx_train __pyx_mstate_global->__pyx_n_s_n_ctx_train
 #define __pyx_n_s_n_embd __pyx_mstate_global->__pyx_n_s_n_embd
 #define __pyx_n_s_n_params __pyx_mstate_global->__pyx_n_s_n_params
+#define __pyx_n_s_n_past __pyx_mstate_global->__pyx_n_s_n_past
+#define __pyx_n_s_n_seq_max __pyx_mstate_global->__pyx_n_s_n_seq_max
 #define __pyx_n_s_n_threads __pyx_mstate_global->__pyx_n_s_n_threads
 #define __pyx_n_s_n_threads_batch __pyx_mstate_global->__pyx_n_s_n_threads_batch
 #define __pyx_n_s_n_tokens __pyx_mstate_global->__pyx_n_s_n_tokens
+#define __pyx_n_s_n_tokens0 __pyx_mstate_global->__pyx_n_s_n_tokens0
 #define __pyx_n_s_n_vocab __pyx_mstate_global->__pyx_n_s_n_vocab
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
 #define __pyx_n_s_name_2 __pyx_mstate_global->__pyx_n_s_name_2
@@ -3774,20 +4024,26 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_params __pyx_mstate_global->__pyx_n_s_params
 #define __pyx_n_s_path __pyx_mstate_global->__pyx_n_s_path
 #define __pyx_n_s_path_model __pyx_mstate_global->__pyx_n_s_path_model
+#define __pyx_n_s_print_timings __pyx_mstate_global->__pyx_n_s_print_timings
 #define __pyx_n_s_pyx_state __pyx_mstate_global->__pyx_n_s_pyx_state
 #define __pyx_n_s_pyx_vtable __pyx_mstate_global->__pyx_n_s_pyx_vtable
 #define __pyx_n_s_range __pyx_mstate_global->__pyx_n_s_range
 #define __pyx_n_s_reduce __pyx_mstate_global->__pyx_n_s_reduce
 #define __pyx_n_s_reduce_cython __pyx_mstate_global->__pyx_n_s_reduce_cython
 #define __pyx_n_s_reduce_ex __pyx_mstate_global->__pyx_n_s_reduce_ex
+#define __pyx_n_s_reset __pyx_mstate_global->__pyx_n_s_reset
+#define __pyx_n_s_reset_timings __pyx_mstate_global->__pyx_n_s_reset_timings
 #define __pyx_n_s_return __pyx_mstate_global->__pyx_n_s_return
 #define __pyx_n_s_rope_freq_scale_train __pyx_mstate_global->__pyx_n_s_rope_freq_scale_train
+#define __pyx_n_s_seed __pyx_mstate_global->__pyx_n_s_seed
 #define __pyx_n_s_self __pyx_mstate_global->__pyx_n_s_self
 #define __pyx_kp_s_self_p_cannot_be_converted_to_a __pyx_mstate_global->__pyx_kp_s_self_p_cannot_be_converted_to_a
 #define __pyx_n_s_seq_id __pyx_mstate_global->__pyx_n_s_seq_id
 #define __pyx_n_s_seq_id_dst __pyx_mstate_global->__pyx_n_s_seq_id_dst
 #define __pyx_n_s_seq_id_src __pyx_mstate_global->__pyx_n_s_seq_id_src
+#define __pyx_n_s_set_batch __pyx_mstate_global->__pyx_n_s_set_batch
 #define __pyx_n_s_set_n_threads __pyx_mstate_global->__pyx_n_s_set_n_threads
+#define __pyx_n_s_set_rng_seed __pyx_mstate_global->__pyx_n_s_set_rng_seed
 #define __pyx_n_s_setstate __pyx_mstate_global->__pyx_n_s_setstate
 #define __pyx_n_s_setstate_cython __pyx_mstate_global->__pyx_n_s_setstate_cython
 #define __pyx_n_s_shift __pyx_mstate_global->__pyx_n_s_shift
@@ -3820,6 +4076,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_value __pyx_mstate_global->__pyx_n_s_value
 #define __pyx_n_s_verbose __pyx_mstate_global->__pyx_n_s_verbose
 #define __pyx_int_0 __pyx_mstate_global->__pyx_int_0
+#define __pyx_int_1 __pyx_mstate_global->__pyx_int_1
 #define __pyx_int_1024 __pyx_mstate_global->__pyx_int_1024
 #define __pyx_tuple_ __pyx_mstate_global->__pyx_tuple_
 #define __pyx_tuple__4 __pyx_mstate_global->__pyx_tuple__4
@@ -3838,6 +4095,9 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_tuple__59 __pyx_mstate_global->__pyx_tuple__59
 #define __pyx_tuple__61 __pyx_mstate_global->__pyx_tuple__61
 #define __pyx_tuple__63 __pyx_mstate_global->__pyx_tuple__63
+#define __pyx_tuple__65 __pyx_mstate_global->__pyx_tuple__65
+#define __pyx_tuple__75 __pyx_mstate_global->__pyx_tuple__75
+#define __pyx_tuple__77 __pyx_mstate_global->__pyx_tuple__77
 #define __pyx_codeobj__8 __pyx_mstate_global->__pyx_codeobj__8
 #define __pyx_codeobj__10 __pyx_mstate_global->__pyx_codeobj__10
 #define __pyx_codeobj__11 __pyx_mstate_global->__pyx_codeobj__11
@@ -3881,8 +4141,19 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_codeobj__60 __pyx_mstate_global->__pyx_codeobj__60
 #define __pyx_codeobj__62 __pyx_mstate_global->__pyx_codeobj__62
 #define __pyx_codeobj__64 __pyx_mstate_global->__pyx_codeobj__64
-#define __pyx_codeobj__65 __pyx_mstate_global->__pyx_codeobj__65
 #define __pyx_codeobj__66 __pyx_mstate_global->__pyx_codeobj__66
+#define __pyx_codeobj__67 __pyx_mstate_global->__pyx_codeobj__67
+#define __pyx_codeobj__68 __pyx_mstate_global->__pyx_codeobj__68
+#define __pyx_codeobj__69 __pyx_mstate_global->__pyx_codeobj__69
+#define __pyx_codeobj__70 __pyx_mstate_global->__pyx_codeobj__70
+#define __pyx_codeobj__71 __pyx_mstate_global->__pyx_codeobj__71
+#define __pyx_codeobj__72 __pyx_mstate_global->__pyx_codeobj__72
+#define __pyx_codeobj__73 __pyx_mstate_global->__pyx_codeobj__73
+#define __pyx_codeobj__74 __pyx_mstate_global->__pyx_codeobj__74
+#define __pyx_codeobj__76 __pyx_mstate_global->__pyx_codeobj__76
+#define __pyx_codeobj__78 __pyx_mstate_global->__pyx_codeobj__78
+#define __pyx_codeobj__79 __pyx_mstate_global->__pyx_codeobj__79
+#define __pyx_codeobj__80 __pyx_mstate_global->__pyx_codeobj__80
 /* #### Code section: module_code ### */
 
 /* "vector.to_py":66
@@ -6264,8 +6535,8 @@ static void __pyx_pf_7cyllama_10LlamaModel_4__dealloc__(struct __pyx_obj_7cyllam
  *     #     return llama_cpp.get_llama_vocab_type(self.model)
  * 
  *     def n_vocab(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_vocab(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -6312,7 +6583,8 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_6n_vocab(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -6321,29 +6593,48 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_6n_vocab(struct __pyx_obj_7cylla
   /* "cyllama.pyx":165
  * 
  *     def n_vocab(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_n_vocab(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 165, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 165, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":166
+ *     def n_vocab(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_vocab(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def n_ctx_train(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_n_vocab(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 165, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_n_vocab(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 166, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
   /* "cyllama.pyx":164
  *     #     return llama_cpp.get_llama_vocab_type(self.model)
  * 
  *     def n_vocab(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_vocab(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.n_vocab", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -6352,12 +6643,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_6n_vocab(struct __pyx_obj_7cylla
   return __pyx_r;
 }
 
-/* "cyllama.pyx":167
+/* "cyllama.pyx":168
  *         return llama_cpp.llama_n_vocab(self.model)
  * 
  *     def n_ctx_train(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_ctx_train(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -6404,38 +6695,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_8n_ctx_train(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("n_ctx_train", 1);
 
-  /* "cyllama.pyx":168
+  /* "cyllama.pyx":169
  * 
  *     def n_ctx_train(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_n_ctx_train(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 169, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 169, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":170
+ *     def n_ctx_train(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_ctx_train(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def n_embd(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_n_ctx_train(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 168, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_n_ctx_train(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 170, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":167
+  /* "cyllama.pyx":168
  *         return llama_cpp.llama_n_vocab(self.model)
  * 
  *     def n_ctx_train(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_ctx_train(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.n_ctx_train", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -6444,12 +6755,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_8n_ctx_train(struct __pyx_obj_7c
   return __pyx_r;
 }
 
-/* "cyllama.pyx":170
+/* "cyllama.pyx":172
  *         return llama_cpp.llama_n_ctx_train(self.model)
  * 
  *     def n_embd(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_embd(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -6496,38 +6807,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_10n_embd(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("n_embd", 1);
 
-  /* "cyllama.pyx":171
+  /* "cyllama.pyx":173
  * 
  *     def n_embd(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_n_embd(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 173, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 173, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":174
+ *     def n_embd(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_embd(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def rope_freq_scale_train(self) -> float:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_n_embd(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 171, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_n_embd(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 174, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":170
+  /* "cyllama.pyx":172
  *         return llama_cpp.llama_n_ctx_train(self.model)
  * 
  *     def n_embd(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_embd(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.n_embd", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -6536,12 +6867,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_10n_embd(struct __pyx_obj_7cylla
   return __pyx_r;
 }
 
-/* "cyllama.pyx":173
+/* "cyllama.pyx":176
  *         return llama_cpp.llama_n_embd(self.model)
  * 
  *     def rope_freq_scale_train(self) -> float:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_rope_freq_scale_train(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -6588,37 +6919,57 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_12rope_freq_scale_train(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("rope_freq_scale_train", 1);
 
-  /* "cyllama.pyx":174
+  /* "cyllama.pyx":177
  * 
  *     def rope_freq_scale_train(self) -> float:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_rope_freq_scale_train(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 177, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 177, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":178
+ *     def rope_freq_scale_train(self) -> float:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_rope_freq_scale_train(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def desc(self) -> str:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(llama_rope_freq_scale_train(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_r = __pyx_t_1;
-  __pyx_t_1 = 0;
+  __pyx_t_2 = PyFloat_FromDouble(llama_rope_freq_scale_train(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_r = __pyx_t_2;
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":173
+  /* "cyllama.pyx":176
  *         return llama_cpp.llama_n_embd(self.model)
  * 
  *     def rope_freq_scale_train(self) -> float:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_rope_freq_scale_train(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.rope_freq_scale_train", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -6627,12 +6978,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_12rope_freq_scale_train(struct _
   return __pyx_r;
 }
 
-/* "cyllama.pyx":176
+/* "cyllama.pyx":180
  *         return llama_cpp.llama_rope_freq_scale_train(self.model)
  * 
  *     def desc(self) -> str:             # <<<<<<<<<<<<<<
  *         cdef char buf[1024]
- *         llama_cpp.llama_model_desc(self.model, buf, 1024)
+ *         assert self.model is not NULL
  */
 
 /* Python wrapper */
@@ -6680,48 +7031,68 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_14desc(struct __pyx_obj_7cyllama
   char __pyx_v_buf[0x400];
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  Py_ssize_t __pyx_t_1;
-  PyObject *__pyx_t_2 = NULL;
+  int __pyx_t_1;
+  Py_ssize_t __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("desc", 1);
 
-  /* "cyllama.pyx":178
+  /* "cyllama.pyx":182
  *     def desc(self) -> str:
  *         cdef char buf[1024]
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         llama_cpp.llama_model_desc(self.model, buf, 1024)
+ *         return buf.decode("utf-8")
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 182, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 182, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":183
+ *         cdef char buf[1024]
+ *         assert self.model is not NULL
  *         llama_cpp.llama_model_desc(self.model, buf, 1024)             # <<<<<<<<<<<<<<
  *         return buf.decode("utf-8")
  * 
  */
   (void)(llama_model_desc(__pyx_v_self->model, __pyx_v_buf, 0x400));
 
-  /* "cyllama.pyx":179
- *         cdef char buf[1024]
+  /* "cyllama.pyx":184
+ *         assert self.model is not NULL
  *         llama_cpp.llama_model_desc(self.model, buf, 1024)
  *         return buf.decode("utf-8")             # <<<<<<<<<<<<<<
  * 
  *     def size(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_ssize_strlen(__pyx_v_buf); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 179, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_decode_c_string(__pyx_v_buf, 0, __pyx_t_1, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 179, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_r = ((PyObject*)__pyx_t_2);
-  __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ssize_strlen(__pyx_v_buf); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 184, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_decode_c_string(__pyx_v_buf, 0, __pyx_t_2, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 184, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_r = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":176
+  /* "cyllama.pyx":180
  *         return llama_cpp.llama_rope_freq_scale_train(self.model)
  * 
  *     def desc(self) -> str:             # <<<<<<<<<<<<<<
  *         cdef char buf[1024]
- *         llama_cpp.llama_model_desc(self.model, buf, 1024)
+ *         assert self.model is not NULL
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
   __Pyx_AddTraceback("cyllama.LlamaModel.desc", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -6730,12 +7101,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_14desc(struct __pyx_obj_7cyllama
   return __pyx_r;
 }
 
-/* "cyllama.pyx":181
+/* "cyllama.pyx":186
  *         return buf.decode("utf-8")
  * 
  *     def size(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_model_size(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -6782,38 +7153,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_16size(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("size", 1);
 
-  /* "cyllama.pyx":182
+  /* "cyllama.pyx":187
  * 
  *     def size(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_model_size(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 187, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 187, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":188
+ *     def size(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_model_size(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def n_params(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_uint64_t(llama_model_size(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 182, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_uint64_t(llama_model_size(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 188, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 188, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":181
+  /* "cyllama.pyx":186
  *         return buf.decode("utf-8")
  * 
  *     def size(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_model_size(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.size", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -6822,12 +7213,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_16size(struct __pyx_obj_7cyllama
   return __pyx_r;
 }
 
-/* "cyllama.pyx":184
+/* "cyllama.pyx":190
  *         return llama_cpp.llama_model_size(self.model)
  * 
  *     def n_params(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_model_n_params(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -6874,38 +7265,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_18n_params(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("n_params", 1);
 
-  /* "cyllama.pyx":185
+  /* "cyllama.pyx":191
  * 
  *     def n_params(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_model_n_params(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 191, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 191, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":192
+ *     def n_params(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_model_n_params(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def get_tensor(self, name: str) -> GGMLTensor:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_uint64_t(llama_model_n_params(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 185, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 185, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_uint64_t(llama_model_n_params(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":184
+  /* "cyllama.pyx":190
  *         return llama_cpp.llama_model_size(self.model)
  * 
  *     def n_params(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_model_n_params(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.n_params", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -6914,12 +7325,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_18n_params(struct __pyx_obj_7cyl
   return __pyx_r;
 }
 
-/* "cyllama.pyx":187
+/* "cyllama.pyx":194
  *         return llama_cpp.llama_model_n_params(self.model)
  * 
  *     def get_tensor(self, name: str) -> GGMLTensor:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         cdef llama_cpp.ggml_tensor * tensor = llama_cpp.llama_get_model_tensor(self.model, name.encode("utf-8"))
- *         return GGMLTensor.from_ptr(tensor)
  */
 
 /* Python wrapper */
@@ -6975,12 +7386,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 187, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 194, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "get_tensor") < 0)) __PYX_ERR(0, 187, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "get_tensor") < 0)) __PYX_ERR(0, 194, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -6991,7 +7402,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_tensor", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 187, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_tensor", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 194, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7005,7 +7416,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 0, "name", 1))) __PYX_ERR(0, 187, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 0, "name", 1))) __PYX_ERR(0, 194, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_10LlamaModel_20get_tensor(((struct __pyx_obj_7cyllama_LlamaModel *)__pyx_v_self), __pyx_v_name);
 
   /* function exit code */
@@ -7027,51 +7438,71 @@ static struct __pyx_obj_7cyllama_GGMLTensor *__pyx_pf_7cyllama_10LlamaModel_20ge
   ggml_tensor *__pyx_v_tensor;
   struct __pyx_obj_7cyllama_GGMLTensor *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  char const *__pyx_t_2;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
+  char const *__pyx_t_3;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_tensor", 1);
 
-  /* "cyllama.pyx":188
+  /* "cyllama.pyx":195
  * 
  *     def get_tensor(self, name: str) -> GGMLTensor:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         cdef llama_cpp.ggml_tensor * tensor = llama_cpp.llama_get_model_tensor(self.model, name.encode("utf-8"))
+ *         return GGMLTensor.from_ptr(tensor)
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 195, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 195, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":196
+ *     def get_tensor(self, name: str) -> GGMLTensor:
+ *         assert self.model is not NULL
  *         cdef llama_cpp.ggml_tensor * tensor = llama_cpp.llama_get_model_tensor(self.model, name.encode("utf-8"))             # <<<<<<<<<<<<<<
  *         return GGMLTensor.from_ptr(tensor)
  * 
  */
-  __pyx_t_1 = PyUnicode_AsUTF8String(__pyx_v_name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 188, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyBytes_AsString(__pyx_t_1); if (unlikely((!__pyx_t_2) && PyErr_Occurred())) __PYX_ERR(0, 188, __pyx_L1_error)
-  __pyx_v_tensor = llama_get_model_tensor(__pyx_v_self->model, __pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyUnicode_AsUTF8String(__pyx_v_name); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyBytes_AsString(__pyx_t_2); if (unlikely((!__pyx_t_3) && PyErr_Occurred())) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_v_tensor = llama_get_model_tensor(__pyx_v_self->model, __pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cyllama.pyx":189
- *     def get_tensor(self, name: str) -> GGMLTensor:
+  /* "cyllama.pyx":197
+ *         assert self.model is not NULL
  *         cdef llama_cpp.ggml_tensor * tensor = llama_cpp.llama_get_model_tensor(self.model, name.encode("utf-8"))
  *         return GGMLTensor.from_ptr(tensor)             # <<<<<<<<<<<<<<
  * 
  *     # def get_tensor(self, name: str) -> ctypes.c_void_p:
  */
   __Pyx_XDECREF((PyObject *)__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_vtabptr_7cyllama_GGMLTensor->from_ptr(__pyx_v_tensor, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 189, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_r = ((struct __pyx_obj_7cyllama_GGMLTensor *)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = ((PyObject *)__pyx_vtabptr_7cyllama_GGMLTensor->from_ptr(__pyx_v_tensor, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 197, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_r = ((struct __pyx_obj_7cyllama_GGMLTensor *)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":187
+  /* "cyllama.pyx":194
  *         return llama_cpp.llama_model_n_params(self.model)
  * 
  *     def get_tensor(self, name: str) -> GGMLTensor:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         cdef llama_cpp.ggml_tensor * tensor = llama_cpp.llama_get_model_tensor(self.model, name.encode("utf-8"))
- *         return GGMLTensor.from_ptr(tensor)
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.get_tensor", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -7080,12 +7511,12 @@ static struct __pyx_obj_7cyllama_GGMLTensor *__pyx_pf_7cyllama_10LlamaModel_20ge
   return __pyx_r;
 }
 
-/* "cyllama.pyx":235
+/* "cyllama.pyx":243
  *     # Vocab
  * 
  *     def token_get_text(self, token: int) -> str:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_text(self.model, token).decode("utf-8")
- * 
  */
 
 /* Python wrapper */
@@ -7141,12 +7572,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 235, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 243, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "token_get_text") < 0)) __PYX_ERR(0, 235, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "token_get_text") < 0)) __PYX_ERR(0, 243, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -7157,7 +7588,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("token_get_text", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 235, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("token_get_text", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 243, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7171,7 +7602,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_token), (&PyInt_Type), 0, "token", 1))) __PYX_ERR(0, 235, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_token), (&PyInt_Type), 0, "token", 1))) __PYX_ERR(0, 243, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_10LlamaModel_22token_get_text(((struct __pyx_obj_7cyllama_LlamaModel *)__pyx_v_self), __pyx_v_token);
 
   /* function exit code */
@@ -7192,45 +7623,65 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_22token_get_text(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self, PyObject *__pyx_v_token) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  llama_token __pyx_t_1;
-  char const *__pyx_t_2;
-  Py_ssize_t __pyx_t_3;
-  PyObject *__pyx_t_4 = NULL;
+  int __pyx_t_1;
+  llama_token __pyx_t_2;
+  char const *__pyx_t_3;
+  Py_ssize_t __pyx_t_4;
+  PyObject *__pyx_t_5 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_get_text", 1);
 
-  /* "cyllama.pyx":236
+  /* "cyllama.pyx":244
  * 
  *     def token_get_text(self, token: int) -> str:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_get_text(self.model, token).decode("utf-8")
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 244, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 244, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":245
+ *     def token_get_text(self, token: int) -> str:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_text(self.model, token).decode("utf-8")             # <<<<<<<<<<<<<<
  * 
  *     def token_get_score(self, token: int) -> float:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_As_int32_t(__pyx_v_token); if (unlikely((__pyx_t_1 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 236, __pyx_L1_error)
-  __pyx_t_2 = llama_token_get_text(__pyx_v_self->model, __pyx_t_1);
-  __pyx_t_3 = __Pyx_ssize_strlen(__pyx_t_2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 236, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_decode_c_string(__pyx_t_2, 0, __pyx_t_3, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 236, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_4)) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_t_4))) __PYX_ERR(0, 236, __pyx_L1_error)
-  __Pyx_INCREF(__pyx_t_4);
-  __pyx_r = ((PyObject*)__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_2 = __Pyx_PyInt_As_int32_t(__pyx_v_token); if (unlikely((__pyx_t_2 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 245, __pyx_L1_error)
+  __pyx_t_3 = llama_token_get_text(__pyx_v_self->model, __pyx_t_2);
+  __pyx_t_4 = __Pyx_ssize_strlen(__pyx_t_3); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 245, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_decode_c_string(__pyx_t_3, 0, __pyx_t_4, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 245, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  if (!(likely(PyUnicode_CheckExact(__pyx_t_5)) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_t_5))) __PYX_ERR(0, 245, __pyx_L1_error)
+  __Pyx_INCREF(__pyx_t_5);
+  __pyx_r = ((PyObject*)__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":235
+  /* "cyllama.pyx":243
  *     # Vocab
  * 
  *     def token_get_text(self, token: int) -> str:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_text(self.model, token).decode("utf-8")
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_get_text", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -7239,12 +7690,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_22token_get_text(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "cyllama.pyx":238
+/* "cyllama.pyx":247
  *         return llama_cpp.llama_token_get_text(self.model, token).decode("utf-8")
  * 
  *     def token_get_score(self, token: int) -> float:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_score(self.model, token)
- * 
  */
 
 /* Python wrapper */
@@ -7300,12 +7751,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 238, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 247, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "token_get_score") < 0)) __PYX_ERR(0, 238, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "token_get_score") < 0)) __PYX_ERR(0, 247, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -7316,7 +7767,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("token_get_score", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 238, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("token_get_score", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 247, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7330,7 +7781,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_token), (&PyInt_Type), 0, "token", 1))) __PYX_ERR(0, 238, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_token), (&PyInt_Type), 0, "token", 1))) __PYX_ERR(0, 247, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_10LlamaModel_24token_get_score(((struct __pyx_obj_7cyllama_LlamaModel *)__pyx_v_self), __pyx_v_token);
 
   /* function exit code */
@@ -7351,39 +7802,59 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_24token_get_score(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self, PyObject *__pyx_v_token) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  llama_token __pyx_t_1;
-  PyObject *__pyx_t_2 = NULL;
+  int __pyx_t_1;
+  llama_token __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_get_score", 1);
 
-  /* "cyllama.pyx":239
+  /* "cyllama.pyx":248
  * 
  *     def token_get_score(self, token: int) -> float:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_get_score(self.model, token)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 248, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 248, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":249
+ *     def token_get_score(self, token: int) -> float:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_score(self.model, token)             # <<<<<<<<<<<<<<
  * 
  *     def token_get_attr(self, token: int) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_As_int32_t(__pyx_v_token); if (unlikely((__pyx_t_1 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 239, __pyx_L1_error)
-  __pyx_t_2 = PyFloat_FromDouble(llama_token_get_score(__pyx_v_self->model, __pyx_t_1)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 239, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_r = __pyx_t_2;
-  __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyInt_As_int32_t(__pyx_v_token); if (unlikely((__pyx_t_2 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 249, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(llama_token_get_score(__pyx_v_self->model, __pyx_t_2)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 249, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_r = __pyx_t_3;
+  __pyx_t_3 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":238
+  /* "cyllama.pyx":247
  *         return llama_cpp.llama_token_get_text(self.model, token).decode("utf-8")
  * 
  *     def token_get_score(self, token: int) -> float:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_score(self.model, token)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_get_score", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -7392,12 +7863,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_24token_get_score(struct __pyx_o
   return __pyx_r;
 }
 
-/* "cyllama.pyx":241
+/* "cyllama.pyx":251
  *         return llama_cpp.llama_token_get_score(self.model, token)
  * 
  *     def token_get_attr(self, token: int) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_attr(self.model, token)
- * 
  */
 
 /* Python wrapper */
@@ -7453,12 +7924,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 241, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 251, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "token_get_attr") < 0)) __PYX_ERR(0, 241, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "token_get_attr") < 0)) __PYX_ERR(0, 251, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -7469,7 +7940,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("token_get_attr", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 241, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("token_get_attr", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 251, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7483,7 +7954,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_token), (&PyInt_Type), 0, "token", 1))) __PYX_ERR(0, 241, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_token), (&PyInt_Type), 0, "token", 1))) __PYX_ERR(0, 251, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_10LlamaModel_26token_get_attr(((struct __pyx_obj_7cyllama_LlamaModel *)__pyx_v_self), __pyx_v_token);
 
   /* function exit code */
@@ -7504,40 +7975,60 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_26token_get_attr(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self, PyObject *__pyx_v_token) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  llama_token __pyx_t_1;
-  PyObject *__pyx_t_2 = NULL;
+  int __pyx_t_1;
+  llama_token __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_get_attr", 1);
 
-  /* "cyllama.pyx":242
+  /* "cyllama.pyx":252
  * 
  *     def token_get_attr(self, token: int) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_get_attr(self.model, token)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 252, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 252, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":253
+ *     def token_get_attr(self, token: int) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_attr(self.model, token)             # <<<<<<<<<<<<<<
  * 
  *     # Special tokens
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_As_int32_t(__pyx_v_token); if (unlikely((__pyx_t_1 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 242, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_PyInt_From_llama_token_attr(llama_token_get_attr(__pyx_v_self->model, __pyx_t_1)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 242, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 242, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_2);
-  __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyInt_As_int32_t(__pyx_v_token); if (unlikely((__pyx_t_2 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_llama_token_attr(llama_token_get_attr(__pyx_v_self->model, __pyx_t_2)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_3)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_3))) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":241
+  /* "cyllama.pyx":251
  *         return llama_cpp.llama_token_get_score(self.model, token)
  * 
  *     def token_get_attr(self, token: int) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_attr(self.model, token)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_get_attr", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -7546,12 +8037,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_26token_get_attr(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "cyllama.pyx":246
+/* "cyllama.pyx":257
  *     # Special tokens
  * 
  *     def token_bos(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_bos(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -7598,38 +8089,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_28token_bos(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_bos", 1);
 
-  /* "cyllama.pyx":247
+  /* "cyllama.pyx":258
  * 
  *     def token_bos(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_bos(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 258, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 258, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":259
+ *     def token_bos(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_bos(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def token_eos(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_token_bos(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 247, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 247, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_token_bos(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 259, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 259, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":246
+  /* "cyllama.pyx":257
  *     # Special tokens
  * 
  *     def token_bos(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_bos(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_bos", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -7638,12 +8149,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_28token_bos(struct __pyx_obj_7cy
   return __pyx_r;
 }
 
-/* "cyllama.pyx":249
+/* "cyllama.pyx":261
  *         return llama_cpp.llama_token_bos(self.model)
  * 
  *     def token_eos(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_eos(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -7690,38 +8201,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_30token_eos(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_eos", 1);
 
-  /* "cyllama.pyx":250
+  /* "cyllama.pyx":262
  * 
  *     def token_eos(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_eos(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 262, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 262, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":263
+ *     def token_eos(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_eos(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def token_cls(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_token_eos(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 250, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 250, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_token_eos(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 263, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 263, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":249
+  /* "cyllama.pyx":261
  *         return llama_cpp.llama_token_bos(self.model)
  * 
  *     def token_eos(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_eos(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_eos", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -7730,12 +8261,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_30token_eos(struct __pyx_obj_7cy
   return __pyx_r;
 }
 
-/* "cyllama.pyx":252
+/* "cyllama.pyx":265
  *         return llama_cpp.llama_token_eos(self.model)
  * 
  *     def token_cls(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_cls(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -7782,38 +8313,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_32token_cls(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_cls", 1);
 
-  /* "cyllama.pyx":253
+  /* "cyllama.pyx":266
  * 
  *     def token_cls(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_cls(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 266, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 266, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":267
+ *     def token_cls(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_cls(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def token_sep(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_token_cls(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 253, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 253, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_token_cls(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 267, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":252
+  /* "cyllama.pyx":265
  *         return llama_cpp.llama_token_eos(self.model)
  * 
  *     def token_cls(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_cls(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_cls", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -7822,12 +8373,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_32token_cls(struct __pyx_obj_7cy
   return __pyx_r;
 }
 
-/* "cyllama.pyx":255
+/* "cyllama.pyx":269
  *         return llama_cpp.llama_token_cls(self.model)
  * 
  *     def token_sep(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_sep(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -7874,38 +8425,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_34token_sep(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_sep", 1);
 
-  /* "cyllama.pyx":256
+  /* "cyllama.pyx":270
  * 
  *     def token_sep(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_sep(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 270, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 270, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":271
+ *     def token_sep(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_sep(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def token_nl(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_token_sep(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 256, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 256, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_token_sep(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 271, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 271, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":255
+  /* "cyllama.pyx":269
  *         return llama_cpp.llama_token_cls(self.model)
  * 
  *     def token_sep(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_sep(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_sep", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -7914,12 +8485,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_34token_sep(struct __pyx_obj_7cy
   return __pyx_r;
 }
 
-/* "cyllama.pyx":258
+/* "cyllama.pyx":273
  *         return llama_cpp.llama_token_sep(self.model)
  * 
  *     def token_nl(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_nl(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -7966,38 +8537,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_36token_nl(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_nl", 1);
 
-  /* "cyllama.pyx":259
+  /* "cyllama.pyx":274
  * 
  *     def token_nl(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_nl(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 274, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 274, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":275
+ *     def token_nl(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_nl(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def token_prefix(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_token_nl(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 259, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 259, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_token_nl(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":258
+  /* "cyllama.pyx":273
  *         return llama_cpp.llama_token_sep(self.model)
  * 
  *     def token_nl(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_nl(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_nl", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -8006,12 +8597,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_36token_nl(struct __pyx_obj_7cyl
   return __pyx_r;
 }
 
-/* "cyllama.pyx":261
+/* "cyllama.pyx":277
  *         return llama_cpp.llama_token_nl(self.model)
  * 
  *     def token_prefix(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_prefix(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -8058,38 +8649,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_38token_prefix(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_prefix", 1);
 
-  /* "cyllama.pyx":262
+  /* "cyllama.pyx":278
  * 
  *     def token_prefix(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_prefix(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 278, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 278, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":279
+ *     def token_prefix(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_prefix(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def token_middle(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_token_prefix(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 262, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 262, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_token_prefix(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 279, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 279, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":261
+  /* "cyllama.pyx":277
  *         return llama_cpp.llama_token_nl(self.model)
  * 
  *     def token_prefix(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_prefix(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_prefix", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -8098,12 +8709,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_38token_prefix(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "cyllama.pyx":264
+/* "cyllama.pyx":281
  *         return llama_cpp.llama_token_prefix(self.model)
  * 
  *     def token_middle(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_middle(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -8150,38 +8761,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_40token_middle(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_middle", 1);
 
-  /* "cyllama.pyx":265
+  /* "cyllama.pyx":282
  * 
  *     def token_middle(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_middle(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 282, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 282, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":283
+ *     def token_middle(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_middle(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def token_suffix(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_token_middle(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 265, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 265, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_token_middle(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 283, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 283, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":264
+  /* "cyllama.pyx":281
  *         return llama_cpp.llama_token_prefix(self.model)
  * 
  *     def token_middle(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_middle(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_middle", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -8190,12 +8821,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_40token_middle(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "cyllama.pyx":267
+/* "cyllama.pyx":285
  *         return llama_cpp.llama_token_middle(self.model)
  * 
  *     def token_suffix(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_suffix(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -8242,38 +8873,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_42token_suffix(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_suffix", 1);
 
-  /* "cyllama.pyx":268
+  /* "cyllama.pyx":286
  * 
  *     def token_suffix(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_suffix(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 286, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 286, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":287
+ *     def token_suffix(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_suffix(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def token_eot(self) -> int:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_token_suffix(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 268, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 268, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_token_suffix(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 287, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 287, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":267
+  /* "cyllama.pyx":285
  *         return llama_cpp.llama_token_middle(self.model)
  * 
  *     def token_suffix(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_suffix(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_suffix", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -8282,12 +8933,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_42token_suffix(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "cyllama.pyx":270
+/* "cyllama.pyx":289
  *         return llama_cpp.llama_token_suffix(self.model)
  * 
  *     def token_eot(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_eot(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -8334,38 +8985,58 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_44token_eot(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_eot", 1);
 
-  /* "cyllama.pyx":271
+  /* "cyllama.pyx":290
  * 
  *     def token_eot(self) -> int:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_token_eot(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 290, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 290, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":291
+ *     def token_eot(self) -> int:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_eot(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def add_bos_token(self) -> bool:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_token_eot(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 271, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_1)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_1))) __PYX_ERR(0, 271, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_token_eot(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 291, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 291, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":270
+  /* "cyllama.pyx":289
  *         return llama_cpp.llama_token_suffix(self.model)
  * 
  *     def token_eot(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_eot(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.token_eot", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -8374,12 +9045,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_44token_eot(struct __pyx_obj_7cy
   return __pyx_r;
 }
 
-/* "cyllama.pyx":273
+/* "cyllama.pyx":293
  *         return llama_cpp.llama_token_eot(self.model)
  * 
  *     def add_bos_token(self) -> bool:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_add_bos_token(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -8426,37 +9097,57 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_46add_bos_token(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("add_bos_token", 1);
 
-  /* "cyllama.pyx":274
+  /* "cyllama.pyx":294
  * 
  *     def add_bos_token(self) -> bool:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_add_bos_token(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 294, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 294, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":295
+ *     def add_bos_token(self) -> bool:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_add_bos_token(self.model)             # <<<<<<<<<<<<<<
  * 
  *     def add_eos_token(self) -> bool:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_add_bos_token(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 274, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_r = __pyx_t_1;
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_add_bos_token(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 295, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_r = __pyx_t_2;
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":273
+  /* "cyllama.pyx":293
  *         return llama_cpp.llama_token_eot(self.model)
  * 
  *     def add_bos_token(self) -> bool:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_add_bos_token(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.add_bos_token", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -8465,12 +9156,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_46add_bos_token(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "cyllama.pyx":276
+/* "cyllama.pyx":297
  *         return llama_cpp.llama_add_bos_token(self.model)
  * 
  *     def add_eos_token(self) -> bool:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_add_eos_token(self.model)
- * 
  */
 
 /* Python wrapper */
@@ -8517,37 +9208,57 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7cyllama_10LlamaModel_48add_eos_token(struct __pyx_obj_7cyllama_LlamaModel *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("add_eos_token", 1);
 
-  /* "cyllama.pyx":277
+  /* "cyllama.pyx":298
  * 
  *     def add_eos_token(self) -> bool:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         return llama_cpp.llama_add_eos_token(self.model)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 298, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 298, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":299
+ *     def add_eos_token(self) -> bool:
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_add_eos_token(self.model)             # <<<<<<<<<<<<<<
  * 
  *     # Tokenization
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_add_eos_token(__pyx_v_self->model)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 277, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_r = __pyx_t_1;
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_add_eos_token(__pyx_v_self->model)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 299, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_r = __pyx_t_2;
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":276
+  /* "cyllama.pyx":297
  *         return llama_cpp.llama_add_bos_token(self.model)
  * 
  *     def add_eos_token(self) -> bool:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_add_eos_token(self.model)
- * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("cyllama.LlamaModel.add_eos_token", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -8556,12 +9267,12 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_48add_eos_token(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "cyllama.pyx":281
+/* "cyllama.pyx":303
  *     # Tokenization
  * 
  *     def tokenize(self, text: bytes, add_bos: bool, special: bool) -> list[int]:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         cdef int n_ctx = self.n_ctx_train()
- *         cdef vector[llama_cpp.llama_token] tokens
  */
 
 /* Python wrapper */
@@ -8623,7 +9334,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 281, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 303, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
@@ -8631,9 +9342,9 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[1]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 281, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 303, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("tokenize", 1, 3, 3, 1); __PYX_ERR(0, 281, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("tokenize", 1, 3, 3, 1); __PYX_ERR(0, 303, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -8641,14 +9352,14 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[2]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 281, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 303, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("tokenize", 1, 3, 3, 2); __PYX_ERR(0, 281, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("tokenize", 1, 3, 3, 2); __PYX_ERR(0, 303, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "tokenize") < 0)) __PYX_ERR(0, 281, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "tokenize") < 0)) __PYX_ERR(0, 303, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 3)) {
       goto __pyx_L5_argtuple_error;
@@ -8663,7 +9374,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("tokenize", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 281, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("tokenize", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 303, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -8677,7 +9388,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_text), (&PyBytes_Type), 0, "text", 1))) __PYX_ERR(0, 281, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_text), (&PyBytes_Type), 0, "text", 1))) __PYX_ERR(0, 303, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_10LlamaModel_50tokenize(((struct __pyx_obj_7cyllama_LlamaModel *)__pyx_v_self), __pyx_v_text, __pyx_v_add_bos, __pyx_v_special);
 
   /* function exit code */
@@ -8701,14 +9412,14 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_50tokenize(struct __pyx_obj_7cyl
   PyObject *__pyx_v_n_tokens = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
   PyObject *__pyx_t_2 = NULL;
   PyObject *__pyx_t_3 = NULL;
-  unsigned int __pyx_t_4;
-  int __pyx_t_5;
-  char const *__pyx_t_6;
-  Py_ssize_t __pyx_t_7;
-  int __pyx_t_8;
+  PyObject *__pyx_t_4 = NULL;
+  unsigned int __pyx_t_5;
+  int __pyx_t_6;
+  char const *__pyx_t_7;
+  Py_ssize_t __pyx_t_8;
   int __pyx_t_9;
   int32_t __pyx_t_10;
   int __pyx_lineno = 0;
@@ -8716,42 +9427,61 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_50tokenize(struct __pyx_obj_7cyl
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("tokenize", 1);
 
-  /* "cyllama.pyx":282
+  /* "cyllama.pyx":304
  * 
  *     def tokenize(self, text: bytes, add_bos: bool, special: bool) -> list[int]:
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         cdef int n_ctx = self.n_ctx_train()
+ *         cdef vector[llama_cpp.llama_token] tokens
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 304, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 304, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":305
+ *     def tokenize(self, text: bytes, add_bos: bool, special: bool) -> list[int]:
+ *         assert self.model is not NULL
  *         cdef int n_ctx = self.n_ctx_train()             # <<<<<<<<<<<<<<
  *         cdef vector[llama_cpp.llama_token] tokens
  *         tokens.reserve(n_ctx)
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_n_ctx_train); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 282, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = NULL;
-  __pyx_t_4 = 0;
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_n_ctx_train); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 305, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = NULL;
+  __pyx_t_5 = 0;
   #if CYTHON_UNPACK_METHODS
-  if (likely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
-    if (likely(__pyx_t_3)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
-      __Pyx_INCREF(__pyx_t_3);
+  if (likely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_4);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
-      __pyx_t_4 = 1;
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+      __pyx_t_5 = 1;
     }
   }
   #endif
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
-    __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
-    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 282, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    PyObject *__pyx_callargs[2] = {__pyx_t_4, NULL};
+    __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 305, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
-  __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 282, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_n_ctx = __pyx_t_5;
+  __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 305, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_v_n_ctx = __pyx_t_6;
 
-  /* "cyllama.pyx":284
+  /* "cyllama.pyx":307
  *         cdef int n_ctx = self.n_ctx_train()
  *         cdef vector[llama_cpp.llama_token] tokens
  *         tokens.reserve(n_ctx)             # <<<<<<<<<<<<<<
@@ -8762,108 +9492,108 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_50tokenize(struct __pyx_obj_7cyl
     __pyx_v_tokens.reserve(__pyx_v_n_ctx);
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(0, 284, __pyx_L1_error)
+    __PYX_ERR(0, 307, __pyx_L1_error)
   }
 
-  /* "cyllama.pyx":286
+  /* "cyllama.pyx":309
  *         tokens.reserve(n_ctx)
  *         n_tokens = llama_cpp.llama_tokenize(
  *             self.model, text, len(text), tokens.data(), n_ctx, add_bos, special             # <<<<<<<<<<<<<<
  *         )
  *         if n_tokens < 0:
  */
-  __pyx_t_6 = __Pyx_PyBytes_AsString(__pyx_v_text); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 286, __pyx_L1_error)
-  __pyx_t_7 = __Pyx_PyBytes_GET_SIZE(__pyx_v_text); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 286, __pyx_L1_error)
-  __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_v_add_bos); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 286, __pyx_L1_error)
-  __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_special); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 286, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyBytes_AsString(__pyx_v_text); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) __PYX_ERR(0, 309, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyBytes_GET_SIZE(__pyx_v_text); if (unlikely(__pyx_t_8 == ((Py_ssize_t)-1))) __PYX_ERR(0, 309, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_add_bos); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 309, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_special); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 309, __pyx_L1_error)
 
-  /* "cyllama.pyx":285
+  /* "cyllama.pyx":308
  *         cdef vector[llama_cpp.llama_token] tokens
  *         tokens.reserve(n_ctx)
  *         n_tokens = llama_cpp.llama_tokenize(             # <<<<<<<<<<<<<<
  *             self.model, text, len(text), tokens.data(), n_ctx, add_bos, special
  *         )
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_tokenize(__pyx_v_self->model, __pyx_t_6, __pyx_t_7, __pyx_v_tokens.data(), __pyx_v_n_ctx, __pyx_t_8, __pyx_t_9)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 285, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_v_n_tokens = __pyx_t_1;
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_tokenize(__pyx_v_self->model, __pyx_t_7, __pyx_t_8, __pyx_v_tokens.data(), __pyx_v_n_ctx, __pyx_t_1, __pyx_t_9)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 308, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_v_n_tokens = __pyx_t_2;
+  __pyx_t_2 = 0;
 
-  /* "cyllama.pyx":288
+  /* "cyllama.pyx":311
  *             self.model, text, len(text), tokens.data(), n_ctx, add_bos, special
  *         )
  *         if n_tokens < 0:             # <<<<<<<<<<<<<<
  *             n_tokens = abs(n_tokens)
  *             # tokens = (llama_cpp.llama_token * n_tokens)()
  */
-  __pyx_t_1 = PyObject_RichCompare(__pyx_v_n_tokens, __pyx_int_0, Py_LT); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 288, __pyx_L1_error)
-  __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 288, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_n_tokens, __pyx_int_0, Py_LT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 311, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 311, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_9) {
 
-    /* "cyllama.pyx":289
+    /* "cyllama.pyx":312
  *         )
  *         if n_tokens < 0:
  *             n_tokens = abs(n_tokens)             # <<<<<<<<<<<<<<
  *             # tokens = (llama_cpp.llama_token * n_tokens)()
  *             n_tokens = llama_cpp.llama_tokenize(
  */
-    __pyx_t_1 = __Pyx_PyNumber_Absolute(__pyx_v_n_tokens); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 289, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF_SET(__pyx_v_n_tokens, __pyx_t_1);
-    __pyx_t_1 = 0;
+    __pyx_t_2 = __Pyx_PyNumber_Absolute(__pyx_v_n_tokens); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 312, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF_SET(__pyx_v_n_tokens, __pyx_t_2);
+    __pyx_t_2 = 0;
 
-    /* "cyllama.pyx":292
+    /* "cyllama.pyx":315
  *             # tokens = (llama_cpp.llama_token * n_tokens)()
  *             n_tokens = llama_cpp.llama_tokenize(
  *                 self.model, text, len(text), tokens.data(), n_tokens, add_bos, special             # <<<<<<<<<<<<<<
  *             )
  *             if n_tokens < 0:
  */
-    __pyx_t_6 = __Pyx_PyBytes_AsString(__pyx_v_text); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 292, __pyx_L1_error)
-    __pyx_t_7 = __Pyx_PyBytes_GET_SIZE(__pyx_v_text); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 292, __pyx_L1_error)
-    __pyx_t_10 = __Pyx_PyInt_As_int32_t(__pyx_v_n_tokens); if (unlikely((__pyx_t_10 == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 292, __pyx_L1_error)
-    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_add_bos); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 292, __pyx_L1_error)
-    __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_v_special); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 292, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyBytes_AsString(__pyx_v_text); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) __PYX_ERR(0, 315, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyBytes_GET_SIZE(__pyx_v_text); if (unlikely(__pyx_t_8 == ((Py_ssize_t)-1))) __PYX_ERR(0, 315, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyInt_As_int32_t(__pyx_v_n_tokens); if (unlikely((__pyx_t_10 == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 315, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_add_bos); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 315, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_special); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 315, __pyx_L1_error)
 
-    /* "cyllama.pyx":291
+    /* "cyllama.pyx":314
  *             n_tokens = abs(n_tokens)
  *             # tokens = (llama_cpp.llama_token * n_tokens)()
  *             n_tokens = llama_cpp.llama_tokenize(             # <<<<<<<<<<<<<<
  *                 self.model, text, len(text), tokens.data(), n_tokens, add_bos, special
  *             )
  */
-    __pyx_t_1 = __Pyx_PyInt_From_int32_t(llama_tokenize(__pyx_v_self->model, __pyx_t_6, __pyx_t_7, __pyx_v_tokens.data(), __pyx_t_10, __pyx_t_9, __pyx_t_8)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 291, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF_SET(__pyx_v_n_tokens, __pyx_t_1);
-    __pyx_t_1 = 0;
+    __pyx_t_2 = __Pyx_PyInt_From_int32_t(llama_tokenize(__pyx_v_self->model, __pyx_t_7, __pyx_t_8, __pyx_v_tokens.data(), __pyx_t_10, __pyx_t_9, __pyx_t_1)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 314, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF_SET(__pyx_v_n_tokens, __pyx_t_2);
+    __pyx_t_2 = 0;
 
-    /* "cyllama.pyx":294
+    /* "cyllama.pyx":317
  *                 self.model, text, len(text), tokens.data(), n_tokens, add_bos, special
  *             )
  *             if n_tokens < 0:             # <<<<<<<<<<<<<<
  *                 raise RuntimeError()
  *                 # raise RuntimeError(
  */
-    __pyx_t_1 = PyObject_RichCompare(__pyx_v_n_tokens, __pyx_int_0, Py_LT); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 294, __pyx_L1_error)
-    __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_8 < 0))) __PYX_ERR(0, 294, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(__pyx_t_8)) {
+    __pyx_t_2 = PyObject_RichCompare(__pyx_v_n_tokens, __pyx_int_0, Py_LT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 317, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 317, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(__pyx_t_1)) {
 
-      /* "cyllama.pyx":295
+      /* "cyllama.pyx":318
  *             )
  *             if n_tokens < 0:
  *                 raise RuntimeError()             # <<<<<<<<<<<<<<
  *                 # raise RuntimeError(
  *                 #     f'Failed to tokenize: text="{text}" n_tokens={n_tokens}'
  */
-      __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_builtin_RuntimeError); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 295, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_Raise(__pyx_t_1, 0, 0, 0);
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __PYX_ERR(0, 295, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_builtin_RuntimeError); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 318, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __PYX_ERR(0, 318, __pyx_L1_error)
 
-      /* "cyllama.pyx":294
+      /* "cyllama.pyx":317
  *                 self.model, text, len(text), tokens.data(), n_tokens, add_bos, special
  *             )
  *             if n_tokens < 0:             # <<<<<<<<<<<<<<
@@ -8872,7 +9602,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_50tokenize(struct __pyx_obj_7cyl
  */
     }
 
-    /* "cyllama.pyx":288
+    /* "cyllama.pyx":311
  *             self.model, text, len(text), tokens.data(), n_ctx, add_bos, special
  *         )
  *         if n_tokens < 0:             # <<<<<<<<<<<<<<
@@ -8881,7 +9611,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_50tokenize(struct __pyx_obj_7cyl
  */
   }
 
-  /* "cyllama.pyx":300
+  /* "cyllama.pyx":323
  *                 # )
  * 
  *         return tokens[:n_tokens]             # <<<<<<<<<<<<<<
@@ -8889,29 +9619,29 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_50tokenize(struct __pyx_obj_7cyl
  *     def token_to_piece(self, token: int, special: bool = False) -> bytes:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_convert_vector_to_py_llama_token(__pyx_v_tokens); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 300, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetSlice(__pyx_t_1, 0, 0, NULL, &__pyx_v_n_tokens, NULL, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 300, __pyx_L1_error)
+  __pyx_t_2 = __pyx_convert_vector_to_py_llama_token(__pyx_v_tokens); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 323, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 300, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_2);
-  __pyx_t_2 = 0;
+  __pyx_t_3 = __Pyx_PyObject_GetSlice(__pyx_t_2, 0, 0, NULL, &__pyx_v_n_tokens, NULL, 0, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 323, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_3))) __PYX_ERR(0, 323, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":281
+  /* "cyllama.pyx":303
  *     # Tokenization
  * 
  *     def tokenize(self, text: bytes, add_bos: bool, special: bool) -> list[int]:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         cdef int n_ctx = self.n_ctx_train()
- *         cdef vector[llama_cpp.llama_token] tokens
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
   __Pyx_AddTraceback("cyllama.LlamaModel.tokenize", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -8921,7 +9651,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_50tokenize(struct __pyx_obj_7cyl
   return __pyx_r;
 }
 
-/* "cyllama.pyx":302
+/* "cyllama.pyx":325
  *         return tokens[:n_tokens]
  * 
  *     def token_to_piece(self, token: int, special: bool = False) -> bytes:             # <<<<<<<<<<<<<<
@@ -8986,19 +9716,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 302, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 325, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (kw_args > 0) {
           PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_special);
           if (value) { values[1] = __Pyx_Arg_NewRef_FASTCALL(value); kw_args--; }
-          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 302, __pyx_L3_error)
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 325, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "token_to_piece") < 0)) __PYX_ERR(0, 302, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "token_to_piece") < 0)) __PYX_ERR(0, 325, __pyx_L3_error)
       }
     } else {
       switch (__pyx_nargs) {
@@ -9014,7 +9744,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("token_to_piece", 0, 1, 2, __pyx_nargs); __PYX_ERR(0, 302, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("token_to_piece", 0, 1, 2, __pyx_nargs); __PYX_ERR(0, 325, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -9028,7 +9758,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_token), (&PyInt_Type), 0, "token", 1))) __PYX_ERR(0, 302, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_token), (&PyInt_Type), 0, "token", 1))) __PYX_ERR(0, 325, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_10LlamaModel_52token_to_piece(((struct __pyx_obj_7cyllama_LlamaModel *)__pyx_v_self), __pyx_v_token, __pyx_v_special);
 
   /* function exit code */
@@ -9059,18 +9789,18 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_52token_to_piece(struct __pyx_ob
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("token_to_piece", 1);
 
-  /* "cyllama.pyx":304
+  /* "cyllama.pyx":327
  *     def token_to_piece(self, token: int, special: bool = False) -> bytes:
  *         cdef char buf[32]
  *         llama_cpp.llama_token_to_piece(self.model, token, buf, 32, 0, special)             # <<<<<<<<<<<<<<
  *         return buf.decode()
  *         # return bytes(buf)
  */
-  __pyx_t_1 = __Pyx_PyInt_As_int32_t(__pyx_v_token); if (unlikely((__pyx_t_1 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 304, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_special); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 304, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_As_int32_t(__pyx_v_token); if (unlikely((__pyx_t_1 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 327, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_special); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 327, __pyx_L1_error)
   (void)(llama_token_to_piece(__pyx_v_self->model, __pyx_t_1, __pyx_v_buf, 32, 0, __pyx_t_2));
 
-  /* "cyllama.pyx":305
+  /* "cyllama.pyx":328
  *         cdef char buf[32]
  *         llama_cpp.llama_token_to_piece(self.model, token, buf, 32, 0, special)
  *         return buf.decode()             # <<<<<<<<<<<<<<
@@ -9078,15 +9808,15 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_52token_to_piece(struct __pyx_ob
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_3 = __Pyx_ssize_strlen(__pyx_v_buf); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 305, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_decode_c_string(__pyx_v_buf, 0, __pyx_t_3, NULL, NULL, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 305, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_ssize_strlen(__pyx_v_buf); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 328, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_decode_c_string(__pyx_v_buf, 0, __pyx_t_3, NULL, NULL, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 328, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (!(likely(PyBytes_CheckExact(__pyx_t_4)) || __Pyx_RaiseUnexpectedTypeError("bytes", __pyx_t_4))) __PYX_ERR(0, 305, __pyx_L1_error)
+  if (!(likely(PyBytes_CheckExact(__pyx_t_4)) || __Pyx_RaiseUnexpectedTypeError("bytes", __pyx_t_4))) __PYX_ERR(0, 328, __pyx_L1_error)
   __pyx_r = ((PyObject*)__pyx_t_4);
   __pyx_t_4 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":302
+  /* "cyllama.pyx":325
  *         return tokens[:n_tokens]
  * 
  *     def token_to_piece(self, token: int, special: bool = False) -> bytes:             # <<<<<<<<<<<<<<
@@ -9105,11 +9835,11 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_52token_to_piece(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "cyllama.pyx":308
+/* "cyllama.pyx":331
  *         # return bytes(buf)
  * 
  *     def detokenize(self, tokens: list[int], special: bool = False) -> bytes:             # <<<<<<<<<<<<<<
- *         # assert self.model is not None
+ *         assert self.model is not NULL
  *         output = b""
  */
 
@@ -9170,19 +9900,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 308, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 331, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (kw_args > 0) {
           PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_special);
           if (value) { values[1] = __Pyx_Arg_NewRef_FASTCALL(value); kw_args--; }
-          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 308, __pyx_L3_error)
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 331, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "detokenize") < 0)) __PYX_ERR(0, 308, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "detokenize") < 0)) __PYX_ERR(0, 331, __pyx_L3_error)
       }
     } else {
       switch (__pyx_nargs) {
@@ -9198,7 +9928,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("detokenize", 0, 1, 2, __pyx_nargs); __PYX_ERR(0, 308, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("detokenize", 0, 1, 2, __pyx_nargs); __PYX_ERR(0, 331, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -9212,7 +9942,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tokens), (&PyList_Type), 0, "tokens", 1))) __PYX_ERR(0, 308, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tokens), (&PyList_Type), 0, "tokens", 1))) __PYX_ERR(0, 331, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_10LlamaModel_54detokenize(((struct __pyx_obj_7cyllama_LlamaModel *)__pyx_v_self), __pyx_v_tokens, __pyx_v_special);
 
   /* function exit code */
@@ -9238,11 +9968,11 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_54detokenize(struct __pyx_obj_7c
   int32_t __pyx_v_n;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  Py_ssize_t __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
-  llama_token __pyx_t_4;
-  int __pyx_t_5;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
+  Py_ssize_t __pyx_t_3;
+  PyObject *__pyx_t_4 = NULL;
+  llama_token __pyx_t_5;
   PyObject *__pyx_t_6 = NULL;
   int __pyx_t_7;
   PyObject *__pyx_t_8 = NULL;
@@ -9253,9 +9983,28 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_54detokenize(struct __pyx_obj_7c
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("detokenize", 1);
 
-  /* "cyllama.pyx":310
+  /* "cyllama.pyx":332
+ * 
  *     def detokenize(self, tokens: list[int], special: bool = False) -> bytes:
- *         # assert self.model is not None
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
+ *         output = b""
+ *         size = 32
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 332, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 332, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":333
+ *     def detokenize(self, tokens: list[int], special: bool = False) -> bytes:
+ *         assert self.model is not NULL
  *         output = b""             # <<<<<<<<<<<<<<
  *         size = 32
  *         cdef char buffer[32]
@@ -9263,8 +10012,8 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_54detokenize(struct __pyx_obj_7c
   __Pyx_INCREF(__pyx_kp_b__2);
   __pyx_v_output = __pyx_kp_b__2;
 
-  /* "cyllama.pyx":311
- *         # assert self.model is not None
+  /* "cyllama.pyx":334
+ *         assert self.model is not NULL
  *         output = b""
  *         size = 32             # <<<<<<<<<<<<<<
  *         cdef char buffer[32]
@@ -9272,55 +10021,55 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_54detokenize(struct __pyx_obj_7c
  */
   __pyx_v_size = 32;
 
-  /* "cyllama.pyx":313
+  /* "cyllama.pyx":336
  *         size = 32
  *         cdef char buffer[32]
  *         for token in tokens:             # <<<<<<<<<<<<<<
  *             n = llama_cpp.llama_token_to_piece(
  *                 self.model, int(token), buffer, size, 0, special
  */
-  __pyx_t_1 = __pyx_v_tokens; __Pyx_INCREF(__pyx_t_1);
-  __pyx_t_2 = 0;
+  __pyx_t_2 = __pyx_v_tokens; __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
   for (;;) {
     {
-      Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
+      Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_2);
       #if !CYTHON_ASSUME_SAFE_MACROS
-      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 313, __pyx_L1_error)
+      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 336, __pyx_L1_error)
       #endif
-      if (__pyx_t_2 >= __pyx_temp) break;
+      if (__pyx_t_3 >= __pyx_temp) break;
     }
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_3); __pyx_t_2++; if (unlikely((0 < 0))) __PYX_ERR(0, 313, __pyx_L1_error)
+    __pyx_t_4 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_4); __pyx_t_3++; if (unlikely((0 < 0))) __PYX_ERR(0, 336, __pyx_L1_error)
     #else
-    __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 313, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_4 = __Pyx_PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 336, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
     #endif
-    __Pyx_XDECREF_SET(__pyx_v_token, __pyx_t_3);
-    __pyx_t_3 = 0;
+    __Pyx_XDECREF_SET(__pyx_v_token, __pyx_t_4);
+    __pyx_t_4 = 0;
 
-    /* "cyllama.pyx":315
+    /* "cyllama.pyx":338
  *         for token in tokens:
  *             n = llama_cpp.llama_token_to_piece(
  *                 self.model, int(token), buffer, size, 0, special             # <<<<<<<<<<<<<<
  *             )
  *             assert n <= size
  */
-    __pyx_t_3 = __Pyx_PyNumber_Int(__pyx_v_token); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 315, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyInt_As_int32_t(__pyx_t_3); if (unlikely((__pyx_t_4 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 315, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_special); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 315, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyNumber_Int(__pyx_v_token); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 338, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_5 = __Pyx_PyInt_As_int32_t(__pyx_t_4); if (unlikely((__pyx_t_5 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 338, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_special); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 338, __pyx_L1_error)
 
-    /* "cyllama.pyx":314
+    /* "cyllama.pyx":337
  *         cdef char buffer[32]
  *         for token in tokens:
  *             n = llama_cpp.llama_token_to_piece(             # <<<<<<<<<<<<<<
  *                 self.model, int(token), buffer, size, 0, special
  *             )
  */
-    __pyx_v_n = llama_token_to_piece(__pyx_v_self->model, __pyx_t_4, __pyx_v_buffer, __pyx_v_size, 0, __pyx_t_5);
+    __pyx_v_n = llama_token_to_piece(__pyx_v_self->model, __pyx_t_5, __pyx_v_buffer, __pyx_v_size, 0, __pyx_t_1);
 
-    /* "cyllama.pyx":317
+    /* "cyllama.pyx":340
  *                 self.model, int(token), buffer, size, 0, special
  *             )
  *             assert n <= size             # <<<<<<<<<<<<<<
@@ -9329,35 +10078,35 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_54detokenize(struct __pyx_obj_7c
  */
     #ifndef CYTHON_WITHOUT_ASSERTIONS
     if (unlikely(__pyx_assertions_enabled())) {
-      __pyx_t_5 = (__pyx_v_n <= __pyx_v_size);
-      if (unlikely(!__pyx_t_5)) {
+      __pyx_t_1 = (__pyx_v_n <= __pyx_v_size);
+      if (unlikely(!__pyx_t_1)) {
         __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
-        __PYX_ERR(0, 317, __pyx_L1_error)
+        __PYX_ERR(0, 340, __pyx_L1_error)
       }
     }
     #else
-    if ((1)); else __PYX_ERR(0, 317, __pyx_L1_error)
+    if ((1)); else __PYX_ERR(0, 340, __pyx_L1_error)
     #endif
 
-    /* "cyllama.pyx":318
+    /* "cyllama.pyx":341
  *             )
  *             assert n <= size
  *             output += bytes(buffer[:n])             # <<<<<<<<<<<<<<
  *         # NOTE: Llama1 models automatically added a space at the start of the prompt
  *         # this line removes a leading space if the first token is a beginning of sentence token
  */
-    __pyx_t_3 = __Pyx_PyBytes_FromStringAndSize(((const char*)__pyx_v_buffer) + 0, __pyx_v_n - 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 318, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_6 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyBytes_Type)), __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 318, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyBytes_FromStringAndSize(((const char*)__pyx_v_buffer) + 0, __pyx_v_n - 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 341, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_6 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyBytes_Type)), __pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 341, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = PyNumber_InPlaceAdd(__pyx_v_output, __pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 318, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_4 = PyNumber_InPlaceAdd(__pyx_v_output, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 341, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __Pyx_DECREF_SET(__pyx_v_output, ((PyObject*)__pyx_t_3));
-    __pyx_t_3 = 0;
+    __Pyx_DECREF_SET(__pyx_v_output, ((PyObject*)__pyx_t_4));
+    __pyx_t_4 = 0;
 
-    /* "cyllama.pyx":313
+    /* "cyllama.pyx":336
  *         size = 32
  *         cdef char buffer[32]
  *         for token in tokens:             # <<<<<<<<<<<<<<
@@ -9365,9 +10114,9 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_54detokenize(struct __pyx_obj_7c
  *                 self.model, int(token), buffer, size, 0, special
  */
   }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cyllama.pyx":321
+  /* "cyllama.pyx":344
  *         # NOTE: Llama1 models automatically added a space at the start of the prompt
  *         # this line removes a leading space if the first token is a beginning of sentence token
  *         return (             # <<<<<<<<<<<<<<
@@ -9376,23 +10125,23 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_54detokenize(struct __pyx_obj_7c
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "cyllama.pyx":323
+  /* "cyllama.pyx":346
  *         return (
  *             output[1:]
  *             if len(tokens) > 0 and tokens[0] == self.token_bos() and output[0:1] == b" "             # <<<<<<<<<<<<<<
  *             else output
  *         )
  */
-  __pyx_t_2 = __Pyx_PyList_GET_SIZE(__pyx_v_tokens); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 323, __pyx_L1_error)
-  __pyx_t_7 = (__pyx_t_2 > 0);
+  __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_v_tokens); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 346, __pyx_L1_error)
+  __pyx_t_7 = (__pyx_t_3 > 0);
   if (__pyx_t_7) {
   } else {
-    __pyx_t_5 = __pyx_t_7;
+    __pyx_t_1 = __pyx_t_7;
     goto __pyx_L6_bool_binop_done;
   }
-  __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_tokens, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 323, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_token_bos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 323, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_tokens, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 346, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_token_bos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 346, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __pyx_t_9 = NULL;
   __pyx_t_10 = 0;
@@ -9412,42 +10161,42 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_54detokenize(struct __pyx_obj_7c
     PyObject *__pyx_callargs[2] = {__pyx_t_9, NULL};
     __pyx_t_6 = __Pyx_PyObject_FastCall(__pyx_t_8, __pyx_callargs+1-__pyx_t_10, 0+__pyx_t_10);
     __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 323, __pyx_L1_error)
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 346, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   }
-  __pyx_t_8 = PyObject_RichCompare(__pyx_t_3, __pyx_t_6, Py_EQ); __Pyx_XGOTREF(__pyx_t_8); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 323, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_8 = PyObject_RichCompare(__pyx_t_4, __pyx_t_6, Py_EQ); __Pyx_XGOTREF(__pyx_t_8); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 346, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_8); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 323, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_8); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 346, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   if (__pyx_t_7) {
   } else {
-    __pyx_t_5 = __pyx_t_7;
+    __pyx_t_1 = __pyx_t_7;
     goto __pyx_L6_bool_binop_done;
   }
-  __pyx_t_8 = PySequence_GetSlice(__pyx_v_output, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 323, __pyx_L1_error)
+  __pyx_t_8 = PySequence_GetSlice(__pyx_v_output, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 346, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
-  __pyx_t_7 = (__Pyx_PyBytes_Equals(__pyx_t_8, __pyx_kp_b__3, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 323, __pyx_L1_error)
+  __pyx_t_7 = (__Pyx_PyBytes_Equals(__pyx_t_8, __pyx_kp_b__3, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 346, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-  __pyx_t_5 = __pyx_t_7;
+  __pyx_t_1 = __pyx_t_7;
   __pyx_L6_bool_binop_done:;
-  if (__pyx_t_5) {
+  if (__pyx_t_1) {
 
-    /* "cyllama.pyx":322
+    /* "cyllama.pyx":345
  *         # this line removes a leading space if the first token is a beginning of sentence token
  *         return (
  *             output[1:]             # <<<<<<<<<<<<<<
  *             if len(tokens) > 0 and tokens[0] == self.token_bos() and output[0:1] == b" "
  *             else output
  */
-    __pyx_t_8 = PySequence_GetSlice(__pyx_v_output, 1, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 322, __pyx_L1_error)
+    __pyx_t_8 = PySequence_GetSlice(__pyx_v_output, 1, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 345, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_1 = __pyx_t_8;
+    __pyx_t_2 = __pyx_t_8;
     __pyx_t_8 = 0;
   } else {
 
-    /* "cyllama.pyx":324
+    /* "cyllama.pyx":347
  *             output[1:]
  *             if len(tokens) > 0 and tokens[0] == self.token_bos() and output[0:1] == b" "
  *             else output             # <<<<<<<<<<<<<<
@@ -9455,24 +10204,24 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_54detokenize(struct __pyx_obj_7c
  * 
  */
     __Pyx_INCREF(__pyx_v_output);
-    __pyx_t_1 = __pyx_v_output;
+    __pyx_t_2 = __pyx_v_output;
   }
-  __pyx_r = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":308
+  /* "cyllama.pyx":331
  *         # return bytes(buf)
  * 
  *     def detokenize(self, tokens: list[int], special: bool = False) -> bytes:             # <<<<<<<<<<<<<<
- *         # assert self.model is not None
+ *         assert self.model is not NULL
  *         output = b""
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_8);
   __Pyx_XDECREF(__pyx_t_9);
@@ -9486,7 +10235,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_54detokenize(struct __pyx_obj_7c
   return __pyx_r;
 }
 
-/* "cyllama.pyx":329
+/* "cyllama.pyx":352
  *     # Extra
  * 
  *     def metadata(self) -> dict[str, str]:             # <<<<<<<<<<<<<<
@@ -9547,30 +10296,30 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   size_t __pyx_t_2;
-  int32_t __pyx_t_3;
+  int __pyx_t_3;
   int32_t __pyx_t_4;
   int32_t __pyx_t_5;
-  PyObject *__pyx_t_6 = NULL;
-  int __pyx_t_7;
+  int32_t __pyx_t_6;
+  PyObject *__pyx_t_7 = NULL;
   Py_ssize_t __pyx_t_8;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("metadata", 1);
 
-  /* "cyllama.pyx":330
+  /* "cyllama.pyx":353
  * 
  *     def metadata(self) -> dict[str, str]:
  *         metadata: dict[str, str] = {}             # <<<<<<<<<<<<<<
  *         buffer_size = 1024
  *         cdef int nbytes
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 330, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 353, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_metadata = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "cyllama.pyx":331
+  /* "cyllama.pyx":354
  *     def metadata(self) -> dict[str, str]:
  *         metadata: dict[str, str] = {}
  *         buffer_size = 1024             # <<<<<<<<<<<<<<
@@ -9580,38 +10329,57 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
   __Pyx_INCREF(__pyx_int_1024);
   __pyx_v_buffer_size = __pyx_int_1024;
 
-  /* "cyllama.pyx":333
+  /* "cyllama.pyx":356
  *         buffer_size = 1024
  *         cdef int nbytes
  *         cdef char * buffer = <char*>calloc(buffer_size, sizeof(char))             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         # iterate over model keys
+ */
+  __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 356, __pyx_L1_error)
+  __pyx_v_buffer = ((char *)calloc(__pyx_t_2, (sizeof(char))));
+
+  /* "cyllama.pyx":357
+ *         cdef int nbytes
+ *         cdef char * buffer = <char*>calloc(buffer_size, sizeof(char))
+ *         assert self.model is not NULL             # <<<<<<<<<<<<<<
  *         # iterate over model keys
  *         for i in range(llama_cpp.llama_model_meta_count(self.model)):
  */
-  __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 333, __pyx_L1_error)
-  __pyx_v_buffer = ((char *)calloc(__pyx_t_2, (sizeof(char))));
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_3 = (__pyx_v_self->model != NULL);
+    if (unlikely(!__pyx_t_3)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 357, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 357, __pyx_L1_error)
+  #endif
 
-  /* "cyllama.pyx":335
- *         cdef char * buffer = <char*>calloc(buffer_size, sizeof(char))
+  /* "cyllama.pyx":359
+ *         assert self.model is not NULL
  *         # iterate over model keys
  *         for i in range(llama_cpp.llama_model_meta_count(self.model)):             # <<<<<<<<<<<<<<
  *             nbytes = llama_cpp.llama_model_meta_key_by_index(
  *                 self.model, i, buffer, buffer_size
  */
-  __pyx_t_3 = llama_model_meta_count(__pyx_v_self->model);
-  __pyx_t_4 = __pyx_t_3;
-  for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
-    __pyx_v_i = __pyx_t_5;
+  __pyx_t_4 = llama_model_meta_count(__pyx_v_self->model);
+  __pyx_t_5 = __pyx_t_4;
+  for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
+    __pyx_v_i = __pyx_t_6;
 
-    /* "cyllama.pyx":337
+    /* "cyllama.pyx":361
  *         for i in range(llama_cpp.llama_model_meta_count(self.model)):
  *             nbytes = llama_cpp.llama_model_meta_key_by_index(
  *                 self.model, i, buffer, buffer_size             # <<<<<<<<<<<<<<
  *             )
  *             if nbytes > buffer_size:
  */
-    __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 337, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 361, __pyx_L1_error)
 
-    /* "cyllama.pyx":336
+    /* "cyllama.pyx":360
  *         # iterate over model keys
  *         for i in range(llama_cpp.llama_model_meta_count(self.model)):
  *             nbytes = llama_cpp.llama_model_meta_key_by_index(             # <<<<<<<<<<<<<<
@@ -9620,59 +10388,59 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
  */
     __pyx_v_nbytes = llama_model_meta_key_by_index(__pyx_v_self->model, __pyx_v_i, __pyx_v_buffer, __pyx_t_2);
 
-    /* "cyllama.pyx":339
+    /* "cyllama.pyx":363
  *                 self.model, i, buffer, buffer_size
  *             )
  *             if nbytes > buffer_size:             # <<<<<<<<<<<<<<
  *                 buffer_size = nbytes + 1
  *                 buffer = <char*>realloc(buffer, buffer_size * sizeof(char));
  */
-    __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_nbytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 339, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_nbytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 363, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_6 = PyObject_RichCompare(__pyx_t_1, __pyx_v_buffer_size, Py_GT); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 339, __pyx_L1_error)
+    __pyx_t_7 = PyObject_RichCompare(__pyx_t_1, __pyx_v_buffer_size, Py_GT); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 363, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 339, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (__pyx_t_7) {
+    __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 363, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    if (__pyx_t_3) {
 
-      /* "cyllama.pyx":340
+      /* "cyllama.pyx":364
  *             )
  *             if nbytes > buffer_size:
  *                 buffer_size = nbytes + 1             # <<<<<<<<<<<<<<
  *                 buffer = <char*>realloc(buffer, buffer_size * sizeof(char));
  *                 nbytes = llama_cpp.llama_model_meta_key_by_index(
  */
-      __pyx_t_6 = __Pyx_PyInt_From_long((__pyx_v_nbytes + 1)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 340, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __Pyx_DECREF_SET(__pyx_v_buffer_size, __pyx_t_6);
-      __pyx_t_6 = 0;
+      __pyx_t_7 = __Pyx_PyInt_From_long((__pyx_v_nbytes + 1)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 364, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_7);
+      __Pyx_DECREF_SET(__pyx_v_buffer_size, __pyx_t_7);
+      __pyx_t_7 = 0;
 
-      /* "cyllama.pyx":341
+      /* "cyllama.pyx":365
  *             if nbytes > buffer_size:
  *                 buffer_size = nbytes + 1
  *                 buffer = <char*>realloc(buffer, buffer_size * sizeof(char));             # <<<<<<<<<<<<<<
  *                 nbytes = llama_cpp.llama_model_meta_key_by_index(
  *                     self.model, i, buffer, buffer_size
  */
-      __pyx_t_6 = __Pyx_PyInt_FromSize_t((sizeof(char))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 341, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_1 = PyNumber_Multiply(__pyx_v_buffer_size, __pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 341, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyInt_FromSize_t((sizeof(char))); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 365, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_7);
+      __pyx_t_1 = PyNumber_Multiply(__pyx_v_buffer_size, __pyx_t_7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 365, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_t_1); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 341, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_t_1); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 365, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_v_buffer = ((char *)realloc(__pyx_v_buffer, __pyx_t_2));
 
-      /* "cyllama.pyx":343
+      /* "cyllama.pyx":367
  *                 buffer = <char*>realloc(buffer, buffer_size * sizeof(char));
  *                 nbytes = llama_cpp.llama_model_meta_key_by_index(
  *                     self.model, i, buffer, buffer_size             # <<<<<<<<<<<<<<
  *                 )
  *             key = buffer.decode("utf-8")
  */
-      __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 343, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 367, __pyx_L1_error)
 
-      /* "cyllama.pyx":342
+      /* "cyllama.pyx":366
  *                 buffer_size = nbytes + 1
  *                 buffer = <char*>realloc(buffer, buffer_size * sizeof(char));
  *                 nbytes = llama_cpp.llama_model_meta_key_by_index(             # <<<<<<<<<<<<<<
@@ -9681,7 +10449,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
  */
       __pyx_v_nbytes = llama_model_meta_key_by_index(__pyx_v_self->model, __pyx_v_i, __pyx_v_buffer, __pyx_t_2);
 
-      /* "cyllama.pyx":339
+      /* "cyllama.pyx":363
  *                 self.model, i, buffer, buffer_size
  *             )
  *             if nbytes > buffer_size:             # <<<<<<<<<<<<<<
@@ -9690,29 +10458,29 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
  */
     }
 
-    /* "cyllama.pyx":345
+    /* "cyllama.pyx":369
  *                     self.model, i, buffer, buffer_size
  *                 )
  *             key = buffer.decode("utf-8")             # <<<<<<<<<<<<<<
  *             nbytes = llama_cpp.llama_model_meta_val_str_by_index(
  *                 self.model, i, buffer, buffer_size
  */
-    __pyx_t_8 = __Pyx_ssize_strlen(__pyx_v_buffer); if (unlikely(__pyx_t_8 == ((Py_ssize_t)-1))) __PYX_ERR(0, 345, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_decode_c_string(__pyx_v_buffer, 0, __pyx_t_8, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 345, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_ssize_strlen(__pyx_v_buffer); if (unlikely(__pyx_t_8 == ((Py_ssize_t)-1))) __PYX_ERR(0, 369, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_decode_c_string(__pyx_v_buffer, 0, __pyx_t_8, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 369, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_key, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "cyllama.pyx":347
+    /* "cyllama.pyx":371
  *             key = buffer.decode("utf-8")
  *             nbytes = llama_cpp.llama_model_meta_val_str_by_index(
  *                 self.model, i, buffer, buffer_size             # <<<<<<<<<<<<<<
  *             )
  *             if nbytes > buffer_size:
  */
-    __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 347, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 371, __pyx_L1_error)
 
-    /* "cyllama.pyx":346
+    /* "cyllama.pyx":370
  *                 )
  *             key = buffer.decode("utf-8")
  *             nbytes = llama_cpp.llama_model_meta_val_str_by_index(             # <<<<<<<<<<<<<<
@@ -9721,59 +10489,59 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
  */
     __pyx_v_nbytes = llama_model_meta_val_str_by_index(__pyx_v_self->model, __pyx_v_i, __pyx_v_buffer, __pyx_t_2);
 
-    /* "cyllama.pyx":349
+    /* "cyllama.pyx":373
  *                 self.model, i, buffer, buffer_size
  *             )
  *             if nbytes > buffer_size:             # <<<<<<<<<<<<<<
  *                 buffer_size = nbytes + 1
  *                 buffer = <char*>realloc(buffer, buffer_size * sizeof(char));
  */
-    __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_nbytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 349, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_nbytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 373, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_6 = PyObject_RichCompare(__pyx_t_1, __pyx_v_buffer_size, Py_GT); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 349, __pyx_L1_error)
+    __pyx_t_7 = PyObject_RichCompare(__pyx_t_1, __pyx_v_buffer_size, Py_GT); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 373, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 349, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (__pyx_t_7) {
+    __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 373, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    if (__pyx_t_3) {
 
-      /* "cyllama.pyx":350
+      /* "cyllama.pyx":374
  *             )
  *             if nbytes > buffer_size:
  *                 buffer_size = nbytes + 1             # <<<<<<<<<<<<<<
  *                 buffer = <char*>realloc(buffer, buffer_size * sizeof(char));
  *                 nbytes = llama_cpp.llama_model_meta_val_str_by_index(
  */
-      __pyx_t_6 = __Pyx_PyInt_From_long((__pyx_v_nbytes + 1)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 350, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __Pyx_DECREF_SET(__pyx_v_buffer_size, __pyx_t_6);
-      __pyx_t_6 = 0;
+      __pyx_t_7 = __Pyx_PyInt_From_long((__pyx_v_nbytes + 1)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 374, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_7);
+      __Pyx_DECREF_SET(__pyx_v_buffer_size, __pyx_t_7);
+      __pyx_t_7 = 0;
 
-      /* "cyllama.pyx":351
+      /* "cyllama.pyx":375
  *             if nbytes > buffer_size:
  *                 buffer_size = nbytes + 1
  *                 buffer = <char*>realloc(buffer, buffer_size * sizeof(char));             # <<<<<<<<<<<<<<
  *                 nbytes = llama_cpp.llama_model_meta_val_str_by_index(
  *                     self.model, i, buffer, buffer_size
  */
-      __pyx_t_6 = __Pyx_PyInt_FromSize_t((sizeof(char))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 351, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_1 = PyNumber_Multiply(__pyx_v_buffer_size, __pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 351, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyInt_FromSize_t((sizeof(char))); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 375, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_7);
+      __pyx_t_1 = PyNumber_Multiply(__pyx_v_buffer_size, __pyx_t_7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 375, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_t_1); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 351, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_t_1); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 375, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_v_buffer = ((char *)realloc(__pyx_v_buffer, __pyx_t_2));
 
-      /* "cyllama.pyx":353
+      /* "cyllama.pyx":377
  *                 buffer = <char*>realloc(buffer, buffer_size * sizeof(char));
  *                 nbytes = llama_cpp.llama_model_meta_val_str_by_index(
  *                     self.model, i, buffer, buffer_size             # <<<<<<<<<<<<<<
  *                 )
  *             value = buffer.decode("utf-8")
  */
-      __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 353, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyInt_As_size_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_2 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 377, __pyx_L1_error)
 
-      /* "cyllama.pyx":352
+      /* "cyllama.pyx":376
  *                 buffer_size = nbytes + 1
  *                 buffer = <char*>realloc(buffer, buffer_size * sizeof(char));
  *                 nbytes = llama_cpp.llama_model_meta_val_str_by_index(             # <<<<<<<<<<<<<<
@@ -9782,7 +10550,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
  */
       __pyx_v_nbytes = llama_model_meta_val_str_by_index(__pyx_v_self->model, __pyx_v_i, __pyx_v_buffer, __pyx_t_2);
 
-      /* "cyllama.pyx":349
+      /* "cyllama.pyx":373
  *                 self.model, i, buffer, buffer_size
  *             )
  *             if nbytes > buffer_size:             # <<<<<<<<<<<<<<
@@ -9791,30 +10559,30 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
  */
     }
 
-    /* "cyllama.pyx":355
+    /* "cyllama.pyx":379
  *                     self.model, i, buffer, buffer_size
  *                 )
  *             value = buffer.decode("utf-8")             # <<<<<<<<<<<<<<
  *             metadata[key] = value
  *         free(buffer)
  */
-    __pyx_t_8 = __Pyx_ssize_strlen(__pyx_v_buffer); if (unlikely(__pyx_t_8 == ((Py_ssize_t)-1))) __PYX_ERR(0, 355, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_decode_c_string(__pyx_v_buffer, 0, __pyx_t_8, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 355, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_ssize_strlen(__pyx_v_buffer); if (unlikely(__pyx_t_8 == ((Py_ssize_t)-1))) __PYX_ERR(0, 379, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_decode_c_string(__pyx_v_buffer, 0, __pyx_t_8, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 379, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_value, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "cyllama.pyx":356
+    /* "cyllama.pyx":380
  *                 )
  *             value = buffer.decode("utf-8")
  *             metadata[key] = value             # <<<<<<<<<<<<<<
  *         free(buffer)
  *         return metadata
  */
-    if (unlikely((PyDict_SetItem(__pyx_v_metadata, __pyx_v_key, __pyx_v_value) < 0))) __PYX_ERR(0, 356, __pyx_L1_error)
+    if (unlikely((PyDict_SetItem(__pyx_v_metadata, __pyx_v_key, __pyx_v_value) < 0))) __PYX_ERR(0, 380, __pyx_L1_error)
   }
 
-  /* "cyllama.pyx":357
+  /* "cyllama.pyx":381
  *             value = buffer.decode("utf-8")
  *             metadata[key] = value
  *         free(buffer)             # <<<<<<<<<<<<<<
@@ -9823,7 +10591,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
  */
   free(__pyx_v_buffer);
 
-  /* "cyllama.pyx":358
+  /* "cyllama.pyx":382
  *             metadata[key] = value
  *         free(buffer)
  *         return metadata             # <<<<<<<<<<<<<<
@@ -9835,7 +10603,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
   __pyx_r = __pyx_v_metadata;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":329
+  /* "cyllama.pyx":352
  *     # Extra
  * 
  *     def metadata(self) -> dict[str, str]:             # <<<<<<<<<<<<<<
@@ -9846,7 +10614,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_7);
   __Pyx_AddTraceback("cyllama.LlamaModel.metadata", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -9859,7 +10627,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_56metadata(struct __pyx_obj_7cyl
   return __pyx_r;
 }
 
-/* "cyllama.pyx":361
+/* "cyllama.pyx":385
  * 
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
@@ -9918,7 +10686,7 @@ static struct __pyx_obj_7cyllama_ModelParams *__pyx_pf_7cyllama_10LlamaModel_58d
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("default_params", 1);
 
-  /* "cyllama.pyx":365
+  /* "cyllama.pyx":389
  *         """Get the default llama_model_params."""
  *         # return llama_cpp.llama_model_default_params()
  *         return ModelParams()             # <<<<<<<<<<<<<<
@@ -9926,13 +10694,13 @@ static struct __pyx_obj_7cyllama_ModelParams *__pyx_pf_7cyllama_10LlamaModel_58d
  * 
  */
   __Pyx_XDECREF((PyObject *)__pyx_r);
-  __pyx_t_1 = __Pyx_PyObject_CallNoArg(((PyObject *)__pyx_ptype_7cyllama_ModelParams)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 365, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_CallNoArg(((PyObject *)__pyx_ptype_7cyllama_ModelParams)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 389, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = ((struct __pyx_obj_7cyllama_ModelParams *)__pyx_t_1);
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":361
+  /* "cyllama.pyx":385
  * 
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
@@ -10476,7 +11244,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaModel_62__setstate_cython__(CYTHON_UNU
   return __pyx_r;
 }
 
-/* "cyllama.pyx":372
+/* "cyllama.pyx":395
  *     cdef llama_cpp.llama_context_params p
  * 
  *     def __init__(self):             # <<<<<<<<<<<<<<
@@ -10511,7 +11279,7 @@ static int __pyx_pw_7cyllama_13ContextParams_1__init__(PyObject *__pyx_v_self, P
 static int __pyx_pf_7cyllama_13ContextParams___init__(struct __pyx_obj_7cyllama_ContextParams *__pyx_v_self) {
   int __pyx_r;
 
-  /* "cyllama.pyx":373
+  /* "cyllama.pyx":396
  * 
  *     def __init__(self):
  *         self.p = llama_cpp.llama_context_default_params()             # <<<<<<<<<<<<<<
@@ -10520,7 +11288,7 @@ static int __pyx_pf_7cyllama_13ContextParams___init__(struct __pyx_obj_7cyllama_
  */
   __pyx_v_self->p = llama_context_default_params();
 
-  /* "cyllama.pyx":372
+  /* "cyllama.pyx":395
  *     cdef llama_cpp.llama_context_params p
  * 
  *     def __init__(self):             # <<<<<<<<<<<<<<
@@ -10533,7 +11301,7 @@ static int __pyx_pf_7cyllama_13ContextParams___init__(struct __pyx_obj_7cyllama_
   return __pyx_r;
 }
 
-/* "cyllama.pyx":375
+/* "cyllama.pyx":398
  *         self.p = llama_cpp.llama_context_default_params()
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -10565,7 +11333,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_4seed___get__(struct __pyx_ob
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 1);
 
-  /* "cyllama.pyx":378
+  /* "cyllama.pyx":401
  *     def seed(self) -> int:
  *         """RNG seed, -1 for random."""
  *         return self.p.seed             # <<<<<<<<<<<<<<
@@ -10573,13 +11341,13 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_4seed___get__(struct __pyx_ob
  *     @seed.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.seed); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 378, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.seed); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 401, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":375
+  /* "cyllama.pyx":398
  *         self.p = llama_cpp.llama_context_default_params()
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -10598,7 +11366,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_4seed___get__(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "cyllama.pyx":380
+/* "cyllama.pyx":403
  *         return self.p.seed
  * 
  *     @seed.setter             # <<<<<<<<<<<<<<
@@ -10617,7 +11385,7 @@ static int __pyx_pw_7cyllama_13ContextParams_4seed_3__set__(PyObject *__pyx_v_se
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 381, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 404, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_13ContextParams_4seed_2__set__(((struct __pyx_obj_7cyllama_ContextParams *)__pyx_v_self), ((PyObject*)__pyx_v_value));
 
   /* function exit code */
@@ -10636,17 +11404,17 @@ static int __pyx_pf_7cyllama_13ContextParams_4seed_2__set__(struct __pyx_obj_7cy
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "cyllama.pyx":382
+  /* "cyllama.pyx":405
  *     @seed.setter
  *     def seed(self, value: int):
  *         self.p.seed = value             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 382, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 405, __pyx_L1_error)
   __pyx_v_self->p.seed = __pyx_t_1;
 
-  /* "cyllama.pyx":380
+  /* "cyllama.pyx":403
  *         return self.p.seed
  * 
  *     @seed.setter             # <<<<<<<<<<<<<<
@@ -10664,7 +11432,7 @@ static int __pyx_pf_7cyllama_13ContextParams_4seed_2__set__(struct __pyx_obj_7cy
   return __pyx_r;
 }
 
-/* "cyllama.pyx":384
+/* "cyllama.pyx":407
  *         self.p.seed = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -10696,7 +11464,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_5n_ctx___get__(struct __pyx_o
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 1);
 
-  /* "cyllama.pyx":387
+  /* "cyllama.pyx":410
  *     def n_ctx(self) -> int:
  *         """text context, 0 = from model."""
  *         return self.p.n_ctx             # <<<<<<<<<<<<<<
@@ -10704,13 +11472,13 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_5n_ctx___get__(struct __pyx_o
  *     @n_ctx.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_ctx); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 387, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_ctx); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 410, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":384
+  /* "cyllama.pyx":407
  *         self.p.seed = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -10729,7 +11497,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_5n_ctx___get__(struct __pyx_o
   return __pyx_r;
 }
 
-/* "cyllama.pyx":389
+/* "cyllama.pyx":412
  *         return self.p.n_ctx
  * 
  *     @n_ctx.setter             # <<<<<<<<<<<<<<
@@ -10748,7 +11516,7 @@ static int __pyx_pw_7cyllama_13ContextParams_5n_ctx_3__set__(PyObject *__pyx_v_s
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 390, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 413, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_13ContextParams_5n_ctx_2__set__(((struct __pyx_obj_7cyllama_ContextParams *)__pyx_v_self), ((PyObject*)__pyx_v_value));
 
   /* function exit code */
@@ -10767,17 +11535,17 @@ static int __pyx_pf_7cyllama_13ContextParams_5n_ctx_2__set__(struct __pyx_obj_7c
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "cyllama.pyx":391
+  /* "cyllama.pyx":414
  *     @n_ctx.setter
  *     def n_ctx(self, value: int):
  *         self.p.n_ctx = value             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 391, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 414, __pyx_L1_error)
   __pyx_v_self->p.n_ctx = __pyx_t_1;
 
-  /* "cyllama.pyx":389
+  /* "cyllama.pyx":412
  *         return self.p.n_ctx
  * 
  *     @n_ctx.setter             # <<<<<<<<<<<<<<
@@ -10795,7 +11563,7 @@ static int __pyx_pf_7cyllama_13ContextParams_5n_ctx_2__set__(struct __pyx_obj_7c
   return __pyx_r;
 }
 
-/* "cyllama.pyx":393
+/* "cyllama.pyx":416
  *         self.p.n_ctx = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -10827,7 +11595,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_7n_batch___get__(struct __pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 1);
 
-  /* "cyllama.pyx":396
+  /* "cyllama.pyx":419
  *     def n_batch(self) -> int:
  *         """logical maximum batch size that can be submitted to llama_decode."""
  *         return self.p.n_batch             # <<<<<<<<<<<<<<
@@ -10835,13 +11603,13 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_7n_batch___get__(struct __pyx
  *     @n_batch.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_batch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 396, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_batch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 419, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":393
+  /* "cyllama.pyx":416
  *         self.p.n_ctx = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -10860,7 +11628,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_7n_batch___get__(struct __pyx
   return __pyx_r;
 }
 
-/* "cyllama.pyx":398
+/* "cyllama.pyx":421
  *         return self.p.n_batch
  * 
  *     @n_batch.setter             # <<<<<<<<<<<<<<
@@ -10879,7 +11647,7 @@ static int __pyx_pw_7cyllama_13ContextParams_7n_batch_3__set__(PyObject *__pyx_v
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 399, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 422, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_13ContextParams_7n_batch_2__set__(((struct __pyx_obj_7cyllama_ContextParams *)__pyx_v_self), ((PyObject*)__pyx_v_value));
 
   /* function exit code */
@@ -10898,17 +11666,17 @@ static int __pyx_pf_7cyllama_13ContextParams_7n_batch_2__set__(struct __pyx_obj_
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "cyllama.pyx":400
+  /* "cyllama.pyx":423
  *     @n_batch.setter
  *     def n_batch(self, value: int):
  *         self.p.n_batch = value             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 400, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 423, __pyx_L1_error)
   __pyx_v_self->p.n_batch = __pyx_t_1;
 
-  /* "cyllama.pyx":398
+  /* "cyllama.pyx":421
  *         return self.p.n_batch
  * 
  *     @n_batch.setter             # <<<<<<<<<<<<<<
@@ -10926,7 +11694,7 @@ static int __pyx_pf_7cyllama_13ContextParams_7n_batch_2__set__(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "cyllama.pyx":402
+/* "cyllama.pyx":425
  *         self.p.n_batch = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -10958,7 +11726,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_8n_ubatch___get__(struct __py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 1);
 
-  /* "cyllama.pyx":405
+  /* "cyllama.pyx":428
  *     def n_ubatch(self) -> int:
  *         """physical maximum batch size."""
  *         return self.p.n_ubatch             # <<<<<<<<<<<<<<
@@ -10966,13 +11734,13 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_8n_ubatch___get__(struct __py
  *     @n_ubatch.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_ubatch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 405, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_ubatch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 428, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":402
+  /* "cyllama.pyx":425
  *         self.p.n_batch = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -10991,7 +11759,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_8n_ubatch___get__(struct __py
   return __pyx_r;
 }
 
-/* "cyllama.pyx":407
+/* "cyllama.pyx":430
  *         return self.p.n_ubatch
  * 
  *     @n_ubatch.setter             # <<<<<<<<<<<<<<
@@ -11010,7 +11778,7 @@ static int __pyx_pw_7cyllama_13ContextParams_8n_ubatch_3__set__(PyObject *__pyx_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 408, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 431, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_13ContextParams_8n_ubatch_2__set__(((struct __pyx_obj_7cyllama_ContextParams *)__pyx_v_self), ((PyObject*)__pyx_v_value));
 
   /* function exit code */
@@ -11029,17 +11797,17 @@ static int __pyx_pf_7cyllama_13ContextParams_8n_ubatch_2__set__(struct __pyx_obj
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "cyllama.pyx":409
+  /* "cyllama.pyx":432
  *     @n_ubatch.setter
  *     def n_ubatch(self, value: int):
  *         self.p.n_ubatch = value             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 409, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 432, __pyx_L1_error)
   __pyx_v_self->p.n_ubatch = __pyx_t_1;
 
-  /* "cyllama.pyx":407
+  /* "cyllama.pyx":430
  *         return self.p.n_ubatch
  * 
  *     @n_ubatch.setter             # <<<<<<<<<<<<<<
@@ -11057,7 +11825,7 @@ static int __pyx_pf_7cyllama_13ContextParams_8n_ubatch_2__set__(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "cyllama.pyx":411
+/* "cyllama.pyx":434
  *         self.p.n_ubatch = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -11089,7 +11857,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_9n_seq_max___get__(struct __p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 1);
 
-  /* "cyllama.pyx":414
+  /* "cyllama.pyx":437
  *     def n_seq_max(self) -> int:
  *         """max number of sequences (i.e. distinct states for recurrent models)."""
  *         return self.p.n_seq_max             # <<<<<<<<<<<<<<
@@ -11097,13 +11865,13 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_9n_seq_max___get__(struct __p
  *     @n_seq_max.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_seq_max); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 414, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_seq_max); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 437, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":411
+  /* "cyllama.pyx":434
  *         self.p.n_ubatch = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -11122,7 +11890,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_9n_seq_max___get__(struct __p
   return __pyx_r;
 }
 
-/* "cyllama.pyx":416
+/* "cyllama.pyx":439
  *         return self.p.n_seq_max
  * 
  *     @n_seq_max.setter             # <<<<<<<<<<<<<<
@@ -11141,7 +11909,7 @@ static int __pyx_pw_7cyllama_13ContextParams_9n_seq_max_3__set__(PyObject *__pyx
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 417, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 440, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_13ContextParams_9n_seq_max_2__set__(((struct __pyx_obj_7cyllama_ContextParams *)__pyx_v_self), ((PyObject*)__pyx_v_value));
 
   /* function exit code */
@@ -11160,17 +11928,17 @@ static int __pyx_pf_7cyllama_13ContextParams_9n_seq_max_2__set__(struct __pyx_ob
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "cyllama.pyx":418
+  /* "cyllama.pyx":441
  *     @n_seq_max.setter
  *     def n_seq_max(self, value: int):
  *         self.p.n_seq_max = value             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 418, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 441, __pyx_L1_error)
   __pyx_v_self->p.n_seq_max = __pyx_t_1;
 
-  /* "cyllama.pyx":416
+  /* "cyllama.pyx":439
  *         return self.p.n_seq_max
  * 
  *     @n_seq_max.setter             # <<<<<<<<<<<<<<
@@ -11188,7 +11956,7 @@ static int __pyx_pf_7cyllama_13ContextParams_9n_seq_max_2__set__(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "cyllama.pyx":420
+/* "cyllama.pyx":443
  *         self.p.n_seq_max = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -11220,7 +11988,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_9n_threads___get__(struct __p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 1);
 
-  /* "cyllama.pyx":423
+  /* "cyllama.pyx":446
  *     def n_threads(self) -> int:
  *         """number of threads to use for generation."""
  *         return self.p.n_threads             # <<<<<<<<<<<<<<
@@ -11228,13 +11996,13 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_9n_threads___get__(struct __p
  *     @n_threads.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_threads); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 423, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_threads); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 446, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":420
+  /* "cyllama.pyx":443
  *         self.p.n_seq_max = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -11253,7 +12021,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_9n_threads___get__(struct __p
   return __pyx_r;
 }
 
-/* "cyllama.pyx":425
+/* "cyllama.pyx":448
  *         return self.p.n_threads
  * 
  *     @n_threads.setter             # <<<<<<<<<<<<<<
@@ -11272,7 +12040,7 @@ static int __pyx_pw_7cyllama_13ContextParams_9n_threads_3__set__(PyObject *__pyx
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 426, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 449, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_13ContextParams_9n_threads_2__set__(((struct __pyx_obj_7cyllama_ContextParams *)__pyx_v_self), ((PyObject*)__pyx_v_value));
 
   /* function exit code */
@@ -11291,17 +12059,17 @@ static int __pyx_pf_7cyllama_13ContextParams_9n_threads_2__set__(struct __pyx_ob
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "cyllama.pyx":427
+  /* "cyllama.pyx":450
  *     @n_threads.setter
  *     def n_threads(self, value: int):
  *         self.p.n_threads = value             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 427, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 450, __pyx_L1_error)
   __pyx_v_self->p.n_threads = __pyx_t_1;
 
-  /* "cyllama.pyx":425
+  /* "cyllama.pyx":448
  *         return self.p.n_threads
  * 
  *     @n_threads.setter             # <<<<<<<<<<<<<<
@@ -11319,7 +12087,7 @@ static int __pyx_pf_7cyllama_13ContextParams_9n_threads_2__set__(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "cyllama.pyx":429
+/* "cyllama.pyx":452
  *         self.p.n_threads = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -11351,7 +12119,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_15n_threads_batch___get__(str
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 1);
 
-  /* "cyllama.pyx":432
+  /* "cyllama.pyx":455
  *     def n_threads_batch(self) -> int:
  *         """number of threads to use for batch processing"""
  *         return self.p.n_threads_batch             # <<<<<<<<<<<<<<
@@ -11359,13 +12127,13 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_15n_threads_batch___get__(str
  *     @n_threads_batch.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_threads_batch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 432, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_uint32_t(__pyx_v_self->p.n_threads_batch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 455, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":429
+  /* "cyllama.pyx":452
  *         self.p.n_threads = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -11384,7 +12152,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_15n_threads_batch___get__(str
   return __pyx_r;
 }
 
-/* "cyllama.pyx":434
+/* "cyllama.pyx":457
  *         return self.p.n_threads_batch
  * 
  *     @n_threads_batch.setter             # <<<<<<<<<<<<<<
@@ -11403,7 +12171,7 @@ static int __pyx_pw_7cyllama_13ContextParams_15n_threads_batch_3__set__(PyObject
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 435, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyInt_Type), 0, "value", 1))) __PYX_ERR(0, 458, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_13ContextParams_15n_threads_batch_2__set__(((struct __pyx_obj_7cyllama_ContextParams *)__pyx_v_self), ((PyObject*)__pyx_v_value));
 
   /* function exit code */
@@ -11422,17 +12190,17 @@ static int __pyx_pf_7cyllama_13ContextParams_15n_threads_batch_2__set__(struct _
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "cyllama.pyx":436
+  /* "cyllama.pyx":459
  *     @n_threads_batch.setter
  *     def n_threads_batch(self, value: int):
  *         self.p.n_threads_batch = value             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 436, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_As_uint32_t(__pyx_v_value); if (unlikely((__pyx_t_1 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 459, __pyx_L1_error)
   __pyx_v_self->p.n_threads_batch = __pyx_t_1;
 
-  /* "cyllama.pyx":434
+  /* "cyllama.pyx":457
  *         return self.p.n_threads_batch
  * 
  *     @n_threads_batch.setter             # <<<<<<<<<<<<<<
@@ -11450,7 +12218,7 @@ static int __pyx_pf_7cyllama_13ContextParams_15n_threads_batch_2__set__(struct _
   return __pyx_r;
 }
 
-/* "cyllama.pyx":438
+/* "cyllama.pyx":461
  *         self.p.n_threads_batch = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -11482,7 +12250,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_17rope_scaling_type___get__(s
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 1);
 
-  /* "cyllama.pyx":441
+  /* "cyllama.pyx":464
  *     def rope_scaling_type(self) -> llama_cpp.llama_rope_scaling_type:
  *         """number of threads to use for batch processing"""
  *         return <llama_cpp.llama_rope_scaling_type>self.p.rope_scaling_type             # <<<<<<<<<<<<<<
@@ -11490,13 +12258,13 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_17rope_scaling_type___get__(s
  *     @rope_scaling_type.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_llama_rope_scaling_type(((llama_rope_scaling_type)__pyx_v_self->p.rope_scaling_type)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 441, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_llama_rope_scaling_type(((llama_rope_scaling_type)__pyx_v_self->p.rope_scaling_type)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 464, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":438
+  /* "cyllama.pyx":461
  *         self.p.n_threads_batch = value
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -11515,7 +12283,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_17rope_scaling_type___get__(s
   return __pyx_r;
 }
 
-/* "cyllama.pyx":443
+/* "cyllama.pyx":466
  *         return <llama_cpp.llama_rope_scaling_type>self.p.rope_scaling_type
  * 
  *     @rope_scaling_type.setter             # <<<<<<<<<<<<<<
@@ -11536,7 +12304,7 @@ static int __pyx_pw_7cyllama_13ContextParams_17rope_scaling_type_3__set__(PyObje
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
   assert(__pyx_arg_value); {
-    __pyx_v_value = ((llama_rope_scaling_type)__Pyx_PyInt_As_llama_rope_scaling_type(__pyx_arg_value)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 444, __pyx_L3_error)
+    __pyx_v_value = ((llama_rope_scaling_type)__Pyx_PyInt_As_llama_rope_scaling_type(__pyx_arg_value)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 467, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -11554,7 +12322,7 @@ static int __pyx_pw_7cyllama_13ContextParams_17rope_scaling_type_3__set__(PyObje
 static int __pyx_pf_7cyllama_13ContextParams_17rope_scaling_type_2__set__(struct __pyx_obj_7cyllama_ContextParams *__pyx_v_self, llama_rope_scaling_type __pyx_v_value) {
   int __pyx_r;
 
-  /* "cyllama.pyx":445
+  /* "cyllama.pyx":468
  *     @rope_scaling_type.setter
  *     def rope_scaling_type(self, llama_cpp.llama_rope_scaling_type value):
  *         self.p.rope_scaling_type = value             # <<<<<<<<<<<<<<
@@ -11563,7 +12331,7 @@ static int __pyx_pf_7cyllama_13ContextParams_17rope_scaling_type_2__set__(struct
  */
   __pyx_v_self->p.rope_scaling_type = __pyx_v_value;
 
-  /* "cyllama.pyx":443
+  /* "cyllama.pyx":466
  *         return <llama_cpp.llama_rope_scaling_type>self.p.rope_scaling_type
  * 
  *     @rope_scaling_type.setter             # <<<<<<<<<<<<<<
@@ -11790,7 +12558,7 @@ static PyObject *__pyx_pf_7cyllama_13ContextParams_4__setstate_cython__(CYTHON_U
   return __pyx_r;
 }
 
-/* "cyllama.pyx":456
+/* "cyllama.pyx":479
  *     cdef bint owner
  * 
  *     def __cinit__(self):             # <<<<<<<<<<<<<<
@@ -11825,7 +12593,7 @@ static int __pyx_pw_7cyllama_12LlamaContext_1__cinit__(PyObject *__pyx_v_self, P
 static int __pyx_pf_7cyllama_12LlamaContext___cinit__(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self) {
   int __pyx_r;
 
-  /* "cyllama.pyx":457
+  /* "cyllama.pyx":480
  * 
  *     def __cinit__(self):
  *         self.ctx = NULL             # <<<<<<<<<<<<<<
@@ -11834,7 +12602,7 @@ static int __pyx_pf_7cyllama_12LlamaContext___cinit__(struct __pyx_obj_7cyllama_
  */
   __pyx_v_self->ctx = NULL;
 
-  /* "cyllama.pyx":458
+  /* "cyllama.pyx":481
  *     def __cinit__(self):
  *         self.ctx = NULL
  *         self.owner = True             # <<<<<<<<<<<<<<
@@ -11843,7 +12611,7 @@ static int __pyx_pf_7cyllama_12LlamaContext___cinit__(struct __pyx_obj_7cyllama_
  */
   __pyx_v_self->owner = 1;
 
-  /* "cyllama.pyx":456
+  /* "cyllama.pyx":479
  *     cdef bint owner
  * 
  *     def __cinit__(self):             # <<<<<<<<<<<<<<
@@ -11856,7 +12624,7 @@ static int __pyx_pf_7cyllama_12LlamaContext___cinit__(struct __pyx_obj_7cyllama_
   return __pyx_r;
 }
 
-/* "cyllama.pyx":460
+/* "cyllama.pyx":483
  *         self.owner = True
  * 
  *     def __init__(             # <<<<<<<<<<<<<<
@@ -11888,7 +12656,7 @@ static int __pyx_pw_7cyllama_12LlamaContext_3__init__(PyObject *__pyx_v_self, Py
   {
     PyObject **__pyx_pyargnames[] = {&__pyx_n_s_model,&__pyx_n_s_params,&__pyx_n_s_verbose,0};
 
-    /* "cyllama.pyx":465
+    /* "cyllama.pyx":488
  *         model: LlamaModel,
  *         # params: llama_cpp.llama_context_params,
  *         params: Optional[ContextParams] = None,             # <<<<<<<<<<<<<<
@@ -11897,7 +12665,7 @@ static int __pyx_pw_7cyllama_12LlamaContext_3__init__(PyObject *__pyx_v_self, Py
  */
     values[1] = __Pyx_Arg_NewRef_VARARGS((PyObject *)((struct __pyx_obj_7cyllama_ContextParams *)Py_None));
 
-    /* "cyllama.pyx":466
+    /* "cyllama.pyx":489
  *         # params: llama_cpp.llama_context_params,
  *         params: Optional[ContextParams] = None,
  *         verbose: bool = True,             # <<<<<<<<<<<<<<
@@ -11916,25 +12684,25 @@ static int __pyx_pw_7cyllama_12LlamaContext_3__init__(PyObject *__pyx_v_self, Py
         (void)__Pyx_Arg_NewRef_VARARGS(values[0]);
         kw_args--;
       }
-      else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 460, __pyx_L3_error)
+      else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 483, __pyx_L3_error)
       else {
-        __Pyx_RaiseKeywordRequired("__init__", __pyx_n_s_model); __PYX_ERR(0, 460, __pyx_L3_error)
+        __Pyx_RaiseKeywordRequired("__init__", __pyx_n_s_model); __PYX_ERR(0, 483, __pyx_L3_error)
       }
       if (kw_args > 0 && likely(kw_args <= 2)) {
         Py_ssize_t index;
         for (index = 1; index < 3 && kw_args > 0; index++) {
           PyObject* value = __Pyx_GetKwValue_VARARGS(__pyx_kwds, __pyx_kwvalues, *__pyx_pyargnames[index]);
           if (value) { values[index] = __Pyx_Arg_NewRef_VARARGS(value); kw_args--; }
-          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 460, __pyx_L3_error)
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 483, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, 0, "__init__") < 0)) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, 0, "__init__") < 0)) __PYX_ERR(0, 483, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 0)) {
       goto __pyx_L5_argtuple_error;
     } else {
-      __Pyx_RaiseKeywordRequired("__init__", __pyx_n_s_model); __PYX_ERR(0, 460, __pyx_L3_error)
+      __Pyx_RaiseKeywordRequired("__init__", __pyx_n_s_model); __PYX_ERR(0, 483, __pyx_L3_error)
     }
     __pyx_v_model = ((struct __pyx_obj_7cyllama_LlamaModel *)values[0]);
     __pyx_v_params = ((struct __pyx_obj_7cyllama_ContextParams *)values[1]);
@@ -11942,7 +12710,7 @@ static int __pyx_pw_7cyllama_12LlamaContext_3__init__(PyObject *__pyx_v_self, Py
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 0, 0, __pyx_nargs); __PYX_ERR(0, 460, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 0, 0, __pyx_nargs); __PYX_ERR(0, 483, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -11956,11 +12724,11 @@ static int __pyx_pw_7cyllama_12LlamaContext_3__init__(PyObject *__pyx_v_self, Py
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_model), __pyx_ptype_7cyllama_LlamaModel, 0, "model", 0))) __PYX_ERR(0, 463, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_params), __pyx_ptype_7cyllama_ContextParams, 1, "params", 0))) __PYX_ERR(0, 465, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_model), __pyx_ptype_7cyllama_LlamaModel, 0, "model", 0))) __PYX_ERR(0, 486, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_params), __pyx_ptype_7cyllama_ContextParams, 1, "params", 0))) __PYX_ERR(0, 488, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_12LlamaContext_2__init__(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self), __pyx_v_model, __pyx_v_params, __pyx_v_verbose);
 
-  /* "cyllama.pyx":460
+  /* "cyllama.pyx":483
  *         self.owner = True
  * 
  *     def __init__(             # <<<<<<<<<<<<<<
@@ -11994,7 +12762,7 @@ static int __pyx_pf_7cyllama_12LlamaContext_2__init__(struct __pyx_obj_7cyllama_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 1);
 
-  /* "cyllama.pyx":468
+  /* "cyllama.pyx":491
  *         verbose: bool = True,
  *     ):
  *         self.model = model             # <<<<<<<<<<<<<<
@@ -12007,19 +12775,19 @@ static int __pyx_pf_7cyllama_12LlamaContext_2__init__(struct __pyx_obj_7cyllama_
   __Pyx_DECREF((PyObject *)__pyx_v_self->model);
   __pyx_v_self->model = __pyx_v_model;
 
-  /* "cyllama.pyx":469
+  /* "cyllama.pyx":492
  *     ):
  *         self.model = model
  *         self.params = params if params else ContextParams()             # <<<<<<<<<<<<<<
  *         self.verbose = verbose
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(((PyObject *)__pyx_v_params)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 469, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(((PyObject *)__pyx_v_params)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 492, __pyx_L1_error)
   if (__pyx_t_2) {
     __Pyx_INCREF((PyObject *)__pyx_v_params);
     __pyx_t_1 = ((PyObject *)__pyx_v_params);
   } else {
-    __pyx_t_3 = __Pyx_PyObject_CallNoArg(((PyObject *)__pyx_ptype_7cyllama_ContextParams)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 469, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_CallNoArg(((PyObject *)__pyx_ptype_7cyllama_ContextParams)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 492, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_1 = __pyx_t_3;
     __pyx_t_3 = 0;
@@ -12030,17 +12798,17 @@ static int __pyx_pf_7cyllama_12LlamaContext_2__init__(struct __pyx_obj_7cyllama_
   __pyx_v_self->params = ((struct __pyx_obj_7cyllama_ContextParams *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "cyllama.pyx":470
+  /* "cyllama.pyx":493
  *         self.model = model
  *         self.params = params if params else ContextParams()
  *         self.verbose = verbose             # <<<<<<<<<<<<<<
  * 
  *         # self.ctx = None
  */
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_verbose); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 470, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_verbose); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 493, __pyx_L1_error)
   __pyx_v_self->verbose = __pyx_t_2;
 
-  /* "cyllama.pyx":474
+  /* "cyllama.pyx":497
  *         # self.ctx = None
  * 
  *         assert self.model.model is not NULL             # <<<<<<<<<<<<<<
@@ -12052,14 +12820,14 @@ static int __pyx_pf_7cyllama_12LlamaContext_2__init__(struct __pyx_obj_7cyllama_
     __pyx_t_2 = (__pyx_v_self->model->model != NULL);
     if (unlikely(!__pyx_t_2)) {
       __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
-      __PYX_ERR(0, 474, __pyx_L1_error)
+      __PYX_ERR(0, 497, __pyx_L1_error)
     }
   }
   #else
-  if ((1)); else __PYX_ERR(0, 474, __pyx_L1_error)
+  if ((1)); else __PYX_ERR(0, 497, __pyx_L1_error)
   #endif
 
-  /* "cyllama.pyx":476
+  /* "cyllama.pyx":499
  *         assert self.model.model is not NULL
  * 
  *         self.ctx = llama_cpp.llama_new_context_with_model(self.model.model, self.params.p)             # <<<<<<<<<<<<<<
@@ -12068,7 +12836,7 @@ static int __pyx_pf_7cyllama_12LlamaContext_2__init__(struct __pyx_obj_7cyllama_
  */
   __pyx_v_self->ctx = llama_new_context_with_model(__pyx_v_self->model->model, __pyx_v_self->params->p);
 
-  /* "cyllama.pyx":478
+  /* "cyllama.pyx":501
  *         self.ctx = llama_cpp.llama_new_context_with_model(self.model.model, self.params.p)
  * 
  *         if self.ctx is NULL:             # <<<<<<<<<<<<<<
@@ -12078,20 +12846,20 @@ static int __pyx_pf_7cyllama_12LlamaContext_2__init__(struct __pyx_obj_7cyllama_
   __pyx_t_2 = (__pyx_v_self->ctx == NULL);
   if (unlikely(__pyx_t_2)) {
 
-    /* "cyllama.pyx":479
+    /* "cyllama.pyx":502
  * 
  *         if self.ctx is NULL:
  *             raise ValueError("Failed to create llama_context")             # <<<<<<<<<<<<<<
  * 
  *     def __dealloc__(self):
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 479, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 502, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 479, __pyx_L1_error)
+    __PYX_ERR(0, 502, __pyx_L1_error)
 
-    /* "cyllama.pyx":478
+    /* "cyllama.pyx":501
  *         self.ctx = llama_cpp.llama_new_context_with_model(self.model.model, self.params.p)
  * 
  *         if self.ctx is NULL:             # <<<<<<<<<<<<<<
@@ -12100,7 +12868,7 @@ static int __pyx_pf_7cyllama_12LlamaContext_2__init__(struct __pyx_obj_7cyllama_
  */
   }
 
-  /* "cyllama.pyx":460
+  /* "cyllama.pyx":483
  *         self.owner = True
  * 
  *     def __init__(             # <<<<<<<<<<<<<<
@@ -12121,7 +12889,7 @@ static int __pyx_pf_7cyllama_12LlamaContext_2__init__(struct __pyx_obj_7cyllama_
   return __pyx_r;
 }
 
-/* "cyllama.pyx":481
+/* "cyllama.pyx":504
  *             raise ValueError("Failed to create llama_context")
  * 
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
@@ -12146,7 +12914,7 @@ static void __pyx_pf_7cyllama_12LlamaContext_4__dealloc__(struct __pyx_obj_7cyll
   int __pyx_t_1;
   int __pyx_t_2;
 
-  /* "cyllama.pyx":482
+  /* "cyllama.pyx":505
  * 
  *     def __dealloc__(self):
  *         if self.ctx is not NULL and self.owner is True:             # <<<<<<<<<<<<<<
@@ -12164,7 +12932,7 @@ static void __pyx_pf_7cyllama_12LlamaContext_4__dealloc__(struct __pyx_obj_7cyll
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "cyllama.pyx":483
+    /* "cyllama.pyx":506
  *     def __dealloc__(self):
  *         if self.ctx is not NULL and self.owner is True:
  *             llama_cpp.llama_free(self.ctx)             # <<<<<<<<<<<<<<
@@ -12173,7 +12941,7 @@ static void __pyx_pf_7cyllama_12LlamaContext_4__dealloc__(struct __pyx_obj_7cyll
  */
     llama_free(__pyx_v_self->ctx);
 
-    /* "cyllama.pyx":484
+    /* "cyllama.pyx":507
  *         if self.ctx is not NULL and self.owner is True:
  *             llama_cpp.llama_free(self.ctx)
  *             self.ctx = NULL             # <<<<<<<<<<<<<<
@@ -12182,7 +12950,7 @@ static void __pyx_pf_7cyllama_12LlamaContext_4__dealloc__(struct __pyx_obj_7cyll
  */
     __pyx_v_self->ctx = NULL;
 
-    /* "cyllama.pyx":482
+    /* "cyllama.pyx":505
  * 
  *     def __dealloc__(self):
  *         if self.ctx is not NULL and self.owner is True:             # <<<<<<<<<<<<<<
@@ -12191,7 +12959,7 @@ static void __pyx_pf_7cyllama_12LlamaContext_4__dealloc__(struct __pyx_obj_7cyll
  */
   }
 
-  /* "cyllama.pyx":481
+  /* "cyllama.pyx":504
  *             raise ValueError("Failed to create llama_context")
  * 
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
@@ -12202,7 +12970,7 @@ static void __pyx_pf_7cyllama_12LlamaContext_4__dealloc__(struct __pyx_obj_7cyll
   /* function exit code */
 }
 
-/* "cyllama.pyx":486
+/* "cyllama.pyx":509
  *             self.ctx = NULL
  * 
  *     def close(self):             # <<<<<<<<<<<<<<
@@ -12263,14 +13031,14 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_6close(struct __pyx_obj_7cylla
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("close", 1);
 
-  /* "cyllama.pyx":487
+  /* "cyllama.pyx":510
  * 
  *     def close(self):
  *         self.__dealloc__()             # <<<<<<<<<<<<<<
  * 
  *     def n_ctx(self) -> int:
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dealloc); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 487, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dealloc); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 510, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -12290,13 +13058,13 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_6close(struct __pyx_obj_7cylla
     PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 487, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 510, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "cyllama.pyx":486
+  /* "cyllama.pyx":509
  *             self.ctx = NULL
  * 
  *     def close(self):             # <<<<<<<<<<<<<<
@@ -12319,7 +13087,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_6close(struct __pyx_obj_7cylla
   return __pyx_r;
 }
 
-/* "cyllama.pyx":489
+/* "cyllama.pyx":512
  *         self.__dealloc__()
  * 
  *     def n_ctx(self) -> int:             # <<<<<<<<<<<<<<
@@ -12378,7 +13146,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_8n_ctx(struct __pyx_obj_7cylla
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("n_ctx", 1);
 
-  /* "cyllama.pyx":490
+  /* "cyllama.pyx":513
  * 
  *     def n_ctx(self) -> int:
  *         assert self.ctx is not NULL             # <<<<<<<<<<<<<<
@@ -12390,14 +13158,14 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_8n_ctx(struct __pyx_obj_7cylla
     __pyx_t_1 = (__pyx_v_self->ctx != NULL);
     if (unlikely(!__pyx_t_1)) {
       __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
-      __PYX_ERR(0, 490, __pyx_L1_error)
+      __PYX_ERR(0, 513, __pyx_L1_error)
     }
   }
   #else
-  if ((1)); else __PYX_ERR(0, 490, __pyx_L1_error)
+  if ((1)); else __PYX_ERR(0, 513, __pyx_L1_error)
   #endif
 
-  /* "cyllama.pyx":491
+  /* "cyllama.pyx":514
  *     def n_ctx(self) -> int:
  *         assert self.ctx is not NULL
  *         return llama_cpp.llama_n_ctx(self.ctx)             # <<<<<<<<<<<<<<
@@ -12405,14 +13173,14 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_8n_ctx(struct __pyx_obj_7cylla
  *     # FIXME: name collision
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __Pyx_PyInt_From_uint32_t(llama_n_ctx(__pyx_v_self->ctx)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 491, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_uint32_t(llama_n_ctx(__pyx_v_self->ctx)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 514, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 491, __pyx_L1_error)
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 514, __pyx_L1_error)
   __pyx_r = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cyllama.pyx":489
+  /* "cyllama.pyx":512
  *         self.__dealloc__()
  * 
  *     def n_ctx(self) -> int:             # <<<<<<<<<<<<<<
@@ -12431,7 +13199,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_8n_ctx(struct __pyx_obj_7cylla
   return __pyx_r;
 }
 
-/* "cyllama.pyx":498
+/* "cyllama.pyx":521
  *     #     return llama_cpp.llama_pooling_type(self.ctx)
  * 
  *     def kv_cache_clear(self):             # <<<<<<<<<<<<<<
@@ -12489,7 +13257,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_10kv_cache_clear(struct __pyx_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("kv_cache_clear", 1);
 
-  /* "cyllama.pyx":499
+  /* "cyllama.pyx":522
  * 
  *     def kv_cache_clear(self):
  *         assert self.ctx is not NULL             # <<<<<<<<<<<<<<
@@ -12501,14 +13269,14 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_10kv_cache_clear(struct __pyx_
     __pyx_t_1 = (__pyx_v_self->ctx != NULL);
     if (unlikely(!__pyx_t_1)) {
       __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
-      __PYX_ERR(0, 499, __pyx_L1_error)
+      __PYX_ERR(0, 522, __pyx_L1_error)
     }
   }
   #else
-  if ((1)); else __PYX_ERR(0, 499, __pyx_L1_error)
+  if ((1)); else __PYX_ERR(0, 522, __pyx_L1_error)
   #endif
 
-  /* "cyllama.pyx":500
+  /* "cyllama.pyx":523
  *     def kv_cache_clear(self):
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_clear(self.ctx)             # <<<<<<<<<<<<<<
@@ -12517,7 +13285,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_10kv_cache_clear(struct __pyx_
  */
   llama_kv_cache_clear(__pyx_v_self->ctx);
 
-  /* "cyllama.pyx":498
+  /* "cyllama.pyx":521
  *     #     return llama_cpp.llama_pooling_type(self.ctx)
  * 
  *     def kv_cache_clear(self):             # <<<<<<<<<<<<<<
@@ -12537,7 +13305,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_10kv_cache_clear(struct __pyx_
   return __pyx_r;
 }
 
-/* "cyllama.pyx":502
+/* "cyllama.pyx":525
  *         llama_cpp.llama_kv_cache_clear(self.ctx)
  * 
  *     def kv_cache_seq_rm(self, seq_id: int, p0: int, p1: int):             # <<<<<<<<<<<<<<
@@ -12604,7 +13372,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 502, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 525, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
@@ -12612,9 +13380,9 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[1]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 502, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 525, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_rm", 1, 3, 3, 1); __PYX_ERR(0, 502, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_rm", 1, 3, 3, 1); __PYX_ERR(0, 525, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -12622,14 +13390,14 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[2]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 502, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 525, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_rm", 1, 3, 3, 2); __PYX_ERR(0, 502, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_rm", 1, 3, 3, 2); __PYX_ERR(0, 525, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "kv_cache_seq_rm") < 0)) __PYX_ERR(0, 502, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "kv_cache_seq_rm") < 0)) __PYX_ERR(0, 525, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 3)) {
       goto __pyx_L5_argtuple_error;
@@ -12644,7 +13412,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("kv_cache_seq_rm", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 502, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("kv_cache_seq_rm", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 525, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -12658,9 +13426,9 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seq_id), (&PyInt_Type), 0, "seq_id", 1))) __PYX_ERR(0, 502, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p0), (&PyInt_Type), 0, "p0", 1))) __PYX_ERR(0, 502, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p1), (&PyInt_Type), 0, "p1", 1))) __PYX_ERR(0, 502, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seq_id), (&PyInt_Type), 0, "seq_id", 1))) __PYX_ERR(0, 525, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p0), (&PyInt_Type), 0, "p0", 1))) __PYX_ERR(0, 525, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p1), (&PyInt_Type), 0, "p1", 1))) __PYX_ERR(0, 525, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_12LlamaContext_12kv_cache_seq_rm(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self), __pyx_v_seq_id, __pyx_v_p0, __pyx_v_p1);
 
   /* function exit code */
@@ -12690,7 +13458,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_12kv_cache_seq_rm(struct __pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("kv_cache_seq_rm", 1);
 
-  /* "cyllama.pyx":503
+  /* "cyllama.pyx":526
  * 
  *     def kv_cache_seq_rm(self, seq_id: int, p0: int, p1: int):
  *         assert self.ctx is not NULL             # <<<<<<<<<<<<<<
@@ -12702,26 +13470,26 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_12kv_cache_seq_rm(struct __pyx
     __pyx_t_1 = (__pyx_v_self->ctx != NULL);
     if (unlikely(!__pyx_t_1)) {
       __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
-      __PYX_ERR(0, 503, __pyx_L1_error)
+      __PYX_ERR(0, 526, __pyx_L1_error)
     }
   }
   #else
-  if ((1)); else __PYX_ERR(0, 503, __pyx_L1_error)
+  if ((1)); else __PYX_ERR(0, 526, __pyx_L1_error)
   #endif
 
-  /* "cyllama.pyx":504
+  /* "cyllama.pyx":527
  *     def kv_cache_seq_rm(self, seq_id: int, p0: int, p1: int):
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_rm(self.ctx, seq_id, p0, p1)             # <<<<<<<<<<<<<<
  * 
  *     def kv_cache_seq_cp(self, seq_id_src: int, seq_id_dst: int, p0: int, p1: int):
  */
-  __pyx_t_2 = __Pyx_PyInt_As_int32_t(__pyx_v_seq_id); if (unlikely((__pyx_t_2 == ((llama_seq_id)-1)) && PyErr_Occurred())) __PYX_ERR(0, 504, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_PyInt_As_int32_t(__pyx_v_p0); if (unlikely((__pyx_t_3 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 504, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_PyInt_As_int32_t(__pyx_v_p1); if (unlikely((__pyx_t_4 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 504, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int32_t(__pyx_v_seq_id); if (unlikely((__pyx_t_2 == ((llama_seq_id)-1)) && PyErr_Occurred())) __PYX_ERR(0, 527, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_As_int32_t(__pyx_v_p0); if (unlikely((__pyx_t_3 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 527, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyInt_As_int32_t(__pyx_v_p1); if (unlikely((__pyx_t_4 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 527, __pyx_L1_error)
   (void)(llama_kv_cache_seq_rm(__pyx_v_self->ctx, __pyx_t_2, __pyx_t_3, __pyx_t_4));
 
-  /* "cyllama.pyx":502
+  /* "cyllama.pyx":525
  *         llama_cpp.llama_kv_cache_clear(self.ctx)
  * 
  *     def kv_cache_seq_rm(self, seq_id: int, p0: int, p1: int):             # <<<<<<<<<<<<<<
@@ -12741,7 +13509,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_12kv_cache_seq_rm(struct __pyx
   return __pyx_r;
 }
 
-/* "cyllama.pyx":506
+/* "cyllama.pyx":529
  *         llama_cpp.llama_kv_cache_seq_rm(self.ctx, seq_id, p0, p1)
  * 
  *     def kv_cache_seq_cp(self, seq_id_src: int, seq_id_dst: int, p0: int, p1: int):             # <<<<<<<<<<<<<<
@@ -12811,7 +13579,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 506, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 529, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
@@ -12819,9 +13587,9 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[1]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 506, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 529, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_cp", 1, 4, 4, 1); __PYX_ERR(0, 506, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_cp", 1, 4, 4, 1); __PYX_ERR(0, 529, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -12829,9 +13597,9 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[2]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 506, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 529, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_cp", 1, 4, 4, 2); __PYX_ERR(0, 506, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_cp", 1, 4, 4, 2); __PYX_ERR(0, 529, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
@@ -12839,14 +13607,14 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[3]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 506, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 529, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_cp", 1, 4, 4, 3); __PYX_ERR(0, 506, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_cp", 1, 4, 4, 3); __PYX_ERR(0, 529, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "kv_cache_seq_cp") < 0)) __PYX_ERR(0, 506, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "kv_cache_seq_cp") < 0)) __PYX_ERR(0, 529, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 4)) {
       goto __pyx_L5_argtuple_error;
@@ -12863,7 +13631,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("kv_cache_seq_cp", 1, 4, 4, __pyx_nargs); __PYX_ERR(0, 506, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("kv_cache_seq_cp", 1, 4, 4, __pyx_nargs); __PYX_ERR(0, 529, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -12877,10 +13645,10 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seq_id_src), (&PyInt_Type), 0, "seq_id_src", 1))) __PYX_ERR(0, 506, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seq_id_dst), (&PyInt_Type), 0, "seq_id_dst", 1))) __PYX_ERR(0, 506, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p0), (&PyInt_Type), 0, "p0", 1))) __PYX_ERR(0, 506, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p1), (&PyInt_Type), 0, "p1", 1))) __PYX_ERR(0, 506, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seq_id_src), (&PyInt_Type), 0, "seq_id_src", 1))) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seq_id_dst), (&PyInt_Type), 0, "seq_id_dst", 1))) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p0), (&PyInt_Type), 0, "p0", 1))) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p1), (&PyInt_Type), 0, "p1", 1))) __PYX_ERR(0, 529, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_12LlamaContext_14kv_cache_seq_cp(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self), __pyx_v_seq_id_src, __pyx_v_seq_id_dst, __pyx_v_p0, __pyx_v_p1);
 
   /* function exit code */
@@ -12911,7 +13679,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_14kv_cache_seq_cp(struct __pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("kv_cache_seq_cp", 1);
 
-  /* "cyllama.pyx":507
+  /* "cyllama.pyx":530
  * 
  *     def kv_cache_seq_cp(self, seq_id_src: int, seq_id_dst: int, p0: int, p1: int):
  *         assert self.ctx is not NULL             # <<<<<<<<<<<<<<
@@ -12923,27 +13691,27 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_14kv_cache_seq_cp(struct __pyx
     __pyx_t_1 = (__pyx_v_self->ctx != NULL);
     if (unlikely(!__pyx_t_1)) {
       __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
-      __PYX_ERR(0, 507, __pyx_L1_error)
+      __PYX_ERR(0, 530, __pyx_L1_error)
     }
   }
   #else
-  if ((1)); else __PYX_ERR(0, 507, __pyx_L1_error)
+  if ((1)); else __PYX_ERR(0, 530, __pyx_L1_error)
   #endif
 
-  /* "cyllama.pyx":508
+  /* "cyllama.pyx":531
  *     def kv_cache_seq_cp(self, seq_id_src: int, seq_id_dst: int, p0: int, p1: int):
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_cp(self.ctx, seq_id_src, seq_id_dst, p0, p1)             # <<<<<<<<<<<<<<
  * 
  *     def kv_cache_seq_keep(self, seq_id: int):
  */
-  __pyx_t_2 = __Pyx_PyInt_As_int32_t(__pyx_v_seq_id_src); if (unlikely((__pyx_t_2 == ((llama_seq_id)-1)) && PyErr_Occurred())) __PYX_ERR(0, 508, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_PyInt_As_int32_t(__pyx_v_seq_id_dst); if (unlikely((__pyx_t_3 == ((llama_seq_id)-1)) && PyErr_Occurred())) __PYX_ERR(0, 508, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_PyInt_As_int32_t(__pyx_v_p0); if (unlikely((__pyx_t_4 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 508, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_PyInt_As_int32_t(__pyx_v_p1); if (unlikely((__pyx_t_5 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 508, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int32_t(__pyx_v_seq_id_src); if (unlikely((__pyx_t_2 == ((llama_seq_id)-1)) && PyErr_Occurred())) __PYX_ERR(0, 531, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_As_int32_t(__pyx_v_seq_id_dst); if (unlikely((__pyx_t_3 == ((llama_seq_id)-1)) && PyErr_Occurred())) __PYX_ERR(0, 531, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyInt_As_int32_t(__pyx_v_p0); if (unlikely((__pyx_t_4 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 531, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_As_int32_t(__pyx_v_p1); if (unlikely((__pyx_t_5 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 531, __pyx_L1_error)
   llama_kv_cache_seq_cp(__pyx_v_self->ctx, __pyx_t_2, __pyx_t_3, __pyx_t_4, __pyx_t_5);
 
-  /* "cyllama.pyx":506
+  /* "cyllama.pyx":529
  *         llama_cpp.llama_kv_cache_seq_rm(self.ctx, seq_id, p0, p1)
  * 
  *     def kv_cache_seq_cp(self, seq_id_src: int, seq_id_dst: int, p0: int, p1: int):             # <<<<<<<<<<<<<<
@@ -12963,7 +13731,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_14kv_cache_seq_cp(struct __pyx
   return __pyx_r;
 }
 
-/* "cyllama.pyx":510
+/* "cyllama.pyx":533
  *         llama_cpp.llama_kv_cache_seq_cp(self.ctx, seq_id_src, seq_id_dst, p0, p1)
  * 
  *     def kv_cache_seq_keep(self, seq_id: int):             # <<<<<<<<<<<<<<
@@ -13024,12 +13792,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 510, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 533, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "kv_cache_seq_keep") < 0)) __PYX_ERR(0, 510, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "kv_cache_seq_keep") < 0)) __PYX_ERR(0, 533, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -13040,7 +13808,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("kv_cache_seq_keep", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 510, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("kv_cache_seq_keep", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 533, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -13054,7 +13822,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seq_id), (&PyInt_Type), 0, "seq_id", 1))) __PYX_ERR(0, 510, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seq_id), (&PyInt_Type), 0, "seq_id", 1))) __PYX_ERR(0, 533, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_12LlamaContext_16kv_cache_seq_keep(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self), __pyx_v_seq_id);
 
   /* function exit code */
@@ -13082,7 +13850,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_16kv_cache_seq_keep(struct __p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("kv_cache_seq_keep", 1);
 
-  /* "cyllama.pyx":511
+  /* "cyllama.pyx":534
  * 
  *     def kv_cache_seq_keep(self, seq_id: int):
  *         assert self.ctx is not NULL             # <<<<<<<<<<<<<<
@@ -13094,24 +13862,24 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_16kv_cache_seq_keep(struct __p
     __pyx_t_1 = (__pyx_v_self->ctx != NULL);
     if (unlikely(!__pyx_t_1)) {
       __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
-      __PYX_ERR(0, 511, __pyx_L1_error)
+      __PYX_ERR(0, 534, __pyx_L1_error)
     }
   }
   #else
-  if ((1)); else __PYX_ERR(0, 511, __pyx_L1_error)
+  if ((1)); else __PYX_ERR(0, 534, __pyx_L1_error)
   #endif
 
-  /* "cyllama.pyx":512
+  /* "cyllama.pyx":535
  *     def kv_cache_seq_keep(self, seq_id: int):
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_keep(self.ctx, seq_id)             # <<<<<<<<<<<<<<
  * 
  *     def kv_cache_seq_shift(self, seq_id: int, p0: int, p1: int, shift: int):
  */
-  __pyx_t_2 = __Pyx_PyInt_As_int32_t(__pyx_v_seq_id); if (unlikely((__pyx_t_2 == ((llama_seq_id)-1)) && PyErr_Occurred())) __PYX_ERR(0, 512, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int32_t(__pyx_v_seq_id); if (unlikely((__pyx_t_2 == ((llama_seq_id)-1)) && PyErr_Occurred())) __PYX_ERR(0, 535, __pyx_L1_error)
   llama_kv_cache_seq_keep(__pyx_v_self->ctx, __pyx_t_2);
 
-  /* "cyllama.pyx":510
+  /* "cyllama.pyx":533
  *         llama_cpp.llama_kv_cache_seq_cp(self.ctx, seq_id_src, seq_id_dst, p0, p1)
  * 
  *     def kv_cache_seq_keep(self, seq_id: int):             # <<<<<<<<<<<<<<
@@ -13131,7 +13899,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_16kv_cache_seq_keep(struct __p
   return __pyx_r;
 }
 
-/* "cyllama.pyx":514
+/* "cyllama.pyx":537
  *         llama_cpp.llama_kv_cache_seq_keep(self.ctx, seq_id)
  * 
  *     def kv_cache_seq_shift(self, seq_id: int, p0: int, p1: int, shift: int):             # <<<<<<<<<<<<<<
@@ -13201,7 +13969,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 514, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 537, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
@@ -13209,9 +13977,9 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[1]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 514, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 537, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_shift", 1, 4, 4, 1); __PYX_ERR(0, 514, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_shift", 1, 4, 4, 1); __PYX_ERR(0, 537, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -13219,9 +13987,9 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[2]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 514, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 537, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_shift", 1, 4, 4, 2); __PYX_ERR(0, 514, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_shift", 1, 4, 4, 2); __PYX_ERR(0, 537, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
@@ -13229,14 +13997,14 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[3]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 514, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 537, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_shift", 1, 4, 4, 3); __PYX_ERR(0, 514, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("kv_cache_seq_shift", 1, 4, 4, 3); __PYX_ERR(0, 537, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "kv_cache_seq_shift") < 0)) __PYX_ERR(0, 514, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "kv_cache_seq_shift") < 0)) __PYX_ERR(0, 537, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 4)) {
       goto __pyx_L5_argtuple_error;
@@ -13253,7 +14021,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("kv_cache_seq_shift", 1, 4, 4, __pyx_nargs); __PYX_ERR(0, 514, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("kv_cache_seq_shift", 1, 4, 4, __pyx_nargs); __PYX_ERR(0, 537, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -13267,10 +14035,10 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seq_id), (&PyInt_Type), 0, "seq_id", 1))) __PYX_ERR(0, 514, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p0), (&PyInt_Type), 0, "p0", 1))) __PYX_ERR(0, 514, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p1), (&PyInt_Type), 0, "p1", 1))) __PYX_ERR(0, 514, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_shift), (&PyInt_Type), 0, "shift", 1))) __PYX_ERR(0, 514, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seq_id), (&PyInt_Type), 0, "seq_id", 1))) __PYX_ERR(0, 537, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p0), (&PyInt_Type), 0, "p0", 1))) __PYX_ERR(0, 537, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p1), (&PyInt_Type), 0, "p1", 1))) __PYX_ERR(0, 537, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_shift), (&PyInt_Type), 0, "shift", 1))) __PYX_ERR(0, 537, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_12LlamaContext_18kv_cache_seq_shift(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self), __pyx_v_seq_id, __pyx_v_p0, __pyx_v_p1, __pyx_v_shift);
 
   /* function exit code */
@@ -13301,7 +14069,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_18kv_cache_seq_shift(struct __
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("kv_cache_seq_shift", 1);
 
-  /* "cyllama.pyx":515
+  /* "cyllama.pyx":538
  * 
  *     def kv_cache_seq_shift(self, seq_id: int, p0: int, p1: int, shift: int):
  *         assert self.ctx is not NULL             # <<<<<<<<<<<<<<
@@ -13313,27 +14081,27 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_18kv_cache_seq_shift(struct __
     __pyx_t_1 = (__pyx_v_self->ctx != NULL);
     if (unlikely(!__pyx_t_1)) {
       __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
-      __PYX_ERR(0, 515, __pyx_L1_error)
+      __PYX_ERR(0, 538, __pyx_L1_error)
     }
   }
   #else
-  if ((1)); else __PYX_ERR(0, 515, __pyx_L1_error)
+  if ((1)); else __PYX_ERR(0, 538, __pyx_L1_error)
   #endif
 
-  /* "cyllama.pyx":516
+  /* "cyllama.pyx":539
  *     def kv_cache_seq_shift(self, seq_id: int, p0: int, p1: int, shift: int):
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_add(self.ctx, seq_id, p0, p1, shift)             # <<<<<<<<<<<<<<
  * 
  *     # def get_state_size(self) -> int:
  */
-  __pyx_t_2 = __Pyx_PyInt_As_int32_t(__pyx_v_seq_id); if (unlikely((__pyx_t_2 == ((llama_seq_id)-1)) && PyErr_Occurred())) __PYX_ERR(0, 516, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_PyInt_As_int32_t(__pyx_v_p0); if (unlikely((__pyx_t_3 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 516, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_PyInt_As_int32_t(__pyx_v_p1); if (unlikely((__pyx_t_4 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 516, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_PyInt_As_int32_t(__pyx_v_shift); if (unlikely((__pyx_t_5 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 516, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int32_t(__pyx_v_seq_id); if (unlikely((__pyx_t_2 == ((llama_seq_id)-1)) && PyErr_Occurred())) __PYX_ERR(0, 539, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_As_int32_t(__pyx_v_p0); if (unlikely((__pyx_t_3 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 539, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyInt_As_int32_t(__pyx_v_p1); if (unlikely((__pyx_t_4 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 539, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_As_int32_t(__pyx_v_shift); if (unlikely((__pyx_t_5 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 539, __pyx_L1_error)
   llama_kv_cache_seq_add(__pyx_v_self->ctx, __pyx_t_2, __pyx_t_3, __pyx_t_4, __pyx_t_5);
 
-  /* "cyllama.pyx":514
+  /* "cyllama.pyx":537
  *         llama_cpp.llama_kv_cache_seq_keep(self.ctx, seq_id)
  * 
  *     def kv_cache_seq_shift(self, seq_id: int, p0: int, p1: int, shift: int):             # <<<<<<<<<<<<<<
@@ -13353,7 +14121,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_18kv_cache_seq_shift(struct __
   return __pyx_r;
 }
 
-/* "cyllama.pyx":540
+/* "cyllama.pyx":563
  *     #         raise RuntimeError(f"llama_decode returned {return_code}")
  * 
  *     def set_n_threads(self, n_threads: int, n_threads_batch: int):             # <<<<<<<<<<<<<<
@@ -13417,7 +14185,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 540, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 563, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
@@ -13425,14 +14193,14 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[1]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 540, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 563, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_n_threads", 1, 2, 2, 1); __PYX_ERR(0, 540, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_n_threads", 1, 2, 2, 1); __PYX_ERR(0, 563, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_n_threads") < 0)) __PYX_ERR(0, 540, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_n_threads") < 0)) __PYX_ERR(0, 563, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -13445,7 +14213,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_n_threads", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 540, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_n_threads", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 563, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -13459,8 +14227,8 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_n_threads), (&PyInt_Type), 0, "n_threads", 1))) __PYX_ERR(0, 540, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_n_threads_batch), (&PyInt_Type), 0, "n_threads_batch", 1))) __PYX_ERR(0, 540, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_n_threads), (&PyInt_Type), 0, "n_threads", 1))) __PYX_ERR(0, 563, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_n_threads_batch), (&PyInt_Type), 0, "n_threads_batch", 1))) __PYX_ERR(0, 563, __pyx_L1_error)
   __pyx_r = __pyx_pf_7cyllama_12LlamaContext_20set_n_threads(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self), __pyx_v_n_threads, __pyx_v_n_threads_batch);
 
   /* function exit code */
@@ -13489,7 +14257,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_20set_n_threads(struct __pyx_o
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_n_threads", 1);
 
-  /* "cyllama.pyx":541
+  /* "cyllama.pyx":564
  * 
  *     def set_n_threads(self, n_threads: int, n_threads_batch: int):
  *         assert self.ctx is not NULL             # <<<<<<<<<<<<<<
@@ -13501,25 +14269,25 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_20set_n_threads(struct __pyx_o
     __pyx_t_1 = (__pyx_v_self->ctx != NULL);
     if (unlikely(!__pyx_t_1)) {
       __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
-      __PYX_ERR(0, 541, __pyx_L1_error)
+      __PYX_ERR(0, 564, __pyx_L1_error)
     }
   }
   #else
-  if ((1)); else __PYX_ERR(0, 541, __pyx_L1_error)
+  if ((1)); else __PYX_ERR(0, 564, __pyx_L1_error)
   #endif
 
-  /* "cyllama.pyx":542
+  /* "cyllama.pyx":565
  *     def set_n_threads(self, n_threads: int, n_threads_batch: int):
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_set_n_threads(self.ctx, n_threads, n_threads_batch)             # <<<<<<<<<<<<<<
  * 
  *     # def get_logits(self):
  */
-  __pyx_t_2 = __Pyx_PyInt_As_uint32_t(__pyx_v_n_threads); if (unlikely((__pyx_t_2 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 542, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_PyInt_As_uint32_t(__pyx_v_n_threads_batch); if (unlikely((__pyx_t_3 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 542, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_uint32_t(__pyx_v_n_threads); if (unlikely((__pyx_t_2 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 565, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_As_uint32_t(__pyx_v_n_threads_batch); if (unlikely((__pyx_t_3 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 565, __pyx_L1_error)
   llama_set_n_threads(__pyx_v_self->ctx, __pyx_t_2, __pyx_t_3);
 
-  /* "cyllama.pyx":540
+  /* "cyllama.pyx":563
  *     #         raise RuntimeError(f"llama_decode returned {return_code}")
  * 
  *     def set_n_threads(self, n_threads: int, n_threads_batch: int):             # <<<<<<<<<<<<<<
@@ -13539,7 +14307,479 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_20set_n_threads(struct __pyx_o
   return __pyx_r;
 }
 
-/* "cyllama.pyx":451
+/* "cyllama.pyx":581
+ *     # Sampling functions
+ * 
+ *     def set_rng_seed(self, seed: int):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_set_rng_seed(self.ctx, seed)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_23set_rng_seed(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_7cyllama_12LlamaContext_23set_rng_seed = {"set_rng_seed", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_23set_rng_seed, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_23set_rng_seed(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_seed = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("set_rng_seed (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_seed,0};
+    if (__pyx_kwds) {
+      Py_ssize_t kw_args;
+      switch (__pyx_nargs) {
+        case  1: values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = __Pyx_NumKwargs_FASTCALL(__pyx_kwds);
+      switch (__pyx_nargs) {
+        case  0:
+        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_seed)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 581, __pyx_L3_error)
+        else goto __pyx_L5_argtuple_error;
+      }
+      if (unlikely(kw_args > 0)) {
+        const Py_ssize_t kwd_pos_args = __pyx_nargs;
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_rng_seed") < 0)) __PYX_ERR(0, 581, __pyx_L3_error)
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+    }
+    __pyx_v_seed = ((PyObject*)values[0]);
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("set_rng_seed", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 581, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_AddTraceback("cyllama.LlamaContext.set_rng_seed", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seed), (&PyInt_Type), 0, "seed", 1))) __PYX_ERR(0, 581, __pyx_L1_error)
+  __pyx_r = __pyx_pf_7cyllama_12LlamaContext_22set_rng_seed(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self), __pyx_v_seed);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  __pyx_L0:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_22set_rng_seed(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self, PyObject *__pyx_v_seed) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  uint32_t __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("set_rng_seed", 1);
+
+  /* "cyllama.pyx":582
+ * 
+ *     def set_rng_seed(self, seed: int):
+ *         assert self.ctx is not NULL             # <<<<<<<<<<<<<<
+ *         llama_cpp.llama_set_rng_seed(self.ctx, seed)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->ctx != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 582, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 582, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":583
+ *     def set_rng_seed(self, seed: int):
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_set_rng_seed(self.ctx, seed)             # <<<<<<<<<<<<<<
+ * 
+ *     # def sample_repetition_penalties(
+ */
+  __pyx_t_2 = __Pyx_PyInt_As_uint32_t(__pyx_v_seed); if (unlikely((__pyx_t_2 == ((uint32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 583, __pyx_L1_error)
+  llama_set_rng_seed(__pyx_v_self->ctx, __pyx_t_2);
+
+  /* "cyllama.pyx":581
+ *     # Sampling functions
+ * 
+ *     def set_rng_seed(self, seed: int):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_set_rng_seed(self.ctx, seed)
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("cyllama.LlamaContext.set_rng_seed", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":715
+ *     #     llama_cpp.llama_grammar_accept_token(grammar.grammar, self.ctx, token)
+ * 
+ *     def reset_timings(self):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_reset_timings(self.ctx)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_25reset_timings(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_7cyllama_12LlamaContext_25reset_timings = {"reset_timings", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_25reset_timings, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_25reset_timings(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("reset_timings (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) {
+    __Pyx_RaiseArgtupleInvalid("reset_timings", 1, 0, 0, __pyx_nargs); return NULL;}
+  if (unlikely(__pyx_kwds) && __Pyx_NumKwargs_FASTCALL(__pyx_kwds) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "reset_timings", 0))) return NULL;
+  __pyx_r = __pyx_pf_7cyllama_12LlamaContext_24reset_timings(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_24reset_timings(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("reset_timings", 1);
+
+  /* "cyllama.pyx":716
+ * 
+ *     def reset_timings(self):
+ *         assert self.ctx is not NULL             # <<<<<<<<<<<<<<
+ *         llama_cpp.llama_reset_timings(self.ctx)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->ctx != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 716, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 716, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":717
+ *     def reset_timings(self):
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_reset_timings(self.ctx)             # <<<<<<<<<<<<<<
+ * 
+ *     def print_timings(self):
+ */
+  llama_reset_timings(__pyx_v_self->ctx);
+
+  /* "cyllama.pyx":715
+ *     #     llama_cpp.llama_grammar_accept_token(grammar.grammar, self.ctx, token)
+ * 
+ *     def reset_timings(self):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_reset_timings(self.ctx)
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("cyllama.LlamaContext.reset_timings", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":719
+ *         llama_cpp.llama_reset_timings(self.ctx)
+ * 
+ *     def print_timings(self):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_print_timings(self.ctx)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_27print_timings(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_7cyllama_12LlamaContext_27print_timings = {"print_timings", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_27print_timings, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_27print_timings(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("print_timings (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) {
+    __Pyx_RaiseArgtupleInvalid("print_timings", 1, 0, 0, __pyx_nargs); return NULL;}
+  if (unlikely(__pyx_kwds) && __Pyx_NumKwargs_FASTCALL(__pyx_kwds) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "print_timings", 0))) return NULL;
+  __pyx_r = __pyx_pf_7cyllama_12LlamaContext_26print_timings(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_26print_timings(struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("print_timings", 1);
+
+  /* "cyllama.pyx":720
+ * 
+ *     def print_timings(self):
+ *         assert self.ctx is not NULL             # <<<<<<<<<<<<<<
+ *         llama_cpp.llama_print_timings(self.ctx)
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->ctx != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 720, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 720, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":721
+ *     def print_timings(self):
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_print_timings(self.ctx)             # <<<<<<<<<<<<<<
+ * 
+ *     # Utility functions
+ */
+  llama_print_timings(__pyx_v_self->ctx);
+
+  /* "cyllama.pyx":719
+ *         llama_cpp.llama_reset_timings(self.ctx)
+ * 
+ *     def print_timings(self):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_print_timings(self.ctx)
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("cyllama.LlamaContext.print_timings", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":724
+ * 
+ *     # Utility functions
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def default_params():
+ *         """Get the default llama_context_params."""
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_29default_params(CYTHON_UNUSED PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_7cyllama_12LlamaContext_28default_params, "Get the default llama_context_params.");
+static PyMethodDef __pyx_mdef_7cyllama_12LlamaContext_29default_params = {"default_params", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_29default_params, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7cyllama_12LlamaContext_28default_params};
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_29default_params(CYTHON_UNUSED PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("default_params (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) {
+    __Pyx_RaiseArgtupleInvalid("default_params", 1, 0, 0, __pyx_nargs); return NULL;}
+  if (unlikely(__pyx_kwds) && __Pyx_NumKwargs_FASTCALL(__pyx_kwds) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "default_params", 0))) return NULL;
+  __pyx_r = __pyx_pf_7cyllama_12LlamaContext_28default_params();
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_28default_params(void) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("default_params", 1);
+
+  /* "cyllama.pyx":727
+ *     def default_params():
+ *         """Get the default llama_context_params."""
+ *         return LlamaContext()             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyObject_CallNoArg(((PyObject *)__pyx_ptype_7cyllama_LlamaContext)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 727, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "cyllama.pyx":724
+ * 
+ *     # Utility functions
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def default_params():
+ *         """Get the default llama_context_params."""
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("cyllama.LlamaContext.default_params", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":474
  *     """Intermediate Python wrapper for a llama.cpp llama_context."""
  *     cdef llama_cpp.llama_context * ctx
  *     cdef public LlamaModel model             # <<<<<<<<<<<<<<
@@ -13601,7 +14841,7 @@ static int __pyx_pf_7cyllama_12LlamaContext_5model_2__set__(struct __pyx_obj_7cy
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 1);
-  if (!(likely(((__pyx_v_value) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_value, __pyx_ptype_7cyllama_LlamaModel))))) __PYX_ERR(0, 451, __pyx_L1_error)
+  if (!(likely(((__pyx_v_value) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_value, __pyx_ptype_7cyllama_LlamaModel))))) __PYX_ERR(0, 474, __pyx_L1_error)
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -13653,7 +14893,7 @@ static int __pyx_pf_7cyllama_12LlamaContext_5model_4__del__(struct __pyx_obj_7cy
   return __pyx_r;
 }
 
-/* "cyllama.pyx":452
+/* "cyllama.pyx":475
  *     cdef llama_cpp.llama_context * ctx
  *     cdef public LlamaModel model
  *     cdef public ContextParams params             # <<<<<<<<<<<<<<
@@ -13715,7 +14955,7 @@ static int __pyx_pf_7cyllama_12LlamaContext_6params_2__set__(struct __pyx_obj_7c
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 1);
-  if (!(likely(((__pyx_v_value) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_value, __pyx_ptype_7cyllama_ContextParams))))) __PYX_ERR(0, 452, __pyx_L1_error)
+  if (!(likely(((__pyx_v_value) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_value, __pyx_ptype_7cyllama_ContextParams))))) __PYX_ERR(0, 475, __pyx_L1_error)
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -13767,7 +15007,7 @@ static int __pyx_pf_7cyllama_12LlamaContext_6params_4__del__(struct __pyx_obj_7c
   return __pyx_r;
 }
 
-/* "cyllama.pyx":453
+/* "cyllama.pyx":476
  *     cdef public LlamaModel model
  *     cdef public ContextParams params
  *     cdef public bint verbose             # <<<<<<<<<<<<<<
@@ -13799,7 +15039,7 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_7verbose___get__(struct __pyx_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 1);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_self->verbose); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 453, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_self->verbose); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 476, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -13837,7 +15077,7 @@ static int __pyx_pf_7cyllama_12LlamaContext_7verbose_2__set__(struct __pyx_obj_7
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 453, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 476, __pyx_L1_error)
   __pyx_v_self->verbose = __pyx_t_1;
 
   /* function exit code */
@@ -13857,15 +15097,15 @@ static int __pyx_pf_7cyllama_12LlamaContext_7verbose_2__set__(struct __pyx_obj_7
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_7cyllama_12LlamaContext_23__reduce_cython__(PyObject *__pyx_v_self, 
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_31__reduce_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_7cyllama_12LlamaContext_23__reduce_cython__ = {"__reduce_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_23__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_7cyllama_12LlamaContext_23__reduce_cython__(PyObject *__pyx_v_self, 
+static PyMethodDef __pyx_mdef_7cyllama_12LlamaContext_31__reduce_cython__ = {"__reduce_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_31__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_31__reduce_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -13890,14 +15130,14 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   if (unlikely(__pyx_nargs > 0)) {
     __Pyx_RaiseArgtupleInvalid("__reduce_cython__", 1, 0, 0, __pyx_nargs); return NULL;}
   if (unlikely(__pyx_kwds) && __Pyx_NumKwargs_FASTCALL(__pyx_kwds) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__reduce_cython__", 0))) return NULL;
-  __pyx_r = __pyx_pf_7cyllama_12LlamaContext_22__reduce_cython__(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self));
+  __pyx_r = __pyx_pf_7cyllama_12LlamaContext_30__reduce_cython__(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_7cyllama_12LlamaContext_22__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self) {
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_30__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   int __pyx_lineno = 0;
@@ -13937,15 +15177,15 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_22__reduce_cython__(CYTHON_UNU
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_7cyllama_12LlamaContext_25__setstate_cython__(PyObject *__pyx_v_self, 
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_33__setstate_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_7cyllama_12LlamaContext_25__setstate_cython__ = {"__setstate_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_25__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_7cyllama_12LlamaContext_25__setstate_cython__(PyObject *__pyx_v_self, 
+static PyMethodDef __pyx_mdef_7cyllama_12LlamaContext_33__setstate_cython__ = {"__setstate_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_33__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_12LlamaContext_33__setstate_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -14019,7 +15259,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_7cyllama_12LlamaContext_24__setstate_cython__(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self), __pyx_v___pyx_state);
+  __pyx_r = __pyx_pf_7cyllama_12LlamaContext_32__setstate_cython__(((struct __pyx_obj_7cyllama_LlamaContext *)__pyx_v_self), __pyx_v___pyx_state);
 
   /* function exit code */
   {
@@ -14032,7 +15272,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_7cyllama_12LlamaContext_24__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state) {
+static PyObject *__pyx_pf_7cyllama_12LlamaContext_32__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaContext *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   int __pyx_lineno = 0;
@@ -14058,6 +15298,1919 @@ static PyObject *__pyx_pf_7cyllama_12LlamaContext_24__setstate_cython__(CYTHON_U
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_AddTraceback("cyllama.LlamaContext.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":739
+ *     cdef bint owner
+ * 
+ *     def __cinit__(self):             # <<<<<<<<<<<<<<
+ *         self.batch = NULL
+ *         self.owner = True
+ */
+
+/* Python wrapper */
+static int __pyx_pw_7cyllama_10LlamaBatch_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_7cyllama_10LlamaBatch_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__cinit__ (wrapper)", 0);
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return -1;
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) {
+    __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 0, 0, __pyx_nargs); return -1;}
+  if (unlikely(__pyx_kwds) && __Pyx_NumKwargs_VARARGS(__pyx_kwds) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__cinit__", 0))) return -1;
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch___cinit__(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_7cyllama_10LlamaBatch___cinit__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self) {
+  int __pyx_r;
+
+  /* "cyllama.pyx":740
+ * 
+ *     def __cinit__(self):
+ *         self.batch = NULL             # <<<<<<<<<<<<<<
+ *         self.owner = True
+ * 
+ */
+  __pyx_v_self->batch = NULL;
+
+  /* "cyllama.pyx":741
+ *     def __cinit__(self):
+ *         self.batch = NULL
+ *         self.owner = True             # <<<<<<<<<<<<<<
+ * 
+ *     def __init__(self, *, n_tokens: int, embd: int, n_seq_max: int, verbose: bool = True):
+ */
+  __pyx_v_self->owner = 1;
+
+  /* "cyllama.pyx":739
+ *     cdef bint owner
+ * 
+ *     def __cinit__(self):             # <<<<<<<<<<<<<<
+ *         self.batch = NULL
+ *         self.owner = True
+ */
+
+  /* function exit code */
+  __pyx_r = 0;
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":743
+ *         self.owner = True
+ * 
+ *     def __init__(self, *, n_tokens: int, embd: int, n_seq_max: int, verbose: bool = True):             # <<<<<<<<<<<<<<
+ *         self._n_tokens = n_tokens
+ *         self.embd = embd
+ */
+
+/* Python wrapper */
+static int __pyx_pw_7cyllama_10LlamaBatch_3__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_7cyllama_10LlamaBatch_3__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_n_tokens = 0;
+  PyObject *__pyx_v_embd = 0;
+  PyObject *__pyx_v_n_seq_max = 0;
+  PyObject *__pyx_v_verbose = 0;
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[4] = {0,0,0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__init__ (wrapper)", 0);
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return -1;
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  {
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_n_tokens,&__pyx_n_s_embd,&__pyx_n_s_n_seq_max,&__pyx_n_s_verbose,0};
+    values[3] = __Pyx_Arg_NewRef_VARARGS(((PyObject *)Py_True));
+    if (likely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      switch (__pyx_nargs) {
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = __Pyx_NumKwargs_VARARGS(__pyx_kwds);
+      if (likely((values[0] = __Pyx_GetKwValue_VARARGS(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_n_tokens)) != 0)) {
+        (void)__Pyx_Arg_NewRef_VARARGS(values[0]);
+        kw_args--;
+      }
+      else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 743, __pyx_L3_error)
+      else {
+        __Pyx_RaiseKeywordRequired("__init__", __pyx_n_s_n_tokens); __PYX_ERR(0, 743, __pyx_L3_error)
+      }
+      if (likely((values[1] = __Pyx_GetKwValue_VARARGS(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_embd)) != 0)) {
+        (void)__Pyx_Arg_NewRef_VARARGS(values[1]);
+        kw_args--;
+      }
+      else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 743, __pyx_L3_error)
+      else {
+        __Pyx_RaiseKeywordRequired("__init__", __pyx_n_s_embd); __PYX_ERR(0, 743, __pyx_L3_error)
+      }
+      if (likely((values[2] = __Pyx_GetKwValue_VARARGS(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_n_seq_max)) != 0)) {
+        (void)__Pyx_Arg_NewRef_VARARGS(values[2]);
+        kw_args--;
+      }
+      else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 743, __pyx_L3_error)
+      else {
+        __Pyx_RaiseKeywordRequired("__init__", __pyx_n_s_n_seq_max); __PYX_ERR(0, 743, __pyx_L3_error)
+      }
+      if (kw_args == 1) {
+        const Py_ssize_t index = 3;
+        PyObject* value = __Pyx_GetKwValue_VARARGS(__pyx_kwds, __pyx_kwvalues, *__pyx_pyargnames[index]);
+        if (value) { values[index] = __Pyx_Arg_NewRef_VARARGS(value); kw_args--; }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 743, __pyx_L3_error)
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, 0, "__init__") < 0)) __PYX_ERR(0, 743, __pyx_L3_error)
+      }
+    } else if (unlikely(__pyx_nargs != 0)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      __Pyx_RaiseKeywordRequired("__init__", __pyx_n_s_n_tokens); __PYX_ERR(0, 743, __pyx_L3_error)
+    }
+    __pyx_v_n_tokens = ((PyObject*)values[0]);
+    __pyx_v_embd = ((PyObject*)values[1]);
+    __pyx_v_n_seq_max = ((PyObject*)values[2]);
+    __pyx_v_verbose = values[3];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 0, 0, __pyx_nargs); __PYX_ERR(0, 743, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_VARARGS(values[__pyx_temp]);
+    }
+  }
+  __Pyx_AddTraceback("cyllama.LlamaBatch.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return -1;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_n_tokens), (&PyInt_Type), 0, "n_tokens", 1))) __PYX_ERR(0, 743, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_embd), (&PyInt_Type), 0, "embd", 1))) __PYX_ERR(0, 743, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_n_seq_max), (&PyInt_Type), 0, "n_seq_max", 1))) __PYX_ERR(0, 743, __pyx_L1_error)
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_2__init__(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self), __pyx_v_n_tokens, __pyx_v_embd, __pyx_v_n_seq_max, __pyx_v_verbose);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = -1;
+  __pyx_L0:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_VARARGS(values[__pyx_temp]);
+    }
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_7cyllama_10LlamaBatch_2__init__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_n_tokens, PyObject *__pyx_v_embd, PyObject *__pyx_v_n_seq_max, PyObject *__pyx_v_verbose) {
+  int __pyx_r;
+  int __pyx_t_1;
+  int __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+
+  /* "cyllama.pyx":744
+ * 
+ *     def __init__(self, *, n_tokens: int, embd: int, n_seq_max: int, verbose: bool = True):
+ *         self._n_tokens = n_tokens             # <<<<<<<<<<<<<<
+ *         self.embd = embd
+ *         self.n_seq_max = n_seq_max
+ */
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_n_tokens); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 744, __pyx_L1_error)
+  __pyx_v_self->_n_tokens = __pyx_t_1;
+
+  /* "cyllama.pyx":745
+ *     def __init__(self, *, n_tokens: int, embd: int, n_seq_max: int, verbose: bool = True):
+ *         self._n_tokens = n_tokens
+ *         self.embd = embd             # <<<<<<<<<<<<<<
+ *         self.n_seq_max = n_seq_max
+ *         self.verbose = verbose
+ */
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_embd); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 745, __pyx_L1_error)
+  __pyx_v_self->embd = __pyx_t_1;
+
+  /* "cyllama.pyx":746
+ *         self._n_tokens = n_tokens
+ *         self.embd = embd
+ *         self.n_seq_max = n_seq_max             # <<<<<<<<<<<<<<
+ *         self.verbose = verbose
+ * 
+ */
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_n_seq_max); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 746, __pyx_L1_error)
+  __pyx_v_self->n_seq_max = __pyx_t_1;
+
+  /* "cyllama.pyx":747
+ *         self.embd = embd
+ *         self.n_seq_max = n_seq_max
+ *         self.verbose = verbose             # <<<<<<<<<<<<<<
+ * 
+ *         self.batch[0] = llama_cpp.llama_batch_init(
+ */
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_verbose); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 747, __pyx_L1_error)
+  __pyx_v_self->verbose = __pyx_t_2;
+
+  /* "cyllama.pyx":749
+ *         self.verbose = verbose
+ * 
+ *         self.batch[0] = llama_cpp.llama_batch_init(             # <<<<<<<<<<<<<<
+ *             self._n_tokens, self.embd, self.n_seq_max
+ *         )
+ */
+  (__pyx_v_self->batch[0]) = llama_batch_init(__pyx_v_self->_n_tokens, __pyx_v_self->embd, __pyx_v_self->n_seq_max);
+
+  /* "cyllama.pyx":743
+ *         self.owner = True
+ * 
+ *     def __init__(self, *, n_tokens: int, embd: int, n_seq_max: int, verbose: bool = True):             # <<<<<<<<<<<<<<
+ *         self._n_tokens = n_tokens
+ *         self.embd = embd
+ */
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("cyllama.LlamaBatch.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":753
+ *         )
+ * 
+ *     def __dealloc__(self):             # <<<<<<<<<<<<<<
+ *         if self.batch is not NULL and self.owner is True:
+ *             llama_cpp.llama_batch_free(self.batch[0])
+ */
+
+/* Python wrapper */
+static void __pyx_pw_7cyllama_10LlamaBatch_5__dealloc__(PyObject *__pyx_v_self); /*proto*/
+static void __pyx_pw_7cyllama_10LlamaBatch_5__dealloc__(PyObject *__pyx_v_self) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__dealloc__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_pf_7cyllama_10LlamaBatch_4__dealloc__(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+}
+
+static void __pyx_pf_7cyllama_10LlamaBatch_4__dealloc__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self) {
+  int __pyx_t_1;
+  int __pyx_t_2;
+
+  /* "cyllama.pyx":754
+ * 
+ *     def __dealloc__(self):
+ *         if self.batch is not NULL and self.owner is True:             # <<<<<<<<<<<<<<
+ *             llama_cpp.llama_batch_free(self.batch[0])
+ *             self.batch = NULL
+ */
+  __pyx_t_2 = (__pyx_v_self->batch != NULL);
+  if (__pyx_t_2) {
+  } else {
+    __pyx_t_1 = __pyx_t_2;
+    goto __pyx_L4_bool_binop_done;
+  }
+  __pyx_t_2 = (__pyx_v_self->owner == 1);
+  __pyx_t_1 = __pyx_t_2;
+  __pyx_L4_bool_binop_done:;
+  if (__pyx_t_1) {
+
+    /* "cyllama.pyx":755
+ *     def __dealloc__(self):
+ *         if self.batch is not NULL and self.owner is True:
+ *             llama_cpp.llama_batch_free(self.batch[0])             # <<<<<<<<<<<<<<
+ *             self.batch = NULL
+ * 
+ */
+    llama_batch_free((__pyx_v_self->batch[0]));
+
+    /* "cyllama.pyx":756
+ *         if self.batch is not NULL and self.owner is True:
+ *             llama_cpp.llama_batch_free(self.batch[0])
+ *             self.batch = NULL             # <<<<<<<<<<<<<<
+ * 
+ *     def close(self):
+ */
+    __pyx_v_self->batch = NULL;
+
+    /* "cyllama.pyx":754
+ * 
+ *     def __dealloc__(self):
+ *         if self.batch is not NULL and self.owner is True:             # <<<<<<<<<<<<<<
+ *             llama_cpp.llama_batch_free(self.batch[0])
+ *             self.batch = NULL
+ */
+  }
+
+  /* "cyllama.pyx":753
+ *         )
+ * 
+ *     def __dealloc__(self):             # <<<<<<<<<<<<<<
+ *         if self.batch is not NULL and self.owner is True:
+ *             llama_cpp.llama_batch_free(self.batch[0])
+ */
+
+  /* function exit code */
+}
+
+/* "cyllama.pyx":758
+ *             self.batch = NULL
+ * 
+ *     def close(self):             # <<<<<<<<<<<<<<
+ *         self.__dealloc__()
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_7close(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_7cyllama_10LlamaBatch_7close = {"close", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_7close, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_7close(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("close (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) {
+    __Pyx_RaiseArgtupleInvalid("close", 1, 0, 0, __pyx_nargs); return NULL;}
+  if (unlikely(__pyx_kwds) && __Pyx_NumKwargs_FASTCALL(__pyx_kwds) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "close", 0))) return NULL;
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_6close(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_6close(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  unsigned int __pyx_t_4;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("close", 1);
+
+  /* "cyllama.pyx":759
+ * 
+ *     def close(self):
+ *         self.__dealloc__()             # <<<<<<<<<<<<<<
+ * 
+ *     def n_tokens(self) -> int:
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dealloc); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 759, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = NULL;
+  __pyx_t_4 = 0;
+  #if CYTHON_UNPACK_METHODS
+  if (likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __pyx_t_4 = 1;
+    }
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
+    __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 759, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "cyllama.pyx":758
+ *             self.batch = NULL
+ * 
+ *     def close(self):             # <<<<<<<<<<<<<<
+ *         self.__dealloc__()
+ * 
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("cyllama.LlamaBatch.close", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":761
+ *         self.__dealloc__()
+ * 
+ *     def n_tokens(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         return self.batch.n_tokens
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_9n_tokens(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_7cyllama_10LlamaBatch_9n_tokens = {"n_tokens", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_9n_tokens, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_9n_tokens(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("n_tokens (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) {
+    __Pyx_RaiseArgtupleInvalid("n_tokens", 1, 0, 0, __pyx_nargs); return NULL;}
+  if (unlikely(__pyx_kwds) && __Pyx_NumKwargs_FASTCALL(__pyx_kwds) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "n_tokens", 0))) return NULL;
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_8n_tokens(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_8n_tokens(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("n_tokens", 1);
+
+  /* "cyllama.pyx":762
+ * 
+ *     def n_tokens(self) -> int:
+ *         assert self.batch is not NULL             # <<<<<<<<<<<<<<
+ *         return self.batch.n_tokens
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->batch != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 762, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 762, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":763
+ *     def n_tokens(self) -> int:
+ *         assert self.batch is not NULL
+ *         return self.batch.n_tokens             # <<<<<<<<<<<<<<
+ * 
+ *     def reset(self):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_2 = __Pyx_PyInt_From_int32_t(__pyx_v_self->batch->n_tokens); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 763, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (!(likely(__Pyx_Py3Int_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("int", __pyx_t_2))) __PYX_ERR(0, 763, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
+  goto __pyx_L0;
+
+  /* "cyllama.pyx":761
+ *         self.__dealloc__()
+ * 
+ *     def n_tokens(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         return self.batch.n_tokens
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_AddTraceback("cyllama.LlamaBatch.n_tokens", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":765
+ *         return self.batch.n_tokens
+ * 
+ *     def reset(self):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         self.batch.n_tokens = 0
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_11reset(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_7cyllama_10LlamaBatch_11reset = {"reset", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_11reset, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_11reset(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("reset (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) {
+    __Pyx_RaiseArgtupleInvalid("reset", 1, 0, 0, __pyx_nargs); return NULL;}
+  if (unlikely(__pyx_kwds) && __Pyx_NumKwargs_FASTCALL(__pyx_kwds) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "reset", 0))) return NULL;
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_10reset(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_10reset(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("reset", 1);
+
+  /* "cyllama.pyx":766
+ * 
+ *     def reset(self):
+ *         assert self.batch is not NULL             # <<<<<<<<<<<<<<
+ *         self.batch.n_tokens = 0
+ * 
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->batch != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 766, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 766, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":767
+ *     def reset(self):
+ *         assert self.batch is not NULL
+ *         self.batch.n_tokens = 0             # <<<<<<<<<<<<<<
+ * 
+ *     def set_batch(self, batch: Sequence[int], n_past: int, logits_all: bool):
+ */
+  __pyx_v_self->batch->n_tokens = 0;
+
+  /* "cyllama.pyx":765
+ *         return self.batch.n_tokens
+ * 
+ *     def reset(self):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         self.batch.n_tokens = 0
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("cyllama.LlamaBatch.reset", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":769
+ *         self.batch.n_tokens = 0
+ * 
+ *     def set_batch(self, batch: Sequence[int], n_past: int, logits_all: bool):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_13set_batch(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_7cyllama_10LlamaBatch_13set_batch = {"set_batch", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_13set_batch, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_13set_batch(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_batch = 0;
+  PyObject *__pyx_v_n_past = 0;
+  PyObject *__pyx_v_logits_all = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[3] = {0,0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("set_batch (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_batch,&__pyx_n_s_n_past,&__pyx_n_s_logits_all,0};
+    if (__pyx_kwds) {
+      Py_ssize_t kw_args;
+      switch (__pyx_nargs) {
+        case  3: values[2] = __Pyx_Arg_FASTCALL(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
+        case  2: values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = __Pyx_NumKwargs_FASTCALL(__pyx_kwds);
+      switch (__pyx_nargs) {
+        case  0:
+        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_batch)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 769, __pyx_L3_error)
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_n_past)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[1]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 769, __pyx_L3_error)
+        else {
+          __Pyx_RaiseArgtupleInvalid("set_batch", 1, 3, 3, 1); __PYX_ERR(0, 769, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (likely((values[2] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_logits_all)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[2]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 769, __pyx_L3_error)
+        else {
+          __Pyx_RaiseArgtupleInvalid("set_batch", 1, 3, 3, 2); __PYX_ERR(0, 769, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        const Py_ssize_t kwd_pos_args = __pyx_nargs;
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_batch") < 0)) __PYX_ERR(0, 769, __pyx_L3_error)
+      }
+    } else if (unlikely(__pyx_nargs != 3)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+      values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
+      values[2] = __Pyx_Arg_FASTCALL(__pyx_args, 2);
+    }
+    __pyx_v_batch = values[0];
+    __pyx_v_n_past = ((PyObject*)values[1]);
+    __pyx_v_logits_all = values[2];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("set_batch", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 769, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_AddTraceback("cyllama.LlamaBatch.set_batch", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_n_past), (&PyInt_Type), 0, "n_past", 1))) __PYX_ERR(0, 769, __pyx_L1_error)
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_12set_batch(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self), __pyx_v_batch, __pyx_v_n_past, __pyx_v_logits_all);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  __pyx_L0:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_12set_batch(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_batch, PyObject *__pyx_v_n_past, PyObject *__pyx_v_logits_all) {
+  PyObject *__pyx_v_n_tokens = NULL;
+  PyObject *__pyx_v_i = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  Py_ssize_t __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  int32_t __pyx_t_4;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *(*__pyx_t_6)(PyObject *);
+  llama_token __pyx_t_7;
+  Py_ssize_t __pyx_t_8;
+  llama_pos __pyx_t_9;
+  int8_t __pyx_t_10;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("set_batch", 1);
+
+  /* "cyllama.pyx":770
+ * 
+ *     def set_batch(self, batch: Sequence[int], n_past: int, logits_all: bool):
+ *         assert self.batch is not NULL             # <<<<<<<<<<<<<<
+ *         n_tokens = len(batch)
+ *         self.batch.n_tokens = n_tokens
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->batch != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 770, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 770, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":771
+ *     def set_batch(self, batch: Sequence[int], n_past: int, logits_all: bool):
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)             # <<<<<<<<<<<<<<
+ *         self.batch.n_tokens = n_tokens
+ *         for i in range(n_tokens):
+ */
+  __pyx_t_2 = PyObject_Length(__pyx_v_batch); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 771, __pyx_L1_error)
+  __pyx_t_3 = PyInt_FromSsize_t(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 771, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_v_n_tokens = __pyx_t_3;
+  __pyx_t_3 = 0;
+
+  /* "cyllama.pyx":772
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)
+ *         self.batch.n_tokens = n_tokens             # <<<<<<<<<<<<<<
+ *         for i in range(n_tokens):
+ *             self.batch.token[i] = batch[i]
+ */
+  __pyx_t_4 = __Pyx_PyInt_As_int32_t(__pyx_v_n_tokens); if (unlikely((__pyx_t_4 == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 772, __pyx_L1_error)
+  __pyx_v_self->batch->n_tokens = __pyx_t_4;
+
+  /* "cyllama.pyx":773
+ *         n_tokens = len(batch)
+ *         self.batch.n_tokens = n_tokens
+ *         for i in range(n_tokens):             # <<<<<<<<<<<<<<
+ *             self.batch.token[i] = batch[i]
+ *             self.batch.pos[i] = n_past + i
+ */
+  __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_range, __pyx_v_n_tokens); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 773, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (likely(PyList_CheckExact(__pyx_t_3)) || PyTuple_CheckExact(__pyx_t_3)) {
+    __pyx_t_5 = __pyx_t_3; __Pyx_INCREF(__pyx_t_5);
+    __pyx_t_2 = 0;
+    __pyx_t_6 = NULL;
+  } else {
+    __pyx_t_2 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 773, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __pyx_t_6 = __Pyx_PyObject_GetIterNextFunc(__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 773, __pyx_L1_error)
+  }
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  for (;;) {
+    if (likely(!__pyx_t_6)) {
+      if (likely(PyList_CheckExact(__pyx_t_5))) {
+        {
+          Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_5);
+          #if !CYTHON_ASSUME_SAFE_MACROS
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 773, __pyx_L1_error)
+          #endif
+          if (__pyx_t_2 >= __pyx_temp) break;
+        }
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_3 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_2); __Pyx_INCREF(__pyx_t_3); __pyx_t_2++; if (unlikely((0 < 0))) __PYX_ERR(0, 773, __pyx_L1_error)
+        #else
+        __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_5, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 773, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        #endif
+      } else {
+        {
+          Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_5);
+          #if !CYTHON_ASSUME_SAFE_MACROS
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 773, __pyx_L1_error)
+          #endif
+          if (__pyx_t_2 >= __pyx_temp) break;
+        }
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_2); __Pyx_INCREF(__pyx_t_3); __pyx_t_2++; if (unlikely((0 < 0))) __PYX_ERR(0, 773, __pyx_L1_error)
+        #else
+        __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_5, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 773, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        #endif
+      }
+    } else {
+      __pyx_t_3 = __pyx_t_6(__pyx_t_5);
+      if (unlikely(!__pyx_t_3)) {
+        PyObject* exc_type = PyErr_Occurred();
+        if (exc_type) {
+          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+          else __PYX_ERR(0, 773, __pyx_L1_error)
+        }
+        break;
+      }
+      __Pyx_GOTREF(__pyx_t_3);
+    }
+    __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_3);
+    __pyx_t_3 = 0;
+
+    /* "cyllama.pyx":774
+ *         self.batch.n_tokens = n_tokens
+ *         for i in range(n_tokens):
+ *             self.batch.token[i] = batch[i]             # <<<<<<<<<<<<<<
+ *             self.batch.pos[i] = n_past + i
+ *             self.batch.seq_id[i][0] = 0
+ */
+    __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_v_batch, __pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 774, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_7 = __Pyx_PyInt_As_int32_t(__pyx_t_3); if (unlikely((__pyx_t_7 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 774, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_8 = __Pyx_PyIndex_AsSsize_t(__pyx_v_i); if (unlikely((__pyx_t_8 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 774, __pyx_L1_error)
+    (__pyx_v_self->batch->token[__pyx_t_8]) = __pyx_t_7;
+
+    /* "cyllama.pyx":775
+ *         for i in range(n_tokens):
+ *             self.batch.token[i] = batch[i]
+ *             self.batch.pos[i] = n_past + i             # <<<<<<<<<<<<<<
+ *             self.batch.seq_id[i][0] = 0
+ *             self.batch.n_seq_id[i] = 1
+ */
+    __pyx_t_3 = PyNumber_Add(__pyx_v_n_past, __pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 775, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_9 = __Pyx_PyInt_As_int32_t(__pyx_t_3); if (unlikely((__pyx_t_9 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 775, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_8 = __Pyx_PyIndex_AsSsize_t(__pyx_v_i); if (unlikely((__pyx_t_8 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 775, __pyx_L1_error)
+    (__pyx_v_self->batch->pos[__pyx_t_8]) = __pyx_t_9;
+
+    /* "cyllama.pyx":776
+ *             self.batch.token[i] = batch[i]
+ *             self.batch.pos[i] = n_past + i
+ *             self.batch.seq_id[i][0] = 0             # <<<<<<<<<<<<<<
+ *             self.batch.n_seq_id[i] = 1
+ *             self.batch.logits[i] = logits_all
+ */
+    __pyx_t_8 = __Pyx_PyIndex_AsSsize_t(__pyx_v_i); if (unlikely((__pyx_t_8 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 776, __pyx_L1_error)
+    ((__pyx_v_self->batch->seq_id[__pyx_t_8])[0]) = 0;
+
+    /* "cyllama.pyx":777
+ *             self.batch.pos[i] = n_past + i
+ *             self.batch.seq_id[i][0] = 0
+ *             self.batch.n_seq_id[i] = 1             # <<<<<<<<<<<<<<
+ *             self.batch.logits[i] = logits_all
+ *         self.batch.logits[n_tokens - 1] = True
+ */
+    __pyx_t_8 = __Pyx_PyIndex_AsSsize_t(__pyx_v_i); if (unlikely((__pyx_t_8 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 777, __pyx_L1_error)
+    (__pyx_v_self->batch->n_seq_id[__pyx_t_8]) = 1;
+
+    /* "cyllama.pyx":778
+ *             self.batch.seq_id[i][0] = 0
+ *             self.batch.n_seq_id[i] = 1
+ *             self.batch.logits[i] = logits_all             # <<<<<<<<<<<<<<
+ *         self.batch.logits[n_tokens - 1] = True
+ * 
+ */
+    __pyx_t_10 = __Pyx_PyInt_As_int8_t(__pyx_v_logits_all); if (unlikely((__pyx_t_10 == ((int8_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 778, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyIndex_AsSsize_t(__pyx_v_i); if (unlikely((__pyx_t_8 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 778, __pyx_L1_error)
+    (__pyx_v_self->batch->logits[__pyx_t_8]) = __pyx_t_10;
+
+    /* "cyllama.pyx":773
+ *         n_tokens = len(batch)
+ *         self.batch.n_tokens = n_tokens
+ *         for i in range(n_tokens):             # <<<<<<<<<<<<<<
+ *             self.batch.token[i] = batch[i]
+ *             self.batch.pos[i] = n_past + i
+ */
+  }
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+
+  /* "cyllama.pyx":779
+ *             self.batch.n_seq_id[i] = 1
+ *             self.batch.logits[i] = logits_all
+ *         self.batch.logits[n_tokens - 1] = True             # <<<<<<<<<<<<<<
+ * 
+ *     def add_sequence(self, batch: Sequence[int], seq_id: int, logits_all: bool):
+ */
+  __pyx_t_5 = __Pyx_PyInt_SubtractObjC(__pyx_v_n_tokens, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 779, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_2 = __Pyx_PyIndex_AsSsize_t(__pyx_t_5); if (unlikely((__pyx_t_2 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 779, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  (__pyx_v_self->batch->logits[__pyx_t_2]) = 1;
+
+  /* "cyllama.pyx":769
+ *         self.batch.n_tokens = 0
+ * 
+ *     def set_batch(self, batch: Sequence[int], n_past: int, logits_all: bool):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_AddTraceback("cyllama.LlamaBatch.set_batch", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_n_tokens);
+  __Pyx_XDECREF(__pyx_v_i);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":781
+ *         self.batch.logits[n_tokens - 1] = True
+ * 
+ *     def add_sequence(self, batch: Sequence[int], seq_id: int, logits_all: bool):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_15add_sequence(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_7cyllama_10LlamaBatch_15add_sequence = {"add_sequence", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_15add_sequence, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_15add_sequence(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_batch = 0;
+  PyObject *__pyx_v_seq_id = 0;
+  PyObject *__pyx_v_logits_all = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[3] = {0,0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("add_sequence (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_batch,&__pyx_n_s_seq_id,&__pyx_n_s_logits_all,0};
+    if (__pyx_kwds) {
+      Py_ssize_t kw_args;
+      switch (__pyx_nargs) {
+        case  3: values[2] = __Pyx_Arg_FASTCALL(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
+        case  2: values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = __Pyx_NumKwargs_FASTCALL(__pyx_kwds);
+      switch (__pyx_nargs) {
+        case  0:
+        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_batch)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 781, __pyx_L3_error)
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_seq_id)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[1]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 781, __pyx_L3_error)
+        else {
+          __Pyx_RaiseArgtupleInvalid("add_sequence", 1, 3, 3, 1); __PYX_ERR(0, 781, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (likely((values[2] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_logits_all)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[2]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 781, __pyx_L3_error)
+        else {
+          __Pyx_RaiseArgtupleInvalid("add_sequence", 1, 3, 3, 2); __PYX_ERR(0, 781, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        const Py_ssize_t kwd_pos_args = __pyx_nargs;
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "add_sequence") < 0)) __PYX_ERR(0, 781, __pyx_L3_error)
+      }
+    } else if (unlikely(__pyx_nargs != 3)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+      values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
+      values[2] = __Pyx_Arg_FASTCALL(__pyx_args, 2);
+    }
+    __pyx_v_batch = values[0];
+    __pyx_v_seq_id = ((PyObject*)values[1]);
+    __pyx_v_logits_all = values[2];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("add_sequence", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 781, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_AddTraceback("cyllama.LlamaBatch.add_sequence", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_seq_id), (&PyInt_Type), 0, "seq_id", 1))) __PYX_ERR(0, 781, __pyx_L1_error)
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_14add_sequence(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self), __pyx_v_batch, __pyx_v_seq_id, __pyx_v_logits_all);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  __pyx_L0:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_14add_sequence(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_batch, PyObject *__pyx_v_seq_id, PyObject *__pyx_v_logits_all) {
+  PyObject *__pyx_v_n_tokens = NULL;
+  PyObject *__pyx_v_n_tokens0 = NULL;
+  PyObject *__pyx_v_i = NULL;
+  PyObject *__pyx_v_j = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  Py_ssize_t __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  int32_t __pyx_t_5;
+  PyObject *(*__pyx_t_6)(PyObject *);
+  llama_token __pyx_t_7;
+  Py_ssize_t __pyx_t_8;
+  llama_pos __pyx_t_9;
+  llama_seq_id __pyx_t_10;
+  int8_t __pyx_t_11;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("add_sequence", 1);
+
+  /* "cyllama.pyx":782
+ * 
+ *     def add_sequence(self, batch: Sequence[int], seq_id: int, logits_all: bool):
+ *         assert self.batch is not NULL             # <<<<<<<<<<<<<<
+ *         n_tokens = len(batch)
+ *         n_tokens0 = self.batch.n_tokens
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(__pyx_assertions_enabled())) {
+    __pyx_t_1 = (__pyx_v_self->batch != NULL);
+    if (unlikely(!__pyx_t_1)) {
+      __Pyx_Raise(__pyx_builtin_AssertionError, 0, 0, 0);
+      __PYX_ERR(0, 782, __pyx_L1_error)
+    }
+  }
+  #else
+  if ((1)); else __PYX_ERR(0, 782, __pyx_L1_error)
+  #endif
+
+  /* "cyllama.pyx":783
+ *     def add_sequence(self, batch: Sequence[int], seq_id: int, logits_all: bool):
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)             # <<<<<<<<<<<<<<
+ *         n_tokens0 = self.batch.n_tokens
+ *         self.batch.n_tokens += n_tokens
+ */
+  __pyx_t_2 = PyObject_Length(__pyx_v_batch); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 783, __pyx_L1_error)
+  __pyx_t_3 = PyInt_FromSsize_t(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 783, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_v_n_tokens = __pyx_t_3;
+  __pyx_t_3 = 0;
+
+  /* "cyllama.pyx":784
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)
+ *         n_tokens0 = self.batch.n_tokens             # <<<<<<<<<<<<<<
+ *         self.batch.n_tokens += n_tokens
+ *         for i in range(n_tokens):
+ */
+  __pyx_t_3 = __Pyx_PyInt_From_int32_t(__pyx_v_self->batch->n_tokens); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 784, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_v_n_tokens0 = __pyx_t_3;
+  __pyx_t_3 = 0;
+
+  /* "cyllama.pyx":785
+ *         n_tokens = len(batch)
+ *         n_tokens0 = self.batch.n_tokens
+ *         self.batch.n_tokens += n_tokens             # <<<<<<<<<<<<<<
+ *         for i in range(n_tokens):
+ *             j = n_tokens0 + i
+ */
+  __pyx_t_3 = __Pyx_PyInt_From_int32_t(__pyx_v_self->batch->n_tokens); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 785, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = PyNumber_InPlaceAdd(__pyx_t_3, __pyx_v_n_tokens); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 785, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_5 = __Pyx_PyInt_As_int32_t(__pyx_t_4); if (unlikely((__pyx_t_5 == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 785, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_v_self->batch->n_tokens = __pyx_t_5;
+
+  /* "cyllama.pyx":786
+ *         n_tokens0 = self.batch.n_tokens
+ *         self.batch.n_tokens += n_tokens
+ *         for i in range(n_tokens):             # <<<<<<<<<<<<<<
+ *             j = n_tokens0 + i
+ *             self.batch.token[j] = batch[i]
+ */
+  __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_range, __pyx_v_n_tokens); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 786, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  if (likely(PyList_CheckExact(__pyx_t_4)) || PyTuple_CheckExact(__pyx_t_4)) {
+    __pyx_t_3 = __pyx_t_4; __Pyx_INCREF(__pyx_t_3);
+    __pyx_t_2 = 0;
+    __pyx_t_6 = NULL;
+  } else {
+    __pyx_t_2 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 786, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_6 = __Pyx_PyObject_GetIterNextFunc(__pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 786, __pyx_L1_error)
+  }
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  for (;;) {
+    if (likely(!__pyx_t_6)) {
+      if (likely(PyList_CheckExact(__pyx_t_3))) {
+        {
+          Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_3);
+          #if !CYTHON_ASSUME_SAFE_MACROS
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 786, __pyx_L1_error)
+          #endif
+          if (__pyx_t_2 >= __pyx_temp) break;
+        }
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely((0 < 0))) __PYX_ERR(0, 786, __pyx_L1_error)
+        #else
+        __pyx_t_4 = __Pyx_PySequence_ITEM(__pyx_t_3, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 786, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_4);
+        #endif
+      } else {
+        {
+          Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_3);
+          #if !CYTHON_ASSUME_SAFE_MACROS
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 786, __pyx_L1_error)
+          #endif
+          if (__pyx_t_2 >= __pyx_temp) break;
+        }
+        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely((0 < 0))) __PYX_ERR(0, 786, __pyx_L1_error)
+        #else
+        __pyx_t_4 = __Pyx_PySequence_ITEM(__pyx_t_3, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 786, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_4);
+        #endif
+      }
+    } else {
+      __pyx_t_4 = __pyx_t_6(__pyx_t_3);
+      if (unlikely(!__pyx_t_4)) {
+        PyObject* exc_type = PyErr_Occurred();
+        if (exc_type) {
+          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+          else __PYX_ERR(0, 786, __pyx_L1_error)
+        }
+        break;
+      }
+      __Pyx_GOTREF(__pyx_t_4);
+    }
+    __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_4);
+    __pyx_t_4 = 0;
+
+    /* "cyllama.pyx":787
+ *         self.batch.n_tokens += n_tokens
+ *         for i in range(n_tokens):
+ *             j = n_tokens0 + i             # <<<<<<<<<<<<<<
+ *             self.batch.token[j] = batch[i]
+ *             self.batch.pos[j] = i
+ */
+    __pyx_t_4 = PyNumber_Add(__pyx_v_n_tokens0, __pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 787, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_XDECREF_SET(__pyx_v_j, __pyx_t_4);
+    __pyx_t_4 = 0;
+
+    /* "cyllama.pyx":788
+ *         for i in range(n_tokens):
+ *             j = n_tokens0 + i
+ *             self.batch.token[j] = batch[i]             # <<<<<<<<<<<<<<
+ *             self.batch.pos[j] = i
+ *             self.batch.seq_id[j][0] = seq_id
+ */
+    __pyx_t_4 = __Pyx_PyObject_GetItem(__pyx_v_batch, __pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 788, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_7 = __Pyx_PyInt_As_int32_t(__pyx_t_4); if (unlikely((__pyx_t_7 == ((llama_token)-1)) && PyErr_Occurred())) __PYX_ERR(0, 788, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_8 = __Pyx_PyIndex_AsSsize_t(__pyx_v_j); if (unlikely((__pyx_t_8 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 788, __pyx_L1_error)
+    (__pyx_v_self->batch->token[__pyx_t_8]) = __pyx_t_7;
+
+    /* "cyllama.pyx":789
+ *             j = n_tokens0 + i
+ *             self.batch.token[j] = batch[i]
+ *             self.batch.pos[j] = i             # <<<<<<<<<<<<<<
+ *             self.batch.seq_id[j][0] = seq_id
+ *             self.batch.n_seq_id[j] = 1
+ */
+    __pyx_t_9 = __Pyx_PyInt_As_int32_t(__pyx_v_i); if (unlikely((__pyx_t_9 == ((llama_pos)-1)) && PyErr_Occurred())) __PYX_ERR(0, 789, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyIndex_AsSsize_t(__pyx_v_j); if (unlikely((__pyx_t_8 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 789, __pyx_L1_error)
+    (__pyx_v_self->batch->pos[__pyx_t_8]) = __pyx_t_9;
+
+    /* "cyllama.pyx":790
+ *             self.batch.token[j] = batch[i]
+ *             self.batch.pos[j] = i
+ *             self.batch.seq_id[j][0] = seq_id             # <<<<<<<<<<<<<<
+ *             self.batch.n_seq_id[j] = 1
+ *             self.batch.logits[j] = logits_all
+ */
+    __pyx_t_10 = __Pyx_PyInt_As_int32_t(__pyx_v_seq_id); if (unlikely((__pyx_t_10 == ((llama_seq_id)-1)) && PyErr_Occurred())) __PYX_ERR(0, 790, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyIndex_AsSsize_t(__pyx_v_j); if (unlikely((__pyx_t_8 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 790, __pyx_L1_error)
+    ((__pyx_v_self->batch->seq_id[__pyx_t_8])[0]) = __pyx_t_10;
+
+    /* "cyllama.pyx":791
+ *             self.batch.pos[j] = i
+ *             self.batch.seq_id[j][0] = seq_id
+ *             self.batch.n_seq_id[j] = 1             # <<<<<<<<<<<<<<
+ *             self.batch.logits[j] = logits_all
+ *         self.batch.logits[n_tokens - 1] = True
+ */
+    __pyx_t_8 = __Pyx_PyIndex_AsSsize_t(__pyx_v_j); if (unlikely((__pyx_t_8 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 791, __pyx_L1_error)
+    (__pyx_v_self->batch->n_seq_id[__pyx_t_8]) = 1;
+
+    /* "cyllama.pyx":792
+ *             self.batch.seq_id[j][0] = seq_id
+ *             self.batch.n_seq_id[j] = 1
+ *             self.batch.logits[j] = logits_all             # <<<<<<<<<<<<<<
+ *         self.batch.logits[n_tokens - 1] = True
+ */
+    __pyx_t_11 = __Pyx_PyInt_As_int8_t(__pyx_v_logits_all); if (unlikely((__pyx_t_11 == ((int8_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 792, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyIndex_AsSsize_t(__pyx_v_j); if (unlikely((__pyx_t_8 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 792, __pyx_L1_error)
+    (__pyx_v_self->batch->logits[__pyx_t_8]) = __pyx_t_11;
+
+    /* "cyllama.pyx":786
+ *         n_tokens0 = self.batch.n_tokens
+ *         self.batch.n_tokens += n_tokens
+ *         for i in range(n_tokens):             # <<<<<<<<<<<<<<
+ *             j = n_tokens0 + i
+ *             self.batch.token[j] = batch[i]
+ */
+  }
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "cyllama.pyx":793
+ *             self.batch.n_seq_id[j] = 1
+ *             self.batch.logits[j] = logits_all
+ *         self.batch.logits[n_tokens - 1] = True             # <<<<<<<<<<<<<<
+ */
+  __pyx_t_3 = __Pyx_PyInt_SubtractObjC(__pyx_v_n_tokens, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 793, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_2 = __Pyx_PyIndex_AsSsize_t(__pyx_t_3); if (unlikely((__pyx_t_2 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 793, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  (__pyx_v_self->batch->logits[__pyx_t_2]) = 1;
+
+  /* "cyllama.pyx":781
+ *         self.batch.logits[n_tokens - 1] = True
+ * 
+ *     def add_sequence(self, batch: Sequence[int], seq_id: int, logits_all: bool):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("cyllama.LlamaBatch.add_sequence", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_n_tokens);
+  __Pyx_XDECREF(__pyx_v_n_tokens0);
+  __Pyx_XDECREF(__pyx_v_i);
+  __Pyx_XDECREF(__pyx_v_j);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":734
+ *     cdef llama_cpp.llama_batch * batch
+ *     cdef int _n_tokens
+ *     cdef public int embd             # <<<<<<<<<<<<<<
+ *     cdef public int n_seq_max
+ *     cdef public bint verbose
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_4embd_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_4embd_1__get__(PyObject *__pyx_v_self) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_4embd___get__(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_4embd___get__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 1);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->embd); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 734, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("cyllama.LlamaBatch.embd.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_7cyllama_10LlamaBatch_4embd_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_7cyllama_10LlamaBatch_4embd_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_4embd_2__set__(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_7cyllama_10LlamaBatch_4embd_2__set__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  int __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 734, __pyx_L1_error)
+  __pyx_v_self->embd = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("cyllama.LlamaBatch.embd.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":735
+ *     cdef int _n_tokens
+ *     cdef public int embd
+ *     cdef public int n_seq_max             # <<<<<<<<<<<<<<
+ *     cdef public bint verbose
+ *     cdef bint owner
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_9n_seq_max_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_9n_seq_max_1__get__(PyObject *__pyx_v_self) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_9n_seq_max___get__(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_9n_seq_max___get__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 1);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->n_seq_max); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 735, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("cyllama.LlamaBatch.n_seq_max.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_7cyllama_10LlamaBatch_9n_seq_max_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_7cyllama_10LlamaBatch_9n_seq_max_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_9n_seq_max_2__set__(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_7cyllama_10LlamaBatch_9n_seq_max_2__set__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  int __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 735, __pyx_L1_error)
+  __pyx_v_self->n_seq_max = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("cyllama.LlamaBatch.n_seq_max.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "cyllama.pyx":736
+ *     cdef public int embd
+ *     cdef public int n_seq_max
+ *     cdef public bint verbose             # <<<<<<<<<<<<<<
+ *     cdef bint owner
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_7verbose_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_7verbose_1__get__(PyObject *__pyx_v_self) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_7verbose___get__(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_7verbose___get__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 1);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_self->verbose); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 736, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("cyllama.LlamaBatch.verbose.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_7cyllama_10LlamaBatch_7verbose_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_7cyllama_10LlamaBatch_7verbose_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_7verbose_2__set__(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_7cyllama_10LlamaBatch_7verbose_2__set__(struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  int __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 736, __pyx_L1_error)
+  __pyx_v_self->verbose = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("cyllama.LlamaBatch.verbose.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_17__reduce_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_7cyllama_10LlamaBatch_17__reduce_cython__ = {"__reduce_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_17__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_17__reduce_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__reduce_cython__ (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) {
+    __Pyx_RaiseArgtupleInvalid("__reduce_cython__", 1, 0, 0, __pyx_nargs); return NULL;}
+  if (unlikely(__pyx_kwds) && __Pyx_NumKwargs_FASTCALL(__pyx_kwds) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__reduce_cython__", 0))) return NULL;
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_16__reduce_cython__(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_16__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__reduce_cython__", 1);
+
+  /* "(tree fragment)":2
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"             # <<<<<<<<<<<<<<
+ * def __setstate_cython__(self, __pyx_state):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ */
+  __Pyx_Raise(__pyx_builtin_TypeError, __pyx_kp_s_no_default___reduce___due_to_non, 0, 0);
+  __PYX_ERR(1, 2, __pyx_L1_error)
+
+  /* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("cyllama.LlamaBatch.__reduce_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_19__setstate_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_7cyllama_10LlamaBatch_19__setstate_cython__ = {"__setstate_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_19__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7cyllama_10LlamaBatch_19__setstate_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  CYTHON_UNUSED PyObject *__pyx_v___pyx_state = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__setstate_cython__ (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_pyx_state,0};
+    if (__pyx_kwds) {
+      Py_ssize_t kw_args;
+      switch (__pyx_nargs) {
+        case  1: values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = __Pyx_NumKwargs_FASTCALL(__pyx_kwds);
+      switch (__pyx_nargs) {
+        case  0:
+        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_pyx_state)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 3, __pyx_L3_error)
+        else goto __pyx_L5_argtuple_error;
+      }
+      if (unlikely(kw_args > 0)) {
+        const Py_ssize_t kwd_pos_args = __pyx_nargs;
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__setstate_cython__") < 0)) __PYX_ERR(1, 3, __pyx_L3_error)
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+    }
+    __pyx_v___pyx_state = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__setstate_cython__", 1, 1, 1, __pyx_nargs); __PYX_ERR(1, 3, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_AddTraceback("cyllama.LlamaBatch.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_7cyllama_10LlamaBatch_18__setstate_cython__(((struct __pyx_obj_7cyllama_LlamaBatch *)__pyx_v_self), __pyx_v___pyx_state);
+
+  /* function exit code */
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7cyllama_10LlamaBatch_18__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_7cyllama_LlamaBatch *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__setstate_cython__", 1);
+
+  /* "(tree fragment)":4
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"             # <<<<<<<<<<<<<<
+ */
+  __Pyx_Raise(__pyx_builtin_TypeError, __pyx_kp_s_no_default___reduce___due_to_non, 0, 0);
+  __PYX_ERR(1, 4, __pyx_L1_error)
+
+  /* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("cyllama.LlamaBatch.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
@@ -15132,8 +18285,12 @@ static PyMethodDef __pyx_methods_7cyllama_LlamaContext[] = {
   {"kv_cache_seq_keep", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_17kv_cache_seq_keep, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
   {"kv_cache_seq_shift", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_19kv_cache_seq_shift, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
   {"set_n_threads", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_21set_n_threads, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
-  {"__reduce_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_23__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
-  {"__setstate_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_25__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"set_rng_seed", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_23set_rng_seed, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"reset_timings", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_25reset_timings, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"print_timings", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_27print_timings, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"default_params", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_29default_params, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7cyllama_12LlamaContext_28default_params},
+  {"__reduce_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_31__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"__setstate_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_12LlamaContext_33__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
   {0, 0, 0, 0}
 };
 
@@ -15249,6 +18406,215 @@ static PyTypeObject __pyx_type_7cyllama_LlamaContext = {
 };
 #endif
 
+static PyObject *__pyx_tp_new_7cyllama_LlamaBatch(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
+  PyObject *o;
+  #if CYTHON_COMPILING_IN_LIMITED_API
+  allocfunc alloc_func = (allocfunc)PyType_GetSlot(t, Py_tp_alloc);
+  o = alloc_func(t, 0);
+  #else
+  if (likely(!__Pyx_PyType_HasFeature(t, Py_TPFLAGS_IS_ABSTRACT))) {
+    o = (*t->tp_alloc)(t, 0);
+  } else {
+    o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_empty_tuple, 0);
+  }
+  if (unlikely(!o)) return 0;
+  #endif
+  if (unlikely(__pyx_pw_7cyllama_10LlamaBatch_1__cinit__(o, __pyx_empty_tuple, NULL) < 0)) goto bad;
+  return o;
+  bad:
+  Py_DECREF(o); o = 0;
+  return NULL;
+}
+
+static void __pyx_tp_dealloc_7cyllama_LlamaBatch(PyObject *o) {
+  #if CYTHON_USE_TP_FINALIZE
+  if (unlikely((PY_VERSION_HEX >= 0x03080000 || __Pyx_PyType_HasFeature(Py_TYPE(o), Py_TPFLAGS_HAVE_FINALIZE)) && __Pyx_PyObject_GetSlot(o, tp_finalize, destructor)) && (!PyType_IS_GC(Py_TYPE(o)) || !__Pyx_PyObject_GC_IsFinalized(o))) {
+    if (__Pyx_PyObject_GetSlot(o, tp_dealloc, destructor) == __pyx_tp_dealloc_7cyllama_LlamaBatch) {
+      if (PyObject_CallFinalizerFromDealloc(o)) return;
+    }
+  }
+  #endif
+  {
+    PyObject *etype, *eval, *etb;
+    PyErr_Fetch(&etype, &eval, &etb);
+    __Pyx_SET_REFCNT(o, Py_REFCNT(o) + 1);
+    __pyx_pw_7cyllama_10LlamaBatch_5__dealloc__(o);
+    __Pyx_SET_REFCNT(o, Py_REFCNT(o) - 1);
+    PyErr_Restore(etype, eval, etb);
+  }
+  #if CYTHON_USE_TYPE_SLOTS || CYTHON_COMPILING_IN_PYPY
+  (*Py_TYPE(o)->tp_free)(o);
+  #else
+  {
+    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE(o), Py_tp_free);
+    if (tp_free) tp_free(o);
+  }
+  #endif
+}
+
+static PyObject *__pyx_getprop_7cyllama_10LlamaBatch_embd(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_7cyllama_10LlamaBatch_4embd_1__get__(o);
+}
+
+static int __pyx_setprop_7cyllama_10LlamaBatch_embd(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_7cyllama_10LlamaBatch_4embd_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
+static PyObject *__pyx_getprop_7cyllama_10LlamaBatch_n_seq_max(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_7cyllama_10LlamaBatch_9n_seq_max_1__get__(o);
+}
+
+static int __pyx_setprop_7cyllama_10LlamaBatch_n_seq_max(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_7cyllama_10LlamaBatch_9n_seq_max_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
+static PyObject *__pyx_getprop_7cyllama_10LlamaBatch_verbose(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_7cyllama_10LlamaBatch_7verbose_1__get__(o);
+}
+
+static int __pyx_setprop_7cyllama_10LlamaBatch_verbose(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_7cyllama_10LlamaBatch_7verbose_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
+static PyMethodDef __pyx_methods_7cyllama_LlamaBatch[] = {
+  {"close", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_7close, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"n_tokens", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_9n_tokens, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"reset", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_11reset, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"set_batch", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_13set_batch, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"add_sequence", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_15add_sequence, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"__reduce_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_17__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"__setstate_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7cyllama_10LlamaBatch_19__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {0, 0, 0, 0}
+};
+
+static struct PyGetSetDef __pyx_getsets_7cyllama_LlamaBatch[] = {
+  {(char *)"embd", __pyx_getprop_7cyllama_10LlamaBatch_embd, __pyx_setprop_7cyllama_10LlamaBatch_embd, (char *)0, 0},
+  {(char *)"n_seq_max", __pyx_getprop_7cyllama_10LlamaBatch_n_seq_max, __pyx_setprop_7cyllama_10LlamaBatch_n_seq_max, (char *)0, 0},
+  {(char *)"verbose", __pyx_getprop_7cyllama_10LlamaBatch_verbose, __pyx_setprop_7cyllama_10LlamaBatch_verbose, (char *)0, 0},
+  {0, 0, 0, 0, 0}
+};
+#if CYTHON_USE_TYPE_SPECS
+static PyType_Slot __pyx_type_7cyllama_LlamaBatch_slots[] = {
+  {Py_tp_dealloc, (void *)__pyx_tp_dealloc_7cyllama_LlamaBatch},
+  {Py_tp_doc, (void *)PyDoc_STR("Intermediate Python wrapper for a llama.cpp llama_context.")},
+  {Py_tp_methods, (void *)__pyx_methods_7cyllama_LlamaBatch},
+  {Py_tp_getset, (void *)__pyx_getsets_7cyllama_LlamaBatch},
+  {Py_tp_init, (void *)__pyx_pw_7cyllama_10LlamaBatch_3__init__},
+  {Py_tp_new, (void *)__pyx_tp_new_7cyllama_LlamaBatch},
+  {0, 0},
+};
+static PyType_Spec __pyx_type_7cyllama_LlamaBatch_spec = {
+  "cyllama.LlamaBatch",
+  sizeof(struct __pyx_obj_7cyllama_LlamaBatch),
+  0,
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE,
+  __pyx_type_7cyllama_LlamaBatch_slots,
+};
+#else
+
+static PyTypeObject __pyx_type_7cyllama_LlamaBatch = {
+  PyVarObject_HEAD_INIT(0, 0)
+  "cyllama.""LlamaBatch", /*tp_name*/
+  sizeof(struct __pyx_obj_7cyllama_LlamaBatch), /*tp_basicsize*/
+  0, /*tp_itemsize*/
+  __pyx_tp_dealloc_7cyllama_LlamaBatch, /*tp_dealloc*/
+  #if PY_VERSION_HEX < 0x030800b4
+  0, /*tp_print*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030800b4
+  0, /*tp_vectorcall_offset*/
+  #endif
+  0, /*tp_getattr*/
+  0, /*tp_setattr*/
+  #if PY_MAJOR_VERSION < 3
+  0, /*tp_compare*/
+  #endif
+  #if PY_MAJOR_VERSION >= 3
+  0, /*tp_as_async*/
+  #endif
+  0, /*tp_repr*/
+  0, /*tp_as_number*/
+  0, /*tp_as_sequence*/
+  0, /*tp_as_mapping*/
+  0, /*tp_hash*/
+  0, /*tp_call*/
+  0, /*tp_str*/
+  0, /*tp_getattro*/
+  0, /*tp_setattro*/
+  0, /*tp_as_buffer*/
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE, /*tp_flags*/
+  PyDoc_STR("Intermediate Python wrapper for a llama.cpp llama_context."), /*tp_doc*/
+  0, /*tp_traverse*/
+  0, /*tp_clear*/
+  0, /*tp_richcompare*/
+  0, /*tp_weaklistoffset*/
+  0, /*tp_iter*/
+  0, /*tp_iternext*/
+  __pyx_methods_7cyllama_LlamaBatch, /*tp_methods*/
+  0, /*tp_members*/
+  __pyx_getsets_7cyllama_LlamaBatch, /*tp_getset*/
+  0, /*tp_base*/
+  0, /*tp_dict*/
+  0, /*tp_descr_get*/
+  0, /*tp_descr_set*/
+  #if !CYTHON_USE_TYPE_SPECS
+  0, /*tp_dictoffset*/
+  #endif
+  __pyx_pw_7cyllama_10LlamaBatch_3__init__, /*tp_init*/
+  0, /*tp_alloc*/
+  __pyx_tp_new_7cyllama_LlamaBatch, /*tp_new*/
+  0, /*tp_free*/
+  0, /*tp_is_gc*/
+  0, /*tp_bases*/
+  0, /*tp_mro*/
+  0, /*tp_cache*/
+  0, /*tp_subclasses*/
+  0, /*tp_weaklist*/
+  0, /*tp_del*/
+  0, /*tp_version_tag*/
+  #if PY_VERSION_HEX >= 0x030400a1
+  #if CYTHON_USE_TP_FINALIZE
+  0, /*tp_finalize*/
+  #else
+  NULL, /*tp_finalize*/
+  #endif
+  #endif
+  #if PY_VERSION_HEX >= 0x030800b1 && (!CYTHON_COMPILING_IN_PYPY || PYPY_VERSION_NUM >= 0x07030800)
+  0, /*tp_vectorcall*/
+  #endif
+  #if __PYX_NEED_TP_PRINT_SLOT == 1
+  0, /*tp_print*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030C0000
+  0, /*tp_watched*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030d00A4
+  0, /*tp_versions_used*/
+  #endif
+  #if CYTHON_COMPILING_IN_PYPY && PY_VERSION_HEX >= 0x03090000 && PY_VERSION_HEX < 0x030a0000
+  0, /*tp_pypy_flags*/
+  #endif
+};
+#endif
+
 static PyMethodDef __pyx_methods[] = {
   {0, 0, 0, 0}
 };
@@ -15274,17 +18640,29 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_GGMLTensor, __pyx_k_GGMLTensor, sizeof(__pyx_k_GGMLTensor), 0, 0, 1, 1},
     {&__pyx_n_s_GGMLTensor___reduce_cython, __pyx_k_GGMLTensor___reduce_cython, sizeof(__pyx_k_GGMLTensor___reduce_cython), 0, 0, 1, 1},
     {&__pyx_n_s_GGMLTensor___setstate_cython, __pyx_k_GGMLTensor___setstate_cython, sizeof(__pyx_k_GGMLTensor___setstate_cython), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaBatch, __pyx_k_LlamaBatch, sizeof(__pyx_k_LlamaBatch), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaBatch___reduce_cython, __pyx_k_LlamaBatch___reduce_cython, sizeof(__pyx_k_LlamaBatch___reduce_cython), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaBatch___setstate_cython, __pyx_k_LlamaBatch___setstate_cython, sizeof(__pyx_k_LlamaBatch___setstate_cython), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaBatch_add_sequence, __pyx_k_LlamaBatch_add_sequence, sizeof(__pyx_k_LlamaBatch_add_sequence), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaBatch_close, __pyx_k_LlamaBatch_close, sizeof(__pyx_k_LlamaBatch_close), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaBatch_n_tokens, __pyx_k_LlamaBatch_n_tokens, sizeof(__pyx_k_LlamaBatch_n_tokens), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaBatch_reset, __pyx_k_LlamaBatch_reset, sizeof(__pyx_k_LlamaBatch_reset), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaBatch_set_batch, __pyx_k_LlamaBatch_set_batch, sizeof(__pyx_k_LlamaBatch_set_batch), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaContext, __pyx_k_LlamaContext, sizeof(__pyx_k_LlamaContext), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaContext___reduce_cython, __pyx_k_LlamaContext___reduce_cython, sizeof(__pyx_k_LlamaContext___reduce_cython), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaContext___setstate_cython, __pyx_k_LlamaContext___setstate_cython, sizeof(__pyx_k_LlamaContext___setstate_cython), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaContext_close, __pyx_k_LlamaContext_close, sizeof(__pyx_k_LlamaContext_close), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaContext_default_params, __pyx_k_LlamaContext_default_params, sizeof(__pyx_k_LlamaContext_default_params), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaContext_kv_cache_clear, __pyx_k_LlamaContext_kv_cache_clear, sizeof(__pyx_k_LlamaContext_kv_cache_clear), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaContext_kv_cache_seq_cp, __pyx_k_LlamaContext_kv_cache_seq_cp, sizeof(__pyx_k_LlamaContext_kv_cache_seq_cp), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaContext_kv_cache_seq_keep, __pyx_k_LlamaContext_kv_cache_seq_keep, sizeof(__pyx_k_LlamaContext_kv_cache_seq_keep), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaContext_kv_cache_seq_rm, __pyx_k_LlamaContext_kv_cache_seq_rm, sizeof(__pyx_k_LlamaContext_kv_cache_seq_rm), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaContext_kv_cache_seq_shift, __pyx_k_LlamaContext_kv_cache_seq_shift, sizeof(__pyx_k_LlamaContext_kv_cache_seq_shift), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaContext_n_ctx, __pyx_k_LlamaContext_n_ctx, sizeof(__pyx_k_LlamaContext_n_ctx), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaContext_print_timings, __pyx_k_LlamaContext_print_timings, sizeof(__pyx_k_LlamaContext_print_timings), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaContext_reset_timings, __pyx_k_LlamaContext_reset_timings, sizeof(__pyx_k_LlamaContext_reset_timings), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaContext_set_n_threads, __pyx_k_LlamaContext_set_n_threads, sizeof(__pyx_k_LlamaContext_set_n_threads), 0, 0, 1, 1},
+    {&__pyx_n_s_LlamaContext_set_rng_seed, __pyx_k_LlamaContext_set_rng_seed, sizeof(__pyx_k_LlamaContext_set_rng_seed), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaModel, __pyx_k_LlamaModel, sizeof(__pyx_k_LlamaModel), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaModel___reduce_cython, __pyx_k_LlamaModel___reduce_cython, sizeof(__pyx_k_LlamaModel___reduce_cython), 0, 0, 1, 1},
     {&__pyx_n_s_LlamaModel___setstate_cython, __pyx_k_LlamaModel___setstate_cython, sizeof(__pyx_k_LlamaModel___setstate_cython), 0, 0, 1, 1},
@@ -15322,6 +18700,8 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_kp_u_Model_path_does_not_exist, __pyx_k_Model_path_does_not_exist, sizeof(__pyx_k_Model_path_does_not_exist), 0, 1, 0, 0},
     {&__pyx_n_s_Optional, __pyx_k_Optional, sizeof(__pyx_k_Optional), 0, 0, 1, 1},
     {&__pyx_n_s_RuntimeError, __pyx_k_RuntimeError, sizeof(__pyx_k_RuntimeError), 0, 0, 1, 1},
+    {&__pyx_n_s_Sequence, __pyx_k_Sequence, sizeof(__pyx_k_Sequence), 0, 0, 1, 1},
+    {&__pyx_kp_s_Sequence_int, __pyx_k_Sequence_int, sizeof(__pyx_k_Sequence_int), 0, 0, 1, 0},
     {&__pyx_kp_u_This_class_cannot_be_instantiate, __pyx_k_This_class_cannot_be_instantiate, sizeof(__pyx_k_This_class_cannot_be_instantiate), 0, 1, 0, 0},
     {&__pyx_n_s_TypeError, __pyx_k_TypeError, sizeof(__pyx_k_TypeError), 0, 0, 1, 1},
     {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
@@ -15329,16 +18709,19 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_kp_b__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 0, 0, 0},
     {&__pyx_n_s__5, __pyx_k__5, sizeof(__pyx_k__5), 0, 0, 1, 1},
     {&__pyx_kp_u__6, __pyx_k__6, sizeof(__pyx_k__6), 0, 1, 0, 0},
-    {&__pyx_n_s__67, __pyx_k__67, sizeof(__pyx_k__67), 0, 0, 1, 1},
+    {&__pyx_n_s__81, __pyx_k__81, sizeof(__pyx_k__81), 0, 0, 1, 1},
     {&__pyx_n_s_add_bos, __pyx_k_add_bos, sizeof(__pyx_k_add_bos), 0, 0, 1, 1},
     {&__pyx_n_s_add_bos_token, __pyx_k_add_bos_token, sizeof(__pyx_k_add_bos_token), 0, 0, 1, 1},
     {&__pyx_n_s_add_eos_token, __pyx_k_add_eos_token, sizeof(__pyx_k_add_eos_token), 0, 0, 1, 1},
+    {&__pyx_n_s_add_sequence, __pyx_k_add_sequence, sizeof(__pyx_k_add_sequence), 0, 0, 1, 1},
     {&__pyx_n_s_asyncio_coroutines, __pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 0, 1, 1},
+    {&__pyx_n_s_batch, __pyx_k_batch, sizeof(__pyx_k_batch), 0, 0, 1, 1},
     {&__pyx_n_s_bool, __pyx_k_bool, sizeof(__pyx_k_bool), 0, 0, 1, 1},
     {&__pyx_n_s_buf, __pyx_k_buf, sizeof(__pyx_k_buf), 0, 0, 1, 1},
     {&__pyx_n_s_buffer, __pyx_k_buffer, sizeof(__pyx_k_buffer), 0, 0, 1, 1},
     {&__pyx_n_s_buffer_size, __pyx_k_buffer_size, sizeof(__pyx_k_buffer_size), 0, 0, 1, 1},
     {&__pyx_n_s_bytes, __pyx_k_bytes, sizeof(__pyx_k_bytes), 0, 0, 1, 1},
+    {&__pyx_n_s_class_getitem, __pyx_k_class_getitem, sizeof(__pyx_k_class_getitem), 0, 0, 1, 1},
     {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
     {&__pyx_n_s_close, __pyx_k_close, sizeof(__pyx_k_close), 0, 0, 1, 1},
     {&__pyx_n_s_cyllama, __pyx_k_cyllama, sizeof(__pyx_k_cyllama), 0, 0, 1, 1},
@@ -15350,6 +18733,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_dict, __pyx_k_dict, sizeof(__pyx_k_dict), 0, 0, 1, 1},
     {&__pyx_kp_s_dict_str_str, __pyx_k_dict_str_str, sizeof(__pyx_k_dict_str_str), 0, 0, 1, 0},
     {&__pyx_kp_u_disable, __pyx_k_disable, sizeof(__pyx_k_disable), 0, 1, 0, 0},
+    {&__pyx_n_s_embd, __pyx_k_embd, sizeof(__pyx_k_embd), 0, 0, 1, 1},
     {&__pyx_kp_u_enable, __pyx_k_enable, sizeof(__pyx_k_enable), 0, 1, 0, 0},
     {&__pyx_n_s_exists, __pyx_k_exists, sizeof(__pyx_k_exists), 0, 0, 1, 1},
     {&__pyx_n_s_float, __pyx_k_float, sizeof(__pyx_k_float), 0, 0, 1, 1},
@@ -15362,6 +18746,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_int, __pyx_k_int, sizeof(__pyx_k_int), 0, 0, 1, 1},
     {&__pyx_n_s_is_coroutine, __pyx_k_is_coroutine, sizeof(__pyx_k_is_coroutine), 0, 0, 1, 1},
     {&__pyx_kp_u_isenabled, __pyx_k_isenabled, sizeof(__pyx_k_isenabled), 0, 1, 0, 0},
+    {&__pyx_n_s_j, __pyx_k_j, sizeof(__pyx_k_j), 0, 0, 1, 1},
     {&__pyx_n_s_key, __pyx_k_key, sizeof(__pyx_k_key), 0, 0, 1, 1},
     {&__pyx_n_s_kv_cache_clear, __pyx_k_kv_cache_clear, sizeof(__pyx_k_kv_cache_clear), 0, 0, 1, 1},
     {&__pyx_n_s_kv_cache_seq_cp, __pyx_k_kv_cache_seq_cp, sizeof(__pyx_k_kv_cache_seq_cp), 0, 0, 1, 1},
@@ -15369,6 +18754,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_kv_cache_seq_rm, __pyx_k_kv_cache_seq_rm, sizeof(__pyx_k_kv_cache_seq_rm), 0, 0, 1, 1},
     {&__pyx_n_s_kv_cache_seq_shift, __pyx_k_kv_cache_seq_shift, sizeof(__pyx_k_kv_cache_seq_shift), 0, 0, 1, 1},
     {&__pyx_kp_s_list_int, __pyx_k_list_int, sizeof(__pyx_k_list_int), 0, 0, 1, 0},
+    {&__pyx_n_s_logits_all, __pyx_k_logits_all, sizeof(__pyx_k_logits_all), 0, 0, 1, 1},
     {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
     {&__pyx_n_s_metadata, __pyx_k_metadata, sizeof(__pyx_k_metadata), 0, 0, 1, 1},
     {&__pyx_n_s_model, __pyx_k_model, sizeof(__pyx_k_model), 0, 0, 1, 1},
@@ -15377,9 +18763,12 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_n_ctx_train, __pyx_k_n_ctx_train, sizeof(__pyx_k_n_ctx_train), 0, 0, 1, 1},
     {&__pyx_n_s_n_embd, __pyx_k_n_embd, sizeof(__pyx_k_n_embd), 0, 0, 1, 1},
     {&__pyx_n_s_n_params, __pyx_k_n_params, sizeof(__pyx_k_n_params), 0, 0, 1, 1},
+    {&__pyx_n_s_n_past, __pyx_k_n_past, sizeof(__pyx_k_n_past), 0, 0, 1, 1},
+    {&__pyx_n_s_n_seq_max, __pyx_k_n_seq_max, sizeof(__pyx_k_n_seq_max), 0, 0, 1, 1},
     {&__pyx_n_s_n_threads, __pyx_k_n_threads, sizeof(__pyx_k_n_threads), 0, 0, 1, 1},
     {&__pyx_n_s_n_threads_batch, __pyx_k_n_threads_batch, sizeof(__pyx_k_n_threads_batch), 0, 0, 1, 1},
     {&__pyx_n_s_n_tokens, __pyx_k_n_tokens, sizeof(__pyx_k_n_tokens), 0, 0, 1, 1},
+    {&__pyx_n_s_n_tokens0, __pyx_k_n_tokens0, sizeof(__pyx_k_n_tokens0), 0, 0, 1, 1},
     {&__pyx_n_s_n_vocab, __pyx_k_n_vocab, sizeof(__pyx_k_n_vocab), 0, 0, 1, 1},
     {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
     {&__pyx_n_s_name_2, __pyx_k_name_2, sizeof(__pyx_k_name_2), 0, 0, 1, 1},
@@ -15392,20 +18781,26 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_params, __pyx_k_params, sizeof(__pyx_k_params), 0, 0, 1, 1},
     {&__pyx_n_s_path, __pyx_k_path, sizeof(__pyx_k_path), 0, 0, 1, 1},
     {&__pyx_n_s_path_model, __pyx_k_path_model, sizeof(__pyx_k_path_model), 0, 0, 1, 1},
+    {&__pyx_n_s_print_timings, __pyx_k_print_timings, sizeof(__pyx_k_print_timings), 0, 0, 1, 1},
     {&__pyx_n_s_pyx_state, __pyx_k_pyx_state, sizeof(__pyx_k_pyx_state), 0, 0, 1, 1},
     {&__pyx_n_s_pyx_vtable, __pyx_k_pyx_vtable, sizeof(__pyx_k_pyx_vtable), 0, 0, 1, 1},
     {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
     {&__pyx_n_s_reduce, __pyx_k_reduce, sizeof(__pyx_k_reduce), 0, 0, 1, 1},
     {&__pyx_n_s_reduce_cython, __pyx_k_reduce_cython, sizeof(__pyx_k_reduce_cython), 0, 0, 1, 1},
     {&__pyx_n_s_reduce_ex, __pyx_k_reduce_ex, sizeof(__pyx_k_reduce_ex), 0, 0, 1, 1},
+    {&__pyx_n_s_reset, __pyx_k_reset, sizeof(__pyx_k_reset), 0, 0, 1, 1},
+    {&__pyx_n_s_reset_timings, __pyx_k_reset_timings, sizeof(__pyx_k_reset_timings), 0, 0, 1, 1},
     {&__pyx_n_s_return, __pyx_k_return, sizeof(__pyx_k_return), 0, 0, 1, 1},
     {&__pyx_n_s_rope_freq_scale_train, __pyx_k_rope_freq_scale_train, sizeof(__pyx_k_rope_freq_scale_train), 0, 0, 1, 1},
+    {&__pyx_n_s_seed, __pyx_k_seed, sizeof(__pyx_k_seed), 0, 0, 1, 1},
     {&__pyx_n_s_self, __pyx_k_self, sizeof(__pyx_k_self), 0, 0, 1, 1},
     {&__pyx_kp_s_self_p_cannot_be_converted_to_a, __pyx_k_self_p_cannot_be_converted_to_a, sizeof(__pyx_k_self_p_cannot_be_converted_to_a), 0, 0, 1, 0},
     {&__pyx_n_s_seq_id, __pyx_k_seq_id, sizeof(__pyx_k_seq_id), 0, 0, 1, 1},
     {&__pyx_n_s_seq_id_dst, __pyx_k_seq_id_dst, sizeof(__pyx_k_seq_id_dst), 0, 0, 1, 1},
     {&__pyx_n_s_seq_id_src, __pyx_k_seq_id_src, sizeof(__pyx_k_seq_id_src), 0, 0, 1, 1},
+    {&__pyx_n_s_set_batch, __pyx_k_set_batch, sizeof(__pyx_k_set_batch), 0, 0, 1, 1},
     {&__pyx_n_s_set_n_threads, __pyx_k_set_n_threads, sizeof(__pyx_k_set_n_threads), 0, 0, 1, 1},
+    {&__pyx_n_s_set_rng_seed, __pyx_k_set_rng_seed, sizeof(__pyx_k_set_rng_seed), 0, 0, 1, 1},
     {&__pyx_n_s_setstate, __pyx_k_setstate, sizeof(__pyx_k_setstate), 0, 0, 1, 1},
     {&__pyx_n_s_setstate_cython, __pyx_k_setstate_cython, sizeof(__pyx_k_setstate_cython), 0, 0, 1, 1},
     {&__pyx_n_s_shift, __pyx_k_shift, sizeof(__pyx_k_shift), 0, 0, 1, 1},
@@ -15443,13 +18838,13 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
 }
 /* #### Code section: cached_builtins ### */
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_staticmethod = __Pyx_GetBuiltinName(__pyx_n_s_staticmethod); if (!__pyx_builtin_staticmethod) __PYX_ERR(0, 361, __pyx_L1_error)
+  __pyx_builtin_staticmethod = __Pyx_GetBuiltinName(__pyx_n_s_staticmethod); if (!__pyx_builtin_staticmethod) __PYX_ERR(0, 385, __pyx_L1_error)
   __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(0, 30, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(0, 44, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 143, __pyx_L1_error)
-  __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_n_s_RuntimeError); if (!__pyx_builtin_RuntimeError) __PYX_ERR(0, 295, __pyx_L1_error)
-  __pyx_builtin_AssertionError = __Pyx_GetBuiltinName(__pyx_n_s_AssertionError); if (!__pyx_builtin_AssertionError) __PYX_ERR(0, 317, __pyx_L1_error)
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 335, __pyx_L1_error)
+  __pyx_builtin_AssertionError = __Pyx_GetBuiltinName(__pyx_n_s_AssertionError); if (!__pyx_builtin_AssertionError) __PYX_ERR(0, 165, __pyx_L1_error)
+  __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_n_s_RuntimeError); if (!__pyx_builtin_RuntimeError) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 359, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -15471,14 +18866,14 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "cyllama.pyx":479
+  /* "cyllama.pyx":502
  * 
  *         if self.ctx is NULL:
  *             raise ValueError("Failed to create llama_context")             # <<<<<<<<<<<<<<
  * 
  *     def __dealloc__(self):
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_Failed_to_create_llama_context); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 479, __pyx_L1_error)
+  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_Failed_to_create_llama_context); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 502, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
 
@@ -15522,268 +18917,268 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     #     return llama_cpp.get_llama_vocab_type(self.model)
  * 
  *     def n_vocab(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_vocab(self.model)
- * 
  */
   __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_n_vocab, 164, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 164, __pyx_L1_error)
 
-  /* "cyllama.pyx":167
+  /* "cyllama.pyx":168
  *         return llama_cpp.llama_n_vocab(self.model)
  * 
  *     def n_ctx_train(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_ctx_train(self.model)
- * 
  */
-  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_n_ctx_train, 167, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 167, __pyx_L1_error)
+  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_n_ctx_train, 168, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 168, __pyx_L1_error)
 
-  /* "cyllama.pyx":170
+  /* "cyllama.pyx":172
  *         return llama_cpp.llama_n_ctx_train(self.model)
  * 
  *     def n_embd(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_embd(self.model)
- * 
  */
-  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_n_embd, 170, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_n_embd, 172, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 172, __pyx_L1_error)
 
-  /* "cyllama.pyx":173
+  /* "cyllama.pyx":176
  *         return llama_cpp.llama_n_embd(self.model)
  * 
  *     def rope_freq_scale_train(self) -> float:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_rope_freq_scale_train(self.model)
- * 
  */
-  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_rope_freq_scale_train, 173, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 173, __pyx_L1_error)
+  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_rope_freq_scale_train, 176, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 176, __pyx_L1_error)
 
-  /* "cyllama.pyx":176
+  /* "cyllama.pyx":180
  *         return llama_cpp.llama_rope_freq_scale_train(self.model)
  * 
  *     def desc(self) -> str:             # <<<<<<<<<<<<<<
  *         cdef char buf[1024]
- *         llama_cpp.llama_model_desc(self.model, buf, 1024)
+ *         assert self.model is not NULL
  */
-  __pyx_tuple__17 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_buf); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __pyx_tuple__17 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_buf); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 180, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__17);
   __Pyx_GIVEREF(__pyx_tuple__17);
-  __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_desc, 176, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_desc, 180, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 180, __pyx_L1_error)
 
-  /* "cyllama.pyx":181
+  /* "cyllama.pyx":186
  *         return buf.decode("utf-8")
  * 
  *     def size(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_model_size(self.model)
- * 
  */
-  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_size, 181, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 181, __pyx_L1_error)
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_size, 186, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 186, __pyx_L1_error)
 
-  /* "cyllama.pyx":184
+  /* "cyllama.pyx":190
  *         return llama_cpp.llama_model_size(self.model)
  * 
  *     def n_params(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_model_n_params(self.model)
- * 
  */
-  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_n_params, 184, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 184, __pyx_L1_error)
+  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_n_params, 190, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 190, __pyx_L1_error)
 
-  /* "cyllama.pyx":187
+  /* "cyllama.pyx":194
  *         return llama_cpp.llama_model_n_params(self.model)
  * 
  *     def get_tensor(self, name: str) -> GGMLTensor:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         cdef llama_cpp.ggml_tensor * tensor = llama_cpp.llama_get_model_tensor(self.model, name.encode("utf-8"))
- *         return GGMLTensor.from_ptr(tensor)
  */
-  __pyx_tuple__21 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_name, __pyx_n_s_tensor); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __pyx_tuple__21 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_name, __pyx_n_s_tensor); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(0, 194, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__21);
   __Pyx_GIVEREF(__pyx_tuple__21);
-  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_get_tensor, 187, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_get_tensor, 194, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 194, __pyx_L1_error)
 
-  /* "cyllama.pyx":235
+  /* "cyllama.pyx":243
  *     # Vocab
  * 
  *     def token_get_text(self, token: int) -> str:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_text(self.model, token).decode("utf-8")
- * 
  */
-  __pyx_tuple__23 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_token); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_tuple__23 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_token); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__23);
   __Pyx_GIVEREF(__pyx_tuple__23);
-  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_get_text, 235, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_get_text, 243, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 243, __pyx_L1_error)
 
-  /* "cyllama.pyx":238
+  /* "cyllama.pyx":247
  *         return llama_cpp.llama_token_get_text(self.model, token).decode("utf-8")
  * 
  *     def token_get_score(self, token: int) -> float:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_score(self.model, token)
- * 
  */
-  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_get_score, 238, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 238, __pyx_L1_error)
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_get_score, 247, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 247, __pyx_L1_error)
 
-  /* "cyllama.pyx":241
+  /* "cyllama.pyx":251
  *         return llama_cpp.llama_token_get_score(self.model, token)
  * 
  *     def token_get_attr(self, token: int) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_attr(self.model, token)
- * 
  */
-  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_get_attr, 241, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 241, __pyx_L1_error)
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_get_attr, 251, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 251, __pyx_L1_error)
 
-  /* "cyllama.pyx":246
+  /* "cyllama.pyx":257
  *     # Special tokens
  * 
  *     def token_bos(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_bos(self.model)
- * 
  */
-  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_bos, 246, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 246, __pyx_L1_error)
+  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_bos, 257, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 257, __pyx_L1_error)
 
-  /* "cyllama.pyx":249
+  /* "cyllama.pyx":261
  *         return llama_cpp.llama_token_bos(self.model)
  * 
  *     def token_eos(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_eos(self.model)
- * 
  */
-  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_eos, 249, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 249, __pyx_L1_error)
+  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_eos, 261, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 261, __pyx_L1_error)
 
-  /* "cyllama.pyx":252
+  /* "cyllama.pyx":265
  *         return llama_cpp.llama_token_eos(self.model)
  * 
  *     def token_cls(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_cls(self.model)
- * 
  */
-  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_cls, 252, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_cls, 265, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 265, __pyx_L1_error)
 
-  /* "cyllama.pyx":255
+  /* "cyllama.pyx":269
  *         return llama_cpp.llama_token_cls(self.model)
  * 
  *     def token_sep(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_sep(self.model)
- * 
  */
-  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_sep, 255, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_sep, 269, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 269, __pyx_L1_error)
 
-  /* "cyllama.pyx":258
+  /* "cyllama.pyx":273
  *         return llama_cpp.llama_token_sep(self.model)
  * 
  *     def token_nl(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_nl(self.model)
- * 
  */
-  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_nl, 258, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 258, __pyx_L1_error)
+  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_nl, 273, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 273, __pyx_L1_error)
 
-  /* "cyllama.pyx":261
+  /* "cyllama.pyx":277
  *         return llama_cpp.llama_token_nl(self.model)
  * 
  *     def token_prefix(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_prefix(self.model)
- * 
  */
-  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_prefix, 261, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 261, __pyx_L1_error)
+  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_prefix, 277, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 277, __pyx_L1_error)
 
-  /* "cyllama.pyx":264
+  /* "cyllama.pyx":281
  *         return llama_cpp.llama_token_prefix(self.model)
  * 
  *     def token_middle(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_middle(self.model)
- * 
  */
-  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_middle, 264, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 264, __pyx_L1_error)
+  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_middle, 281, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 281, __pyx_L1_error)
 
-  /* "cyllama.pyx":267
+  /* "cyllama.pyx":285
  *         return llama_cpp.llama_token_middle(self.model)
  * 
  *     def token_suffix(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_suffix(self.model)
- * 
  */
-  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_suffix, 267, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_suffix, 285, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 285, __pyx_L1_error)
 
-  /* "cyllama.pyx":270
+  /* "cyllama.pyx":289
  *         return llama_cpp.llama_token_suffix(self.model)
  * 
  *     def token_eot(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_eot(self.model)
- * 
  */
-  __pyx_codeobj__35 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_eot, 270, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__35)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_codeobj__35 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_eot, 289, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__35)) __PYX_ERR(0, 289, __pyx_L1_error)
 
-  /* "cyllama.pyx":273
+  /* "cyllama.pyx":293
  *         return llama_cpp.llama_token_eot(self.model)
  * 
  *     def add_bos_token(self) -> bool:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_add_bos_token(self.model)
- * 
  */
-  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_add_bos_token, 273, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_add_bos_token, 293, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 293, __pyx_L1_error)
 
-  /* "cyllama.pyx":276
+  /* "cyllama.pyx":297
  *         return llama_cpp.llama_add_bos_token(self.model)
  * 
  *     def add_eos_token(self) -> bool:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_add_eos_token(self.model)
- * 
  */
-  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_add_eos_token, 276, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_add_eos_token, 297, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(0, 297, __pyx_L1_error)
 
-  /* "cyllama.pyx":281
+  /* "cyllama.pyx":303
  *     # Tokenization
  * 
  *     def tokenize(self, text: bytes, add_bos: bool, special: bool) -> list[int]:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         cdef int n_ctx = self.n_ctx_train()
- *         cdef vector[llama_cpp.llama_token] tokens
  */
-  __pyx_tuple__38 = PyTuple_Pack(7, __pyx_n_s_self, __pyx_n_s_text, __pyx_n_s_add_bos, __pyx_n_s_special, __pyx_n_s_n_ctx, __pyx_n_s_tokens, __pyx_n_s_n_tokens); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_tuple__38 = PyTuple_Pack(7, __pyx_n_s_self, __pyx_n_s_text, __pyx_n_s_add_bos, __pyx_n_s_special, __pyx_n_s_n_ctx, __pyx_n_s_tokens, __pyx_n_s_n_tokens); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 303, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__38);
   __Pyx_GIVEREF(__pyx_tuple__38);
-  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__38, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_tokenize, 281, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__38, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_tokenize, 303, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 303, __pyx_L1_error)
 
-  /* "cyllama.pyx":302
+  /* "cyllama.pyx":325
  *         return tokens[:n_tokens]
  * 
  *     def token_to_piece(self, token: int, special: bool = False) -> bytes:             # <<<<<<<<<<<<<<
  *         cdef char buf[32]
  *         llama_cpp.llama_token_to_piece(self.model, token, buf, 32, 0, special)
  */
-  __pyx_tuple__40 = PyTuple_Pack(4, __pyx_n_s_self, __pyx_n_s_token, __pyx_n_s_special, __pyx_n_s_buf); if (unlikely(!__pyx_tuple__40)) __PYX_ERR(0, 302, __pyx_L1_error)
+  __pyx_tuple__40 = PyTuple_Pack(4, __pyx_n_s_self, __pyx_n_s_token, __pyx_n_s_special, __pyx_n_s_buf); if (unlikely(!__pyx_tuple__40)) __PYX_ERR(0, 325, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__40);
   __Pyx_GIVEREF(__pyx_tuple__40);
-  __pyx_codeobj__41 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__40, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_to_piece, 302, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__41)) __PYX_ERR(0, 302, __pyx_L1_error)
-  __pyx_tuple__42 = PyTuple_Pack(1, Py_False); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 302, __pyx_L1_error)
+  __pyx_codeobj__41 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__40, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_token_to_piece, 325, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__41)) __PYX_ERR(0, 325, __pyx_L1_error)
+  __pyx_tuple__42 = PyTuple_Pack(1, Py_False); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 325, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__42);
   __Pyx_GIVEREF(__pyx_tuple__42);
 
-  /* "cyllama.pyx":308
+  /* "cyllama.pyx":331
  *         # return bytes(buf)
  * 
  *     def detokenize(self, tokens: list[int], special: bool = False) -> bytes:             # <<<<<<<<<<<<<<
- *         # assert self.model is not None
+ *         assert self.model is not NULL
  *         output = b""
  */
-  __pyx_tuple__43 = PyTuple_Pack(8, __pyx_n_s_self, __pyx_n_s_tokens, __pyx_n_s_special, __pyx_n_s_output, __pyx_n_s_size, __pyx_n_s_buffer, __pyx_n_s_token, __pyx_n_s_n); if (unlikely(!__pyx_tuple__43)) __PYX_ERR(0, 308, __pyx_L1_error)
+  __pyx_tuple__43 = PyTuple_Pack(8, __pyx_n_s_self, __pyx_n_s_tokens, __pyx_n_s_special, __pyx_n_s_output, __pyx_n_s_size, __pyx_n_s_buffer, __pyx_n_s_token, __pyx_n_s_n); if (unlikely(!__pyx_tuple__43)) __PYX_ERR(0, 331, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__43);
   __Pyx_GIVEREF(__pyx_tuple__43);
-  __pyx_codeobj__44 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__43, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_detokenize, 308, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__44)) __PYX_ERR(0, 308, __pyx_L1_error)
+  __pyx_codeobj__44 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__43, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_detokenize, 331, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__44)) __PYX_ERR(0, 331, __pyx_L1_error)
 
-  /* "cyllama.pyx":329
+  /* "cyllama.pyx":352
  *     # Extra
  * 
  *     def metadata(self) -> dict[str, str]:             # <<<<<<<<<<<<<<
  *         metadata: dict[str, str] = {}
  *         buffer_size = 1024
  */
-  __pyx_tuple__45 = PyTuple_Pack(8, __pyx_n_s_self, __pyx_n_s_metadata, __pyx_n_s_buffer_size, __pyx_n_s_nbytes, __pyx_n_s_buffer, __pyx_n_s_i, __pyx_n_s_key, __pyx_n_s_value); if (unlikely(!__pyx_tuple__45)) __PYX_ERR(0, 329, __pyx_L1_error)
+  __pyx_tuple__45 = PyTuple_Pack(8, __pyx_n_s_self, __pyx_n_s_metadata, __pyx_n_s_buffer_size, __pyx_n_s_nbytes, __pyx_n_s_buffer, __pyx_n_s_i, __pyx_n_s_key, __pyx_n_s_value); if (unlikely(!__pyx_tuple__45)) __PYX_ERR(0, 352, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__45);
   __Pyx_GIVEREF(__pyx_tuple__45);
-  __pyx_codeobj__46 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__45, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_metadata, 329, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__46)) __PYX_ERR(0, 329, __pyx_L1_error)
+  __pyx_codeobj__46 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__45, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_metadata, 352, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__46)) __PYX_ERR(0, 352, __pyx_L1_error)
 
-  /* "cyllama.pyx":361
+  /* "cyllama.pyx":385
  * 
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
  *     def default_params() -> ModelParams:
  *         """Get the default llama_model_params."""
  */
-  __pyx_codeobj__47 = (PyObject*)__Pyx_PyCode_New(0, 0, 0, 0, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_default_params, 361, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__47)) __PYX_ERR(0, 361, __pyx_L1_error)
+  __pyx_codeobj__47 = (PyObject*)__Pyx_PyCode_New(0, 0, 0, 0, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_default_params, 385, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__47)) __PYX_ERR(0, 385, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
@@ -15815,99 +19210,138 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  */
   __pyx_codeobj__51 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 3, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__51)) __PYX_ERR(1, 3, __pyx_L1_error)
 
-  /* "cyllama.pyx":486
+  /* "cyllama.pyx":509
  *             self.ctx = NULL
  * 
  *     def close(self):             # <<<<<<<<<<<<<<
  *         self.__dealloc__()
  * 
  */
-  __pyx_codeobj__52 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_close, 486, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__52)) __PYX_ERR(0, 486, __pyx_L1_error)
+  __pyx_codeobj__52 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_close, 509, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__52)) __PYX_ERR(0, 509, __pyx_L1_error)
 
-  /* "cyllama.pyx":489
+  /* "cyllama.pyx":512
  *         self.__dealloc__()
  * 
  *     def n_ctx(self) -> int:             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         return llama_cpp.llama_n_ctx(self.ctx)
  */
-  __pyx_codeobj__53 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_n_ctx, 489, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__53)) __PYX_ERR(0, 489, __pyx_L1_error)
+  __pyx_codeobj__53 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_n_ctx, 512, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__53)) __PYX_ERR(0, 512, __pyx_L1_error)
 
-  /* "cyllama.pyx":498
+  /* "cyllama.pyx":521
  *     #     return llama_cpp.llama_pooling_type(self.ctx)
  * 
  *     def kv_cache_clear(self):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_clear(self.ctx)
  */
-  __pyx_codeobj__54 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_kv_cache_clear, 498, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__54)) __PYX_ERR(0, 498, __pyx_L1_error)
+  __pyx_codeobj__54 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_kv_cache_clear, 521, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__54)) __PYX_ERR(0, 521, __pyx_L1_error)
 
-  /* "cyllama.pyx":502
+  /* "cyllama.pyx":525
  *         llama_cpp.llama_kv_cache_clear(self.ctx)
  * 
  *     def kv_cache_seq_rm(self, seq_id: int, p0: int, p1: int):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_rm(self.ctx, seq_id, p0, p1)
  */
-  __pyx_tuple__55 = PyTuple_Pack(4, __pyx_n_s_self, __pyx_n_s_seq_id, __pyx_n_s_p0, __pyx_n_s_p1); if (unlikely(!__pyx_tuple__55)) __PYX_ERR(0, 502, __pyx_L1_error)
+  __pyx_tuple__55 = PyTuple_Pack(4, __pyx_n_s_self, __pyx_n_s_seq_id, __pyx_n_s_p0, __pyx_n_s_p1); if (unlikely(!__pyx_tuple__55)) __PYX_ERR(0, 525, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__55);
   __Pyx_GIVEREF(__pyx_tuple__55);
-  __pyx_codeobj__56 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__55, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_kv_cache_seq_rm, 502, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__56)) __PYX_ERR(0, 502, __pyx_L1_error)
+  __pyx_codeobj__56 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__55, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_kv_cache_seq_rm, 525, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__56)) __PYX_ERR(0, 525, __pyx_L1_error)
 
-  /* "cyllama.pyx":506
+  /* "cyllama.pyx":529
  *         llama_cpp.llama_kv_cache_seq_rm(self.ctx, seq_id, p0, p1)
  * 
  *     def kv_cache_seq_cp(self, seq_id_src: int, seq_id_dst: int, p0: int, p1: int):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_cp(self.ctx, seq_id_src, seq_id_dst, p0, p1)
  */
-  __pyx_tuple__57 = PyTuple_Pack(5, __pyx_n_s_self, __pyx_n_s_seq_id_src, __pyx_n_s_seq_id_dst, __pyx_n_s_p0, __pyx_n_s_p1); if (unlikely(!__pyx_tuple__57)) __PYX_ERR(0, 506, __pyx_L1_error)
+  __pyx_tuple__57 = PyTuple_Pack(5, __pyx_n_s_self, __pyx_n_s_seq_id_src, __pyx_n_s_seq_id_dst, __pyx_n_s_p0, __pyx_n_s_p1); if (unlikely(!__pyx_tuple__57)) __PYX_ERR(0, 529, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__57);
   __Pyx_GIVEREF(__pyx_tuple__57);
-  __pyx_codeobj__58 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__57, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_kv_cache_seq_cp, 506, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__58)) __PYX_ERR(0, 506, __pyx_L1_error)
+  __pyx_codeobj__58 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__57, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_kv_cache_seq_cp, 529, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__58)) __PYX_ERR(0, 529, __pyx_L1_error)
 
-  /* "cyllama.pyx":510
+  /* "cyllama.pyx":533
  *         llama_cpp.llama_kv_cache_seq_cp(self.ctx, seq_id_src, seq_id_dst, p0, p1)
  * 
  *     def kv_cache_seq_keep(self, seq_id: int):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_keep(self.ctx, seq_id)
  */
-  __pyx_tuple__59 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_seq_id); if (unlikely(!__pyx_tuple__59)) __PYX_ERR(0, 510, __pyx_L1_error)
+  __pyx_tuple__59 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_seq_id); if (unlikely(!__pyx_tuple__59)) __PYX_ERR(0, 533, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__59);
   __Pyx_GIVEREF(__pyx_tuple__59);
-  __pyx_codeobj__60 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__59, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_kv_cache_seq_keep, 510, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__60)) __PYX_ERR(0, 510, __pyx_L1_error)
+  __pyx_codeobj__60 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__59, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_kv_cache_seq_keep, 533, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__60)) __PYX_ERR(0, 533, __pyx_L1_error)
 
-  /* "cyllama.pyx":514
+  /* "cyllama.pyx":537
  *         llama_cpp.llama_kv_cache_seq_keep(self.ctx, seq_id)
  * 
  *     def kv_cache_seq_shift(self, seq_id: int, p0: int, p1: int, shift: int):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_add(self.ctx, seq_id, p0, p1, shift)
  */
-  __pyx_tuple__61 = PyTuple_Pack(5, __pyx_n_s_self, __pyx_n_s_seq_id, __pyx_n_s_p0, __pyx_n_s_p1, __pyx_n_s_shift); if (unlikely(!__pyx_tuple__61)) __PYX_ERR(0, 514, __pyx_L1_error)
+  __pyx_tuple__61 = PyTuple_Pack(5, __pyx_n_s_self, __pyx_n_s_seq_id, __pyx_n_s_p0, __pyx_n_s_p1, __pyx_n_s_shift); if (unlikely(!__pyx_tuple__61)) __PYX_ERR(0, 537, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__61);
   __Pyx_GIVEREF(__pyx_tuple__61);
-  __pyx_codeobj__62 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__61, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_kv_cache_seq_shift, 514, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__62)) __PYX_ERR(0, 514, __pyx_L1_error)
+  __pyx_codeobj__62 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__61, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_kv_cache_seq_shift, 537, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__62)) __PYX_ERR(0, 537, __pyx_L1_error)
 
-  /* "cyllama.pyx":540
+  /* "cyllama.pyx":563
  *     #         raise RuntimeError(f"llama_decode returned {return_code}")
  * 
  *     def set_n_threads(self, n_threads: int, n_threads_batch: int):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_set_n_threads(self.ctx, n_threads, n_threads_batch)
  */
-  __pyx_tuple__63 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_n_threads, __pyx_n_s_n_threads_batch); if (unlikely(!__pyx_tuple__63)) __PYX_ERR(0, 540, __pyx_L1_error)
+  __pyx_tuple__63 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_n_threads, __pyx_n_s_n_threads_batch); if (unlikely(!__pyx_tuple__63)) __PYX_ERR(0, 563, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__63);
   __Pyx_GIVEREF(__pyx_tuple__63);
-  __pyx_codeobj__64 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__63, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_set_n_threads, 540, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__64)) __PYX_ERR(0, 540, __pyx_L1_error)
+  __pyx_codeobj__64 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__63, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_set_n_threads, 563, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__64)) __PYX_ERR(0, 563, __pyx_L1_error)
+
+  /* "cyllama.pyx":581
+ *     # Sampling functions
+ * 
+ *     def set_rng_seed(self, seed: int):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_set_rng_seed(self.ctx, seed)
+ */
+  __pyx_tuple__65 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_seed); if (unlikely(!__pyx_tuple__65)) __PYX_ERR(0, 581, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__65);
+  __Pyx_GIVEREF(__pyx_tuple__65);
+  __pyx_codeobj__66 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__65, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_set_rng_seed, 581, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__66)) __PYX_ERR(0, 581, __pyx_L1_error)
+
+  /* "cyllama.pyx":715
+ *     #     llama_cpp.llama_grammar_accept_token(grammar.grammar, self.ctx, token)
+ * 
+ *     def reset_timings(self):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_reset_timings(self.ctx)
+ */
+  __pyx_codeobj__67 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_reset_timings, 715, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__67)) __PYX_ERR(0, 715, __pyx_L1_error)
+
+  /* "cyllama.pyx":719
+ *         llama_cpp.llama_reset_timings(self.ctx)
+ * 
+ *     def print_timings(self):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_print_timings(self.ctx)
+ */
+  __pyx_codeobj__68 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_print_timings, 719, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__68)) __PYX_ERR(0, 719, __pyx_L1_error)
+
+  /* "cyllama.pyx":724
+ * 
+ *     # Utility functions
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def default_params():
+ *         """Get the default llama_context_params."""
+ */
+  __pyx_codeobj__69 = (PyObject*)__Pyx_PyCode_New(0, 0, 0, 0, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_default_params, 724, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__69)) __PYX_ERR(0, 724, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
  *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
  * def __setstate_cython__(self, __pyx_state):
  */
-  __pyx_codeobj__65 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_reduce_cython, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__65)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __pyx_codeobj__70 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_reduce_cython, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__70)) __PYX_ERR(1, 1, __pyx_L1_error)
 
   /* "(tree fragment)":3
  * def __reduce_cython__(self):
@@ -15915,7 +19349,73 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
  *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
  */
-  __pyx_codeobj__66 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 3, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__66)) __PYX_ERR(1, 3, __pyx_L1_error)
+  __pyx_codeobj__71 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 3, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__71)) __PYX_ERR(1, 3, __pyx_L1_error)
+
+  /* "cyllama.pyx":758
+ *             self.batch = NULL
+ * 
+ *     def close(self):             # <<<<<<<<<<<<<<
+ *         self.__dealloc__()
+ * 
+ */
+  __pyx_codeobj__72 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_close, 758, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__72)) __PYX_ERR(0, 758, __pyx_L1_error)
+
+  /* "cyllama.pyx":761
+ *         self.__dealloc__()
+ * 
+ *     def n_tokens(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         return self.batch.n_tokens
+ */
+  __pyx_codeobj__73 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_n_tokens, 761, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__73)) __PYX_ERR(0, 761, __pyx_L1_error)
+
+  /* "cyllama.pyx":765
+ *         return self.batch.n_tokens
+ * 
+ *     def reset(self):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         self.batch.n_tokens = 0
+ */
+  __pyx_codeobj__74 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_reset, 765, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__74)) __PYX_ERR(0, 765, __pyx_L1_error)
+
+  /* "cyllama.pyx":769
+ *         self.batch.n_tokens = 0
+ * 
+ *     def set_batch(self, batch: Sequence[int], n_past: int, logits_all: bool):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)
+ */
+  __pyx_tuple__75 = PyTuple_Pack(6, __pyx_n_s_self, __pyx_n_s_batch, __pyx_n_s_n_past, __pyx_n_s_logits_all, __pyx_n_s_n_tokens, __pyx_n_s_i); if (unlikely(!__pyx_tuple__75)) __PYX_ERR(0, 769, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__75);
+  __Pyx_GIVEREF(__pyx_tuple__75);
+  __pyx_codeobj__76 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__75, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_set_batch, 769, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__76)) __PYX_ERR(0, 769, __pyx_L1_error)
+
+  /* "cyllama.pyx":781
+ *         self.batch.logits[n_tokens - 1] = True
+ * 
+ *     def add_sequence(self, batch: Sequence[int], seq_id: int, logits_all: bool):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)
+ */
+  __pyx_tuple__77 = PyTuple_Pack(8, __pyx_n_s_self, __pyx_n_s_batch, __pyx_n_s_seq_id, __pyx_n_s_logits_all, __pyx_n_s_n_tokens, __pyx_n_s_n_tokens0, __pyx_n_s_i, __pyx_n_s_j); if (unlikely(!__pyx_tuple__77)) __PYX_ERR(0, 781, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__77);
+  __Pyx_GIVEREF(__pyx_tuple__77);
+  __pyx_codeobj__78 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__77, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_add_sequence, 781, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__78)) __PYX_ERR(0, 781, __pyx_L1_error)
+
+  /* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+ */
+  __pyx_codeobj__79 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_reduce_cython, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__79)) __PYX_ERR(1, 1, __pyx_L1_error)
+
+  /* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ */
+  __pyx_codeobj__80 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 3, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__80)) __PYX_ERR(1, 3, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -15927,6 +19427,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
 static CYTHON_SMALL_CODE int __Pyx_InitConstants(void) {
   if (__Pyx_CreateStringTabAndInitStrings() < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   __pyx_int_0 = PyInt_FromLong(0); if (unlikely(!__pyx_int_0)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __pyx_int_1 = PyInt_FromLong(1); if (unlikely(!__pyx_int_1)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_1024 = PyInt_FromLong(1024); if (unlikely(!__pyx_int_1024)) __PYX_ERR(0, 1, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
@@ -16062,15 +19563,15 @@ static int __Pyx_modinit_type_init_code(void) {
   if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_7cyllama_LlamaModel) < 0) __PYX_ERR(0, 125, __pyx_L1_error)
   #endif
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_ptype_7cyllama_ContextParams = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_7cyllama_ContextParams_spec, NULL); if (unlikely(!__pyx_ptype_7cyllama_ContextParams)) __PYX_ERR(0, 369, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_7cyllama_ContextParams_spec, __pyx_ptype_7cyllama_ContextParams) < 0) __PYX_ERR(0, 369, __pyx_L1_error)
+  __pyx_ptype_7cyllama_ContextParams = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_7cyllama_ContextParams_spec, NULL); if (unlikely(!__pyx_ptype_7cyllama_ContextParams)) __PYX_ERR(0, 392, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_7cyllama_ContextParams_spec, __pyx_ptype_7cyllama_ContextParams) < 0) __PYX_ERR(0, 392, __pyx_L1_error)
   #else
   __pyx_ptype_7cyllama_ContextParams = &__pyx_type_7cyllama_ContextParams;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_ptype_7cyllama_ContextParams) < 0) __PYX_ERR(0, 369, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_ptype_7cyllama_ContextParams) < 0) __PYX_ERR(0, 392, __pyx_L1_error)
   #endif
   #if PY_MAJOR_VERSION < 3
   __pyx_ptype_7cyllama_ContextParams->tp_print = 0;
@@ -16080,20 +19581,20 @@ static int __Pyx_modinit_type_init_code(void) {
     __pyx_ptype_7cyllama_ContextParams->tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_ContextParams, (PyObject *) __pyx_ptype_7cyllama_ContextParams) < 0) __PYX_ERR(0, 369, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_ContextParams, (PyObject *) __pyx_ptype_7cyllama_ContextParams) < 0) __PYX_ERR(0, 392, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_7cyllama_ContextParams) < 0) __PYX_ERR(0, 369, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_7cyllama_ContextParams) < 0) __PYX_ERR(0, 392, __pyx_L1_error)
   #endif
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_ptype_7cyllama_LlamaContext = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_7cyllama_LlamaContext_spec, NULL); if (unlikely(!__pyx_ptype_7cyllama_LlamaContext)) __PYX_ERR(0, 448, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_7cyllama_LlamaContext_spec, __pyx_ptype_7cyllama_LlamaContext) < 0) __PYX_ERR(0, 448, __pyx_L1_error)
+  __pyx_ptype_7cyllama_LlamaContext = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_7cyllama_LlamaContext_spec, NULL); if (unlikely(!__pyx_ptype_7cyllama_LlamaContext)) __PYX_ERR(0, 471, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_7cyllama_LlamaContext_spec, __pyx_ptype_7cyllama_LlamaContext) < 0) __PYX_ERR(0, 471, __pyx_L1_error)
   #else
   __pyx_ptype_7cyllama_LlamaContext = &__pyx_type_7cyllama_LlamaContext;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_ptype_7cyllama_LlamaContext) < 0) __PYX_ERR(0, 448, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_ptype_7cyllama_LlamaContext) < 0) __PYX_ERR(0, 471, __pyx_L1_error)
   #endif
   #if PY_MAJOR_VERSION < 3
   __pyx_ptype_7cyllama_LlamaContext->tp_print = 0;
@@ -16103,9 +19604,32 @@ static int __Pyx_modinit_type_init_code(void) {
     __pyx_ptype_7cyllama_LlamaContext->tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_LlamaContext, (PyObject *) __pyx_ptype_7cyllama_LlamaContext) < 0) __PYX_ERR(0, 448, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_LlamaContext, (PyObject *) __pyx_ptype_7cyllama_LlamaContext) < 0) __PYX_ERR(0, 471, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_7cyllama_LlamaContext) < 0) __PYX_ERR(0, 448, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_7cyllama_LlamaContext) < 0) __PYX_ERR(0, 471, __pyx_L1_error)
+  #endif
+  #if CYTHON_USE_TYPE_SPECS
+  __pyx_ptype_7cyllama_LlamaBatch = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_7cyllama_LlamaBatch_spec, NULL); if (unlikely(!__pyx_ptype_7cyllama_LlamaBatch)) __PYX_ERR(0, 730, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_7cyllama_LlamaBatch_spec, __pyx_ptype_7cyllama_LlamaBatch) < 0) __PYX_ERR(0, 730, __pyx_L1_error)
+  #else
+  __pyx_ptype_7cyllama_LlamaBatch = &__pyx_type_7cyllama_LlamaBatch;
+  #endif
+  #if !CYTHON_COMPILING_IN_LIMITED_API
+  #endif
+  #if !CYTHON_USE_TYPE_SPECS
+  if (__Pyx_PyType_Ready(__pyx_ptype_7cyllama_LlamaBatch) < 0) __PYX_ERR(0, 730, __pyx_L1_error)
+  #endif
+  #if PY_MAJOR_VERSION < 3
+  __pyx_ptype_7cyllama_LlamaBatch->tp_print = 0;
+  #endif
+  #if !CYTHON_COMPILING_IN_LIMITED_API
+  if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_ptype_7cyllama_LlamaBatch->tp_dictoffset && __pyx_ptype_7cyllama_LlamaBatch->tp_getattro == PyObject_GenericGetAttr)) {
+    __pyx_ptype_7cyllama_LlamaBatch->tp_getattro = __Pyx_PyObject_GenericGetAttr;
+  }
+  #endif
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_LlamaBatch, (PyObject *) __pyx_ptype_7cyllama_LlamaBatch) < 0) __PYX_ERR(0, 730, __pyx_L1_error)
+  #if !CYTHON_COMPILING_IN_LIMITED_API
+  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_7cyllama_LlamaBatch) < 0) __PYX_ERR(0, 730, __pyx_L1_error)
   #endif
   __Pyx_RefNannyFinishContext();
   return 0;
@@ -16421,7 +19945,7 @@ if (!__Pyx_RefNanny) {
  * cimport llama_cpp
  * 
  * import os             # <<<<<<<<<<<<<<
- * from typing import Optional
+ * from typing import Optional, Sequence
  * 
  */
   __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_os, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
@@ -16432,21 +19956,28 @@ if (!__Pyx_RefNanny) {
   /* "cyllama.pyx":10
  * 
  * import os
- * from typing import Optional             # <<<<<<<<<<<<<<
+ * from typing import Optional, Sequence             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_n_s_Optional);
   __Pyx_GIVEREF(__pyx_n_s_Optional);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_Optional)) __PYX_ERR(0, 10, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_s_Sequence);
+  __Pyx_GIVEREF(__pyx_n_s_Sequence);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_Sequence)) __PYX_ERR(0, 10, __pyx_L1_error);
   __pyx_t_3 = __Pyx_Import(__pyx_n_s_typing, __pyx_t_2, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_Optional); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_Optional, __pyx_t_2) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_Sequence); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Sequence, __pyx_t_2) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
@@ -16496,8 +20027,8 @@ if (!__Pyx_RefNanny) {
  *     #     return llama_cpp.get_llama_vocab_type(self.model)
  * 
  *     def n_vocab(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_vocab(self.model)
- * 
  */
   __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 164, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
@@ -16510,492 +20041,492 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":167
+  /* "cyllama.pyx":168
  *         return llama_cpp.llama_n_vocab(self.model)
  * 
  *     def n_ctx_train(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_ctx_train(self.model)
- * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 167, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 167, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_9n_ctx_train, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_n_ctx_train, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 167, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 168, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_9n_ctx_train, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_n_ctx_train, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_n_ctx_train, __pyx_t_3) < 0) __PYX_ERR(0, 167, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_n_ctx_train, __pyx_t_3) < 0) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":170
+  /* "cyllama.pyx":172
  *         return llama_cpp.llama_n_ctx_train(self.model)
  * 
  *     def n_embd(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_n_embd(self.model)
- * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 170, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_11n_embd, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_n_embd, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 170, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 172, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_11n_embd, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_n_embd, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_n_embd, __pyx_t_2) < 0) __PYX_ERR(0, 170, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_n_embd, __pyx_t_2) < 0) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
-
-  /* "cyllama.pyx":173
- *         return llama_cpp.llama_n_embd(self.model)
- * 
- *     def rope_freq_scale_train(self) -> float:             # <<<<<<<<<<<<<<
- *         return llama_cpp.llama_rope_freq_scale_train(self.model)
- * 
- */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 173, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_float) < 0) __PYX_ERR(0, 173, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_13rope_freq_scale_train, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_rope_freq_scale_train, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 173, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_rope_freq_scale_train, __pyx_t_3) < 0) __PYX_ERR(0, 173, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
   /* "cyllama.pyx":176
+ *         return llama_cpp.llama_n_embd(self.model)
+ * 
+ *     def rope_freq_scale_train(self) -> float:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         return llama_cpp.llama_rope_freq_scale_train(self.model)
+ */
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_float) < 0) __PYX_ERR(0, 176, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_13rope_freq_scale_train, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_rope_freq_scale_train, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_rope_freq_scale_train, __pyx_t_3) < 0) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
+
+  /* "cyllama.pyx":180
  *         return llama_cpp.llama_rope_freq_scale_train(self.model)
  * 
  *     def desc(self) -> str:             # <<<<<<<<<<<<<<
  *         cdef char buf[1024]
- *         llama_cpp.llama_model_desc(self.model, buf, 1024)
+ *         assert self.model is not NULL
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 180, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_str) < 0) __PYX_ERR(0, 176, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_15desc, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_desc, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__18)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 176, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_str) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_15desc, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_desc, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__18)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_desc, __pyx_t_2) < 0) __PYX_ERR(0, 176, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_desc, __pyx_t_2) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":181
+  /* "cyllama.pyx":186
  *         return buf.decode("utf-8")
  * 
  *     def size(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_model_size(self.model)
- * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 186, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 181, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_17size, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_size, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__19)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 181, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 186, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_17size, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_size, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__19)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 186, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_size, __pyx_t_3) < 0) __PYX_ERR(0, 181, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_size, __pyx_t_3) < 0) __PYX_ERR(0, 186, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":184
+  /* "cyllama.pyx":190
  *         return llama_cpp.llama_model_size(self.model)
  * 
  *     def n_params(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_model_n_params(self.model)
- * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 184, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 190, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 184, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_19n_params, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_n_params, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__20)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 184, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_19n_params, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_n_params, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__20)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_n_params, __pyx_t_2) < 0) __PYX_ERR(0, 184, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_n_params, __pyx_t_2) < 0) __PYX_ERR(0, 190, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":187
+  /* "cyllama.pyx":194
  *         return llama_cpp.llama_model_n_params(self.model)
  * 
  *     def get_tensor(self, name: str) -> GGMLTensor:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         cdef llama_cpp.ggml_tensor * tensor = llama_cpp.llama_get_model_tensor(self.model, name.encode("utf-8"))
- *         return GGMLTensor.from_ptr(tensor)
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 194, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_name, __pyx_n_s_str) < 0) __PYX_ERR(0, 187, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_GGMLTensor) < 0) __PYX_ERR(0, 187, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_21get_tensor, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_get_tensor, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__22)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 187, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_name, __pyx_n_s_str) < 0) __PYX_ERR(0, 194, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_GGMLTensor) < 0) __PYX_ERR(0, 194, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_21get_tensor, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_get_tensor, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__22)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 194, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_get_tensor, __pyx_t_3) < 0) __PYX_ERR(0, 187, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_get_tensor, __pyx_t_3) < 0) __PYX_ERR(0, 194, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":235
+  /* "cyllama.pyx":243
  *     # Vocab
  * 
  *     def token_get_text(self, token: int) -> str:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_text(self.model, token).decode("utf-8")
- * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_token, __pyx_n_s_int) < 0) __PYX_ERR(0, 235, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_str) < 0) __PYX_ERR(0, 235, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_23token_get_text, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_get_text, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 235, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_token, __pyx_n_s_int) < 0) __PYX_ERR(0, 243, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_str) < 0) __PYX_ERR(0, 243, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_23token_get_text, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_get_text, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_get_text, __pyx_t_2) < 0) __PYX_ERR(0, 235, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_get_text, __pyx_t_2) < 0) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":238
+  /* "cyllama.pyx":247
  *         return llama_cpp.llama_token_get_text(self.model, token).decode("utf-8")
  * 
  *     def token_get_score(self, token: int) -> float:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_score(self.model, token)
- * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 238, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_token, __pyx_n_s_int) < 0) __PYX_ERR(0, 238, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_float) < 0) __PYX_ERR(0, 238, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_25token_get_score, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_get_score, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 238, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_token, __pyx_n_s_int) < 0) __PYX_ERR(0, 247, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_float) < 0) __PYX_ERR(0, 247, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_25token_get_score, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_get_score, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_get_score, __pyx_t_3) < 0) __PYX_ERR(0, 238, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_get_score, __pyx_t_3) < 0) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":241
+  /* "cyllama.pyx":251
  *         return llama_cpp.llama_token_get_score(self.model, token)
  * 
  *     def token_get_attr(self, token: int) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_get_attr(self.model, token)
- * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 241, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 251, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_token, __pyx_n_s_int) < 0) __PYX_ERR(0, 241, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 241, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_27token_get_attr, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_get_attr, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 241, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_token, __pyx_n_s_int) < 0) __PYX_ERR(0, 251, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 251, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_27token_get_attr, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_get_attr, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 251, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_get_attr, __pyx_t_2) < 0) __PYX_ERR(0, 241, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_get_attr, __pyx_t_2) < 0) __PYX_ERR(0, 251, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":246
+  /* "cyllama.pyx":257
  *     # Special tokens
  * 
  *     def token_bos(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
  *         return llama_cpp.llama_token_bos(self.model)
- * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 246, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 246, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_29token_bos, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_bos, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 246, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_29token_bos, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_bos, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_bos, __pyx_t_3) < 0) __PYX_ERR(0, 246, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
-
-  /* "cyllama.pyx":249
- *         return llama_cpp.llama_token_bos(self.model)
- * 
- *     def token_eos(self) -> int:             # <<<<<<<<<<<<<<
- *         return llama_cpp.llama_token_eos(self.model)
- * 
- */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 249, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_31token_eos, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_eos, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 249, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_eos, __pyx_t_2) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
-
-  /* "cyllama.pyx":252
- *         return llama_cpp.llama_token_eos(self.model)
- * 
- *     def token_cls(self) -> int:             # <<<<<<<<<<<<<<
- *         return llama_cpp.llama_token_cls(self.model)
- * 
- */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 252, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_33token_cls, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_cls, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 252, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_cls, __pyx_t_3) < 0) __PYX_ERR(0, 252, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
-
-  /* "cyllama.pyx":255
- *         return llama_cpp.llama_token_cls(self.model)
- * 
- *     def token_sep(self) -> int:             # <<<<<<<<<<<<<<
- *         return llama_cpp.llama_token_sep(self.model)
- * 
- */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 255, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 255, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_35token_sep, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_sep, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__30)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_sep, __pyx_t_2) < 0) __PYX_ERR(0, 255, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
-
-  /* "cyllama.pyx":258
- *         return llama_cpp.llama_token_sep(self.model)
- * 
- *     def token_nl(self) -> int:             # <<<<<<<<<<<<<<
- *         return llama_cpp.llama_token_nl(self.model)
- * 
- */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 258, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_37token_nl, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_nl, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 258, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_nl, __pyx_t_3) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_bos, __pyx_t_3) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
   /* "cyllama.pyx":261
- *         return llama_cpp.llama_token_nl(self.model)
+ *         return llama_cpp.llama_token_bos(self.model)
  * 
- *     def token_prefix(self) -> int:             # <<<<<<<<<<<<<<
- *         return llama_cpp.llama_token_prefix(self.model)
- * 
+ *     def token_eos(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         return llama_cpp.llama_token_eos(self.model)
  */
   __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 261, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 261, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_39token_prefix, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_prefix, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__32)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 261, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_31token_eos, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_eos, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 261, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_prefix, __pyx_t_2) < 0) __PYX_ERR(0, 261, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_eos, __pyx_t_2) < 0) __PYX_ERR(0, 261, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":264
- *         return llama_cpp.llama_token_prefix(self.model)
+  /* "cyllama.pyx":265
+ *         return llama_cpp.llama_token_eos(self.model)
  * 
- *     def token_middle(self) -> int:             # <<<<<<<<<<<<<<
- *         return llama_cpp.llama_token_middle(self.model)
- * 
+ *     def token_cls(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         return llama_cpp.llama_token_cls(self.model)
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 264, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 265, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 264, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_41token_middle, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_middle, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 264, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_33token_cls, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_cls, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 265, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_middle, __pyx_t_3) < 0) __PYX_ERR(0, 264, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_cls, __pyx_t_3) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":267
- *         return llama_cpp.llama_token_middle(self.model)
+  /* "cyllama.pyx":269
+ *         return llama_cpp.llama_token_cls(self.model)
  * 
- *     def token_suffix(self) -> int:             # <<<<<<<<<<<<<<
- *         return llama_cpp.llama_token_suffix(self.model)
- * 
+ *     def token_sep(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         return llama_cpp.llama_token_sep(self.model)
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 267, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_43token_suffix, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_suffix, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__34)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 267, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 269, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_35token_sep, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_sep, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__30)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_suffix, __pyx_t_2) < 0) __PYX_ERR(0, 267, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_sep, __pyx_t_2) < 0) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
-
-  /* "cyllama.pyx":270
- *         return llama_cpp.llama_token_suffix(self.model)
- * 
- *     def token_eot(self) -> int:             # <<<<<<<<<<<<<<
- *         return llama_cpp.llama_token_eot(self.model)
- * 
- */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 270, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 270, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_45token_eot, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_eot, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__35)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 270, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_eot, __pyx_t_3) < 0) __PYX_ERR(0, 270, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
   /* "cyllama.pyx":273
- *         return llama_cpp.llama_token_eot(self.model)
+ *         return llama_cpp.llama_token_sep(self.model)
  * 
- *     def add_bos_token(self) -> bool:             # <<<<<<<<<<<<<<
- *         return llama_cpp.llama_add_bos_token(self.model)
- * 
+ *     def token_nl(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         return llama_cpp.llama_token_nl(self.model)
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 273, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_bool) < 0) __PYX_ERR(0, 273, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_47add_bos_token, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_add_bos_token, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__36)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_add_bos_token, __pyx_t_2) < 0) __PYX_ERR(0, 273, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
-
-  /* "cyllama.pyx":276
- *         return llama_cpp.llama_add_bos_token(self.model)
- * 
- *     def add_eos_token(self) -> bool:             # <<<<<<<<<<<<<<
- *         return llama_cpp.llama_add_eos_token(self.model)
- * 
- */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_bool) < 0) __PYX_ERR(0, 276, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_49add_eos_token, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_add_eos_token, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__37)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 276, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_37token_nl, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_nl, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 273, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_add_eos_token, __pyx_t_3) < 0) __PYX_ERR(0, 276, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_nl, __pyx_t_3) < 0) __PYX_ERR(0, 273, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":281
- *     # Tokenization
+  /* "cyllama.pyx":277
+ *         return llama_cpp.llama_token_nl(self.model)
  * 
- *     def tokenize(self, text: bytes, add_bos: bool, special: bool) -> list[int]:             # <<<<<<<<<<<<<<
- *         cdef int n_ctx = self.n_ctx_train()
- *         cdef vector[llama_cpp.llama_token] tokens
+ *     def token_prefix(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         return llama_cpp.llama_token_prefix(self.model)
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_text, __pyx_n_s_bytes) < 0) __PYX_ERR(0, 281, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_add_bos, __pyx_n_s_bool) < 0) __PYX_ERR(0, 281, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_special, __pyx_n_s_bool) < 0) __PYX_ERR(0, 281, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_kp_s_list_int) < 0) __PYX_ERR(0, 281, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_51tokenize, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_tokenize, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__39)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 281, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 277, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_39token_prefix, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_prefix, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__32)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_tokenize, __pyx_t_2) < 0) __PYX_ERR(0, 281, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_prefix, __pyx_t_2) < 0) __PYX_ERR(0, 277, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":302
+  /* "cyllama.pyx":281
+ *         return llama_cpp.llama_token_prefix(self.model)
+ * 
+ *     def token_middle(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         return llama_cpp.llama_token_middle(self.model)
+ */
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_41token_middle, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_middle, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_middle, __pyx_t_3) < 0) __PYX_ERR(0, 281, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
+
+  /* "cyllama.pyx":285
+ *         return llama_cpp.llama_token_middle(self.model)
+ * 
+ *     def token_suffix(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         return llama_cpp.llama_token_suffix(self.model)
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 285, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 285, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_43token_suffix, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_suffix, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__34)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 285, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_suffix, __pyx_t_2) < 0) __PYX_ERR(0, 285, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
+
+  /* "cyllama.pyx":289
+ *         return llama_cpp.llama_token_suffix(self.model)
+ * 
+ *     def token_eot(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         return llama_cpp.llama_token_eot(self.model)
+ */
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 289, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 289, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_45token_eot, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_eot, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__35)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 289, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_eot, __pyx_t_3) < 0) __PYX_ERR(0, 289, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
+
+  /* "cyllama.pyx":293
+ *         return llama_cpp.llama_token_eot(self.model)
+ * 
+ *     def add_bos_token(self) -> bool:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         return llama_cpp.llama_add_bos_token(self.model)
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 293, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_bool) < 0) __PYX_ERR(0, 293, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_47add_bos_token, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_add_bos_token, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__36)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 293, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_add_bos_token, __pyx_t_2) < 0) __PYX_ERR(0, 293, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
+
+  /* "cyllama.pyx":297
+ *         return llama_cpp.llama_add_bos_token(self.model)
+ * 
+ *     def add_eos_token(self) -> bool:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         return llama_cpp.llama_add_eos_token(self.model)
+ */
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 297, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_bool) < 0) __PYX_ERR(0, 297, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_49add_eos_token, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_add_eos_token, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__37)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 297, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_add_eos_token, __pyx_t_3) < 0) __PYX_ERR(0, 297, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
+
+  /* "cyllama.pyx":303
+ *     # Tokenization
+ * 
+ *     def tokenize(self, text: bytes, add_bos: bool, special: bool) -> list[int]:             # <<<<<<<<<<<<<<
+ *         assert self.model is not NULL
+ *         cdef int n_ctx = self.n_ctx_train()
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 303, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_text, __pyx_n_s_bytes) < 0) __PYX_ERR(0, 303, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_add_bos, __pyx_n_s_bool) < 0) __PYX_ERR(0, 303, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_special, __pyx_n_s_bool) < 0) __PYX_ERR(0, 303, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_kp_s_list_int) < 0) __PYX_ERR(0, 303, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_51tokenize, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_tokenize, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__39)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 303, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_tokenize, __pyx_t_2) < 0) __PYX_ERR(0, 303, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
+
+  /* "cyllama.pyx":325
  *         return tokens[:n_tokens]
  * 
  *     def token_to_piece(self, token: int, special: bool = False) -> bytes:             # <<<<<<<<<<<<<<
  *         cdef char buf[32]
  *         llama_cpp.llama_token_to_piece(self.model, token, buf, 32, 0, special)
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 302, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 325, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_token, __pyx_n_s_int) < 0) __PYX_ERR(0, 302, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_special, __pyx_n_s_bool) < 0) __PYX_ERR(0, 302, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_bytes) < 0) __PYX_ERR(0, 302, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_53token_to_piece, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_to_piece, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__41)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 302, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_token, __pyx_n_s_int) < 0) __PYX_ERR(0, 325, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_special, __pyx_n_s_bool) < 0) __PYX_ERR(0, 325, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_bytes) < 0) __PYX_ERR(0, 325, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_53token_to_piece, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_token_to_piece, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__41)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 325, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_3, __pyx_tuple__42);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_to_piece, __pyx_t_3) < 0) __PYX_ERR(0, 302, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_token_to_piece, __pyx_t_3) < 0) __PYX_ERR(0, 325, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":308
+  /* "cyllama.pyx":331
  *         # return bytes(buf)
  * 
  *     def detokenize(self, tokens: list[int], special: bool = False) -> bytes:             # <<<<<<<<<<<<<<
- *         # assert self.model is not None
+ *         assert self.model is not NULL
  *         output = b""
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 308, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 331, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_tokens, __pyx_kp_s_list_int) < 0) __PYX_ERR(0, 308, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_special, __pyx_n_s_bool) < 0) __PYX_ERR(0, 308, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_bytes) < 0) __PYX_ERR(0, 308, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_55detokenize, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_detokenize, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__44)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 308, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_tokens, __pyx_kp_s_list_int) < 0) __PYX_ERR(0, 331, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_special, __pyx_n_s_bool) < 0) __PYX_ERR(0, 331, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_bytes) < 0) __PYX_ERR(0, 331, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_55detokenize, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_detokenize, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__44)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 331, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_tuple__42);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_detokenize, __pyx_t_2) < 0) __PYX_ERR(0, 308, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_detokenize, __pyx_t_2) < 0) __PYX_ERR(0, 331, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":329
+  /* "cyllama.pyx":352
  *     # Extra
  * 
  *     def metadata(self) -> dict[str, str]:             # <<<<<<<<<<<<<<
  *         metadata: dict[str, str] = {}
  *         buffer_size = 1024
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 329, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 352, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_kp_s_dict_str_str) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_57metadata, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_metadata, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__46)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 329, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_kp_s_dict_str_str) < 0) __PYX_ERR(0, 352, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_57metadata, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_metadata, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__46)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 352, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_metadata, __pyx_t_3) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_metadata, __pyx_t_3) < 0) __PYX_ERR(0, 352, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
-  /* "cyllama.pyx":361
+  /* "cyllama.pyx":385
  * 
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
  *     def default_params() -> ModelParams:
  *         """Get the default llama_model_params."""
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 361, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 385, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_ModelParams) < 0) __PYX_ERR(0, 361, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_59default_params, __Pyx_CYFUNCTION_STATICMETHOD | __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_default_params, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__47)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 361, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_ModelParams) < 0) __PYX_ERR(0, 385, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaModel_59default_params, __Pyx_CYFUNCTION_STATICMETHOD | __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaModel_default_params, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__47)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 385, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_default_params, __pyx_t_2) < 0) __PYX_ERR(0, 361, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_default_params, __pyx_t_2) < 0) __PYX_ERR(0, 385, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
-  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_default_params); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 361, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_default_params); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 385, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 361, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 385, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_default_params, __pyx_t_3) < 0) __PYX_ERR(0, 361, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaModel, __pyx_n_s_default_params, __pyx_t_3) < 0) __PYX_ERR(0, 385, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaModel);
 
@@ -17041,146 +20572,211 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_setstate_cython, __pyx_t_3) < 0) __PYX_ERR(1, 3, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "cyllama.pyx":486
+  /* "cyllama.pyx":509
  *             self.ctx = NULL
  * 
  *     def close(self):             # <<<<<<<<<<<<<<
  *         self.__dealloc__()
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_7close, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_close, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__52)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 486, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_7close, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_close, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__52)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 509, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_close, __pyx_t_3) < 0) __PYX_ERR(0, 486, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_close, __pyx_t_3) < 0) __PYX_ERR(0, 509, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
 
-  /* "cyllama.pyx":489
+  /* "cyllama.pyx":512
  *         self.__dealloc__()
  * 
  *     def n_ctx(self) -> int:             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         return llama_cpp.llama_n_ctx(self.ctx)
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 489, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 512, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 489, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_9n_ctx, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_n_ctx, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__53)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 489, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 512, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_9n_ctx, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_n_ctx, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__53)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 512, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_n_ctx, __pyx_t_2) < 0) __PYX_ERR(0, 489, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_n_ctx, __pyx_t_2) < 0) __PYX_ERR(0, 512, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
 
-  /* "cyllama.pyx":498
+  /* "cyllama.pyx":521
  *     #     return llama_cpp.llama_pooling_type(self.ctx)
  * 
  *     def kv_cache_clear(self):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_clear(self.ctx)
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_11kv_cache_clear, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_kv_cache_clear, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__54)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 498, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_11kv_cache_clear, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_kv_cache_clear, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__54)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_kv_cache_clear, __pyx_t_2) < 0) __PYX_ERR(0, 498, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_kv_cache_clear, __pyx_t_2) < 0) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
 
-  /* "cyllama.pyx":502
+  /* "cyllama.pyx":525
  *         llama_cpp.llama_kv_cache_clear(self.ctx)
  * 
  *     def kv_cache_seq_rm(self, seq_id: int, p0: int, p1: int):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_rm(self.ctx, seq_id, p0, p1)
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 502, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 525, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_seq_id, __pyx_n_s_int) < 0) __PYX_ERR(0, 502, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_p0, __pyx_n_s_int) < 0) __PYX_ERR(0, 502, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_p1, __pyx_n_s_int) < 0) __PYX_ERR(0, 502, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_13kv_cache_seq_rm, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_kv_cache_seq_rm, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__56)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 502, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_seq_id, __pyx_n_s_int) < 0) __PYX_ERR(0, 525, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_p0, __pyx_n_s_int) < 0) __PYX_ERR(0, 525, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_p1, __pyx_n_s_int) < 0) __PYX_ERR(0, 525, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_13kv_cache_seq_rm, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_kv_cache_seq_rm, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__56)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 525, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_kv_cache_seq_rm, __pyx_t_3) < 0) __PYX_ERR(0, 502, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_kv_cache_seq_rm, __pyx_t_3) < 0) __PYX_ERR(0, 525, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
 
-  /* "cyllama.pyx":506
+  /* "cyllama.pyx":529
  *         llama_cpp.llama_kv_cache_seq_rm(self.ctx, seq_id, p0, p1)
  * 
  *     def kv_cache_seq_cp(self, seq_id_src: int, seq_id_dst: int, p0: int, p1: int):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_cp(self.ctx, seq_id_src, seq_id_dst, p0, p1)
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 506, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 529, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_seq_id_src, __pyx_n_s_int) < 0) __PYX_ERR(0, 506, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_seq_id_dst, __pyx_n_s_int) < 0) __PYX_ERR(0, 506, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_p0, __pyx_n_s_int) < 0) __PYX_ERR(0, 506, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_p1, __pyx_n_s_int) < 0) __PYX_ERR(0, 506, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_15kv_cache_seq_cp, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_kv_cache_seq_cp, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__58)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 506, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_seq_id_src, __pyx_n_s_int) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_seq_id_dst, __pyx_n_s_int) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_p0, __pyx_n_s_int) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_p1, __pyx_n_s_int) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_15kv_cache_seq_cp, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_kv_cache_seq_cp, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__58)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 529, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_kv_cache_seq_cp, __pyx_t_2) < 0) __PYX_ERR(0, 506, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_kv_cache_seq_cp, __pyx_t_2) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
 
-  /* "cyllama.pyx":510
+  /* "cyllama.pyx":533
  *         llama_cpp.llama_kv_cache_seq_cp(self.ctx, seq_id_src, seq_id_dst, p0, p1)
  * 
  *     def kv_cache_seq_keep(self, seq_id: int):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_keep(self.ctx, seq_id)
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 510, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 533, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_seq_id, __pyx_n_s_int) < 0) __PYX_ERR(0, 510, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_17kv_cache_seq_keep, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_kv_cache_seq_keep, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__60)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 510, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_seq_id, __pyx_n_s_int) < 0) __PYX_ERR(0, 533, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_17kv_cache_seq_keep, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_kv_cache_seq_keep, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__60)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 533, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_kv_cache_seq_keep, __pyx_t_3) < 0) __PYX_ERR(0, 510, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_kv_cache_seq_keep, __pyx_t_3) < 0) __PYX_ERR(0, 533, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
 
-  /* "cyllama.pyx":514
+  /* "cyllama.pyx":537
  *         llama_cpp.llama_kv_cache_seq_keep(self.ctx, seq_id)
  * 
  *     def kv_cache_seq_shift(self, seq_id: int, p0: int, p1: int, shift: int):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_kv_cache_seq_add(self.ctx, seq_id, p0, p1, shift)
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 514, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 537, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_seq_id, __pyx_n_s_int) < 0) __PYX_ERR(0, 514, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_p0, __pyx_n_s_int) < 0) __PYX_ERR(0, 514, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_p1, __pyx_n_s_int) < 0) __PYX_ERR(0, 514, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_shift, __pyx_n_s_int) < 0) __PYX_ERR(0, 514, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_19kv_cache_seq_shift, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_kv_cache_seq_shift, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__62)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 514, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_seq_id, __pyx_n_s_int) < 0) __PYX_ERR(0, 537, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_p0, __pyx_n_s_int) < 0) __PYX_ERR(0, 537, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_p1, __pyx_n_s_int) < 0) __PYX_ERR(0, 537, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_shift, __pyx_n_s_int) < 0) __PYX_ERR(0, 537, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_19kv_cache_seq_shift, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_kv_cache_seq_shift, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__62)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 537, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_kv_cache_seq_shift, __pyx_t_2) < 0) __PYX_ERR(0, 514, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_kv_cache_seq_shift, __pyx_t_2) < 0) __PYX_ERR(0, 537, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
 
-  /* "cyllama.pyx":540
+  /* "cyllama.pyx":563
  *     #         raise RuntimeError(f"llama_decode returned {return_code}")
  * 
  *     def set_n_threads(self, n_threads: int, n_threads_batch: int):             # <<<<<<<<<<<<<<
  *         assert self.ctx is not NULL
  *         llama_cpp.llama_set_n_threads(self.ctx, n_threads, n_threads_batch)
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 540, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 563, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_n_threads, __pyx_n_s_int) < 0) __PYX_ERR(0, 540, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_n_threads_batch, __pyx_n_s_int) < 0) __PYX_ERR(0, 540, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_21set_n_threads, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_set_n_threads, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__64)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 540, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_n_threads, __pyx_n_s_int) < 0) __PYX_ERR(0, 563, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_n_threads_batch, __pyx_n_s_int) < 0) __PYX_ERR(0, 563, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_21set_n_threads, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_set_n_threads, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__64)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 563, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_set_n_threads, __pyx_t_3) < 0) __PYX_ERR(0, 540, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_set_n_threads, __pyx_t_3) < 0) __PYX_ERR(0, 563, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
+
+  /* "cyllama.pyx":581
+ *     # Sampling functions
+ * 
+ *     def set_rng_seed(self, seed: int):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_set_rng_seed(self.ctx, seed)
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 581, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_seed, __pyx_n_s_int) < 0) __PYX_ERR(0, 581, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_23set_rng_seed, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_set_rng_seed, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__66)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 581, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_set_rng_seed, __pyx_t_2) < 0) __PYX_ERR(0, 581, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
+
+  /* "cyllama.pyx":715
+ *     #     llama_cpp.llama_grammar_accept_token(grammar.grammar, self.ctx, token)
+ * 
+ *     def reset_timings(self):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_reset_timings(self.ctx)
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_25reset_timings, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_reset_timings, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__67)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 715, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_reset_timings, __pyx_t_2) < 0) __PYX_ERR(0, 715, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
+
+  /* "cyllama.pyx":719
+ *         llama_cpp.llama_reset_timings(self.ctx)
+ * 
+ *     def print_timings(self):             # <<<<<<<<<<<<<<
+ *         assert self.ctx is not NULL
+ *         llama_cpp.llama_print_timings(self.ctx)
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_27print_timings, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_print_timings, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__68)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 719, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_print_timings, __pyx_t_2) < 0) __PYX_ERR(0, 719, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
+
+  /* "cyllama.pyx":724
+ * 
+ *     # Utility functions
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def default_params():
+ *         """Get the default llama_context_params."""
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_29default_params, __Pyx_CYFUNCTION_STATICMETHOD | __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext_default_params, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__69)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 724, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_default_params, __pyx_t_2) < 0) __PYX_ERR(0, 724, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
+  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_default_params); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 724, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 724, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaContext, __pyx_n_s_default_params, __pyx_t_3) < 0) __PYX_ERR(0, 724, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7cyllama_LlamaContext);
 
@@ -17189,7 +20785,7 @@ if (!__Pyx_RefNanny) {
  *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
  * def __setstate_cython__(self, __pyx_state):
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_23__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext___reduce_cython, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__65)); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_31__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext___reduce_cython, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__70)); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_reduce_cython, __pyx_t_3) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -17200,20 +20796,125 @@ if (!__Pyx_RefNanny) {
  * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
  *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_25__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext___setstate_cython, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__66)); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 3, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_12LlamaContext_33__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaContext___setstate_cython, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__71)); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 3, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_setstate_cython, __pyx_t_3) < 0) __PYX_ERR(1, 3, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "cyllama.pyx":758
+ *             self.batch = NULL
+ * 
+ *     def close(self):             # <<<<<<<<<<<<<<
+ *         self.__dealloc__()
+ * 
+ */
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaBatch_7close, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaBatch_close, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__72)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 758, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaBatch, __pyx_n_s_close, __pyx_t_3) < 0) __PYX_ERR(0, 758, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaBatch);
+
+  /* "cyllama.pyx":761
+ *         self.__dealloc__()
+ * 
+ *     def n_tokens(self) -> int:             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         return self.batch.n_tokens
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 761, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_int) < 0) __PYX_ERR(0, 761, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaBatch_9n_tokens, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaBatch_n_tokens, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__73)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 761, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaBatch, __pyx_n_s_n_tokens, __pyx_t_2) < 0) __PYX_ERR(0, 761, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaBatch);
+
+  /* "cyllama.pyx":765
+ *         return self.batch.n_tokens
+ * 
+ *     def reset(self):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         self.batch.n_tokens = 0
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaBatch_11reset, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaBatch_reset, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__74)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 765, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaBatch, __pyx_n_s_reset, __pyx_t_2) < 0) __PYX_ERR(0, 765, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaBatch);
+
+  /* "cyllama.pyx":769
+ *         self.batch.n_tokens = 0
+ * 
+ *     def set_batch(self, batch: Sequence[int], n_past: int, logits_all: bool):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)
+ */
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 769, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_batch, __pyx_kp_s_Sequence_int) < 0) __PYX_ERR(0, 769, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_n_past, __pyx_n_s_int) < 0) __PYX_ERR(0, 769, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_logits_all, __pyx_n_s_bool) < 0) __PYX_ERR(0, 769, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaBatch_13set_batch, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaBatch_set_batch, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__76)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 769, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaBatch, __pyx_n_s_set_batch, __pyx_t_3) < 0) __PYX_ERR(0, 769, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaBatch);
+
+  /* "cyllama.pyx":781
+ *         self.batch.logits[n_tokens - 1] = True
+ * 
+ *     def add_sequence(self, batch: Sequence[int], seq_id: int, logits_all: bool):             # <<<<<<<<<<<<<<
+ *         assert self.batch is not NULL
+ *         n_tokens = len(batch)
+ */
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 781, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_batch, __pyx_kp_s_Sequence_int) < 0) __PYX_ERR(0, 781, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_seq_id, __pyx_n_s_int) < 0) __PYX_ERR(0, 781, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_logits_all, __pyx_n_s_bool) < 0) __PYX_ERR(0, 781, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaBatch_15add_sequence, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaBatch_add_sequence, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__78)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 781, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7cyllama_LlamaBatch, __pyx_n_s_add_sequence, __pyx_t_2) < 0) __PYX_ERR(0, 781, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7cyllama_LlamaBatch);
+
+  /* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaBatch_17__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaBatch___reduce_cython, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__79)); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_reduce_cython, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7cyllama_10LlamaBatch_19__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_LlamaBatch___setstate_cython, NULL, __pyx_n_s_cyllama, __pyx_d, ((PyObject *)__pyx_codeobj__80)); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 3, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_setstate_cython, __pyx_t_2) < 0) __PYX_ERR(1, 3, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "cyllama.pyx":1
  * # distutils: language = c++             # <<<<<<<<<<<<<<
  * 
  * from libc.stdlib cimport malloc, calloc, realloc, free
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_3) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_2) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /*--- Wrapped vars code ---*/
 
@@ -18761,6 +22462,189 @@ static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type) {
     __Pyx_DECREF_TypeName(type_name);
     return 0;
 }
+
+/* ObjectGetItem */
+#if CYTHON_USE_TYPE_SLOTS
+static PyObject *__Pyx_PyObject_GetIndex(PyObject *obj, PyObject *index) {
+    PyObject *runerr = NULL;
+    Py_ssize_t key_value;
+    key_value = __Pyx_PyIndex_AsSsize_t(index);
+    if (likely(key_value != -1 || !(runerr = PyErr_Occurred()))) {
+        return __Pyx_GetItemInt_Fast(obj, key_value, 0, 1, 1);
+    }
+    if (PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError)) {
+        __Pyx_TypeName index_type_name = __Pyx_PyType_GetName(Py_TYPE(index));
+        PyErr_Clear();
+        PyErr_Format(PyExc_IndexError,
+            "cannot fit '" __Pyx_FMT_TYPENAME "' into an index-sized integer", index_type_name);
+        __Pyx_DECREF_TypeName(index_type_name);
+    }
+    return NULL;
+}
+static PyObject *__Pyx_PyObject_GetItem_Slow(PyObject *obj, PyObject *key) {
+    __Pyx_TypeName obj_type_name;
+    if (likely(PyType_Check(obj))) {
+        PyObject *meth = __Pyx_PyObject_GetAttrStrNoError(obj, __pyx_n_s_class_getitem);
+        if (!meth) {
+            PyErr_Clear();
+        } else {
+            PyObject *result = __Pyx_PyObject_CallOneArg(meth, key);
+            Py_DECREF(meth);
+            return result;
+        }
+    }
+    obj_type_name = __Pyx_PyType_GetName(Py_TYPE(obj));
+    PyErr_Format(PyExc_TypeError,
+        "'" __Pyx_FMT_TYPENAME "' object is not subscriptable", obj_type_name);
+    __Pyx_DECREF_TypeName(obj_type_name);
+    return NULL;
+}
+static PyObject *__Pyx_PyObject_GetItem(PyObject *obj, PyObject *key) {
+    PyTypeObject *tp = Py_TYPE(obj);
+    PyMappingMethods *mm = tp->tp_as_mapping;
+    PySequenceMethods *sm = tp->tp_as_sequence;
+    if (likely(mm && mm->mp_subscript)) {
+        return mm->mp_subscript(obj, key);
+    }
+    if (likely(sm && sm->sq_item)) {
+        return __Pyx_PyObject_GetIndex(obj, key);
+    }
+    return __Pyx_PyObject_GetItem_Slow(obj, key);
+}
+#endif
+
+/* PyIntBinop */
+#if !CYTHON_COMPILING_IN_PYPY
+static PyObject* __Pyx_PyInt_SubtractObjC(PyObject *op1, PyObject *op2, long intval, int inplace, int zerodivision_check) {
+    CYTHON_MAYBE_UNUSED_VAR(intval);
+    CYTHON_MAYBE_UNUSED_VAR(inplace);
+    CYTHON_UNUSED_VAR(zerodivision_check);
+    #if PY_MAJOR_VERSION < 3
+    if (likely(PyInt_CheckExact(op1))) {
+        const long b = intval;
+        long x;
+        long a = PyInt_AS_LONG(op1);
+        
+            x = (long)((unsigned long)a - (unsigned long)b);
+            if (likely((x^a) >= 0 || (x^~b) >= 0))
+                return PyInt_FromLong(x);
+            return PyLong_Type.tp_as_number->nb_subtract(op1, op2);
+    }
+    #endif
+    #if CYTHON_USE_PYLONG_INTERNALS
+    if (likely(PyLong_CheckExact(op1))) {
+        const long b = intval;
+        long a, x;
+#ifdef HAVE_LONG_LONG
+        const PY_LONG_LONG llb = intval;
+        PY_LONG_LONG lla, llx;
+#endif
+        if (unlikely(__Pyx_PyLong_IsZero(op1))) {
+            return PyLong_FromLong(-intval);
+        }
+        if (likely(__Pyx_PyLong_IsCompact(op1))) {
+            a = __Pyx_PyLong_CompactValue(op1);
+        } else {
+            const digit* digits = __Pyx_PyLong_Digits(op1);
+            const Py_ssize_t size = __Pyx_PyLong_SignedDigitCount(op1);
+            switch (size) {
+                case -2:
+                    if (8 * sizeof(long) - 1 > 2 * PyLong_SHIFT) {
+                        a = -(long) (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                        break;
+                    #ifdef HAVE_LONG_LONG
+                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 2 * PyLong_SHIFT) {
+                        lla = -(PY_LONG_LONG) (((((unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
+                        goto long_long;
+                    #endif
+                    }
+                    CYTHON_FALLTHROUGH;
+                case 2:
+                    if (8 * sizeof(long) - 1 > 2 * PyLong_SHIFT) {
+                        a = (long) (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                        break;
+                    #ifdef HAVE_LONG_LONG
+                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 2 * PyLong_SHIFT) {
+                        lla = (PY_LONG_LONG) (((((unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
+                        goto long_long;
+                    #endif
+                    }
+                    CYTHON_FALLTHROUGH;
+                case -3:
+                    if (8 * sizeof(long) - 1 > 3 * PyLong_SHIFT) {
+                        a = -(long) (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                        break;
+                    #ifdef HAVE_LONG_LONG
+                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 3 * PyLong_SHIFT) {
+                        lla = -(PY_LONG_LONG) (((((((unsigned PY_LONG_LONG)digits[2]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
+                        goto long_long;
+                    #endif
+                    }
+                    CYTHON_FALLTHROUGH;
+                case 3:
+                    if (8 * sizeof(long) - 1 > 3 * PyLong_SHIFT) {
+                        a = (long) (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                        break;
+                    #ifdef HAVE_LONG_LONG
+                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 3 * PyLong_SHIFT) {
+                        lla = (PY_LONG_LONG) (((((((unsigned PY_LONG_LONG)digits[2]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
+                        goto long_long;
+                    #endif
+                    }
+                    CYTHON_FALLTHROUGH;
+                case -4:
+                    if (8 * sizeof(long) - 1 > 4 * PyLong_SHIFT) {
+                        a = -(long) (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                        break;
+                    #ifdef HAVE_LONG_LONG
+                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 4 * PyLong_SHIFT) {
+                        lla = -(PY_LONG_LONG) (((((((((unsigned PY_LONG_LONG)digits[3]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[2]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
+                        goto long_long;
+                    #endif
+                    }
+                    CYTHON_FALLTHROUGH;
+                case 4:
+                    if (8 * sizeof(long) - 1 > 4 * PyLong_SHIFT) {
+                        a = (long) (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                        break;
+                    #ifdef HAVE_LONG_LONG
+                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 4 * PyLong_SHIFT) {
+                        lla = (PY_LONG_LONG) (((((((((unsigned PY_LONG_LONG)digits[3]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[2]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
+                        goto long_long;
+                    #endif
+                    }
+                    CYTHON_FALLTHROUGH;
+                default: return PyLong_Type.tp_as_number->nb_subtract(op1, op2);
+            }
+        }
+                x = a - b;
+            return PyLong_FromLong(x);
+#ifdef HAVE_LONG_LONG
+        long_long:
+                llx = lla - llb;
+            return PyLong_FromLongLong(llx);
+#endif
+        
+        
+    }
+    #endif
+    if (PyFloat_CheckExact(op1)) {
+        const long b = intval;
+#if CYTHON_COMPILING_IN_LIMITED_API
+        double a = __pyx_PyFloat_AsDouble(op1);
+#else
+        double a = PyFloat_AS_DOUBLE(op1);
+#endif
+            double result;
+            
+            PyFPE_START_PROTECT("subtract", return NULL)
+            result = ((double)a) - (double)b;
+            PyFPE_END_PROTECT(result)
+            return PyFloat_FromDouble(result);
+    }
+    return (inplace ? PyNumber_InPlaceSubtract : PyNumber_Subtract)(op1, op2);
+}
+#endif
 
 /* FixUpExtensionType */
 #if CYTHON_USE_TYPE_SPECS
@@ -23184,6 +27068,273 @@ static CYTHON_INLINE PyObject* __Pyx_PyInt_From_llama_rope_scaling_type(llama_ro
     }
 }
 
+/* CIntFromPy */
+static CYTHON_INLINE int8_t __Pyx_PyInt_As_int8_t(PyObject *x) {
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
+    const int8_t neg_one = (int8_t) -1, const_zero = (int8_t) 0;
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic pop
+#endif
+    const int is_unsigned = neg_one > const_zero;
+#if PY_MAJOR_VERSION < 3
+    if (likely(PyInt_Check(x))) {
+        if ((sizeof(int8_t) < sizeof(long))) {
+            __PYX_VERIFY_RETURN_INT(int8_t, long, PyInt_AS_LONG(x))
+        } else {
+            long val = PyInt_AS_LONG(x);
+            if (is_unsigned && unlikely(val < 0)) {
+                goto raise_neg_overflow;
+            }
+            return (int8_t) val;
+        }
+    }
+#endif
+    if (unlikely(!PyLong_Check(x))) {
+        int8_t val;
+        PyObject *tmp = __Pyx_PyNumber_IntOrLong(x);
+        if (!tmp) return (int8_t) -1;
+        val = __Pyx_PyInt_As_int8_t(tmp);
+        Py_DECREF(tmp);
+        return val;
+    }
+    if (is_unsigned) {
+#if CYTHON_USE_PYLONG_INTERNALS
+        if (unlikely(__Pyx_PyLong_IsNeg(x))) {
+            goto raise_neg_overflow;
+        } else if (__Pyx_PyLong_IsCompact(x)) {
+            __PYX_VERIFY_RETURN_INT(int8_t, __Pyx_compact_upylong, __Pyx_PyLong_CompactValueUnsigned(x))
+        } else {
+            const digit* digits = __Pyx_PyLong_Digits(x);
+            assert(__Pyx_PyLong_DigitCount(x) > 1);
+            switch (__Pyx_PyLong_DigitCount(x)) {
+                case 2:
+                    if ((8 * sizeof(int8_t) > 1 * PyLong_SHIFT)) {
+                        if ((8 * sizeof(unsigned long) > 2 * PyLong_SHIFT)) {
+                            __PYX_VERIFY_RETURN_INT(int8_t, unsigned long, (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if ((8 * sizeof(int8_t) >= 2 * PyLong_SHIFT)) {
+                            return (int8_t) (((((int8_t)digits[1]) << PyLong_SHIFT) | (int8_t)digits[0]));
+                        }
+                    }
+                    break;
+                case 3:
+                    if ((8 * sizeof(int8_t) > 2 * PyLong_SHIFT)) {
+                        if ((8 * sizeof(unsigned long) > 3 * PyLong_SHIFT)) {
+                            __PYX_VERIFY_RETURN_INT(int8_t, unsigned long, (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if ((8 * sizeof(int8_t) >= 3 * PyLong_SHIFT)) {
+                            return (int8_t) (((((((int8_t)digits[2]) << PyLong_SHIFT) | (int8_t)digits[1]) << PyLong_SHIFT) | (int8_t)digits[0]));
+                        }
+                    }
+                    break;
+                case 4:
+                    if ((8 * sizeof(int8_t) > 3 * PyLong_SHIFT)) {
+                        if ((8 * sizeof(unsigned long) > 4 * PyLong_SHIFT)) {
+                            __PYX_VERIFY_RETURN_INT(int8_t, unsigned long, (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if ((8 * sizeof(int8_t) >= 4 * PyLong_SHIFT)) {
+                            return (int8_t) (((((((((int8_t)digits[3]) << PyLong_SHIFT) | (int8_t)digits[2]) << PyLong_SHIFT) | (int8_t)digits[1]) << PyLong_SHIFT) | (int8_t)digits[0]));
+                        }
+                    }
+                    break;
+            }
+        }
+#endif
+#if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX < 0x030C00A7
+        if (unlikely(Py_SIZE(x) < 0)) {
+            goto raise_neg_overflow;
+        }
+#else
+        {
+            int result = PyObject_RichCompareBool(x, Py_False, Py_LT);
+            if (unlikely(result < 0))
+                return (int8_t) -1;
+            if (unlikely(result == 1))
+                goto raise_neg_overflow;
+        }
+#endif
+        if ((sizeof(int8_t) <= sizeof(unsigned long))) {
+            __PYX_VERIFY_RETURN_INT_EXC(int8_t, unsigned long, PyLong_AsUnsignedLong(x))
+#ifdef HAVE_LONG_LONG
+        } else if ((sizeof(int8_t) <= sizeof(unsigned PY_LONG_LONG))) {
+            __PYX_VERIFY_RETURN_INT_EXC(int8_t, unsigned PY_LONG_LONG, PyLong_AsUnsignedLongLong(x))
+#endif
+        }
+    } else {
+#if CYTHON_USE_PYLONG_INTERNALS
+        if (__Pyx_PyLong_IsCompact(x)) {
+            __PYX_VERIFY_RETURN_INT(int8_t, __Pyx_compact_pylong, __Pyx_PyLong_CompactValue(x))
+        } else {
+            const digit* digits = __Pyx_PyLong_Digits(x);
+            assert(__Pyx_PyLong_DigitCount(x) > 1);
+            switch (__Pyx_PyLong_SignedDigitCount(x)) {
+                case -2:
+                    if ((8 * sizeof(int8_t) - 1 > 1 * PyLong_SHIFT)) {
+                        if ((8 * sizeof(unsigned long) > 2 * PyLong_SHIFT)) {
+                            __PYX_VERIFY_RETURN_INT(int8_t, long, -(long) (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if ((8 * sizeof(int8_t) - 1 > 2 * PyLong_SHIFT)) {
+                            return (int8_t) (((int8_t)-1)*(((((int8_t)digits[1]) << PyLong_SHIFT) | (int8_t)digits[0])));
+                        }
+                    }
+                    break;
+                case 2:
+                    if ((8 * sizeof(int8_t) > 1 * PyLong_SHIFT)) {
+                        if ((8 * sizeof(unsigned long) > 2 * PyLong_SHIFT)) {
+                            __PYX_VERIFY_RETURN_INT(int8_t, unsigned long, (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if ((8 * sizeof(int8_t) - 1 > 2 * PyLong_SHIFT)) {
+                            return (int8_t) ((((((int8_t)digits[1]) << PyLong_SHIFT) | (int8_t)digits[0])));
+                        }
+                    }
+                    break;
+                case -3:
+                    if ((8 * sizeof(int8_t) - 1 > 2 * PyLong_SHIFT)) {
+                        if ((8 * sizeof(unsigned long) > 3 * PyLong_SHIFT)) {
+                            __PYX_VERIFY_RETURN_INT(int8_t, long, -(long) (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if ((8 * sizeof(int8_t) - 1 > 3 * PyLong_SHIFT)) {
+                            return (int8_t) (((int8_t)-1)*(((((((int8_t)digits[2]) << PyLong_SHIFT) | (int8_t)digits[1]) << PyLong_SHIFT) | (int8_t)digits[0])));
+                        }
+                    }
+                    break;
+                case 3:
+                    if ((8 * sizeof(int8_t) > 2 * PyLong_SHIFT)) {
+                        if ((8 * sizeof(unsigned long) > 3 * PyLong_SHIFT)) {
+                            __PYX_VERIFY_RETURN_INT(int8_t, unsigned long, (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if ((8 * sizeof(int8_t) - 1 > 3 * PyLong_SHIFT)) {
+                            return (int8_t) ((((((((int8_t)digits[2]) << PyLong_SHIFT) | (int8_t)digits[1]) << PyLong_SHIFT) | (int8_t)digits[0])));
+                        }
+                    }
+                    break;
+                case -4:
+                    if ((8 * sizeof(int8_t) - 1 > 3 * PyLong_SHIFT)) {
+                        if ((8 * sizeof(unsigned long) > 4 * PyLong_SHIFT)) {
+                            __PYX_VERIFY_RETURN_INT(int8_t, long, -(long) (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if ((8 * sizeof(int8_t) - 1 > 4 * PyLong_SHIFT)) {
+                            return (int8_t) (((int8_t)-1)*(((((((((int8_t)digits[3]) << PyLong_SHIFT) | (int8_t)digits[2]) << PyLong_SHIFT) | (int8_t)digits[1]) << PyLong_SHIFT) | (int8_t)digits[0])));
+                        }
+                    }
+                    break;
+                case 4:
+                    if ((8 * sizeof(int8_t) > 3 * PyLong_SHIFT)) {
+                        if ((8 * sizeof(unsigned long) > 4 * PyLong_SHIFT)) {
+                            __PYX_VERIFY_RETURN_INT(int8_t, unsigned long, (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if ((8 * sizeof(int8_t) - 1 > 4 * PyLong_SHIFT)) {
+                            return (int8_t) ((((((((((int8_t)digits[3]) << PyLong_SHIFT) | (int8_t)digits[2]) << PyLong_SHIFT) | (int8_t)digits[1]) << PyLong_SHIFT) | (int8_t)digits[0])));
+                        }
+                    }
+                    break;
+            }
+        }
+#endif
+        if ((sizeof(int8_t) <= sizeof(long))) {
+            __PYX_VERIFY_RETURN_INT_EXC(int8_t, long, PyLong_AsLong(x))
+#ifdef HAVE_LONG_LONG
+        } else if ((sizeof(int8_t) <= sizeof(PY_LONG_LONG))) {
+            __PYX_VERIFY_RETURN_INT_EXC(int8_t, PY_LONG_LONG, PyLong_AsLongLong(x))
+#endif
+        }
+    }
+    {
+        int8_t val;
+        int ret = -1;
+#if PY_VERSION_HEX >= 0x030d00A6 && !CYTHON_COMPILING_IN_LIMITED_API
+        Py_ssize_t bytes_copied = PyLong_AsNativeBytes(
+            x, &val, sizeof(val), Py_ASNATIVEBYTES_NATIVE_ENDIAN | (is_unsigned ? Py_ASNATIVEBYTES_UNSIGNED_BUFFER | Py_ASNATIVEBYTES_REJECT_NEGATIVE : 0));
+        if (unlikely(bytes_copied == -1)) {
+        } else if (unlikely(bytes_copied > (Py_ssize_t) sizeof(val))) {
+            goto raise_overflow;
+        } else {
+            ret = 0;
+        }
+#elif PY_VERSION_HEX < 0x030d0000 && !(CYTHON_COMPILING_IN_PYPY || CYTHON_COMPILING_IN_LIMITED_API) || defined(_PyLong_AsByteArray)
+        int one = 1; int is_little = (int)*(unsigned char *)&one;
+        unsigned char *bytes = (unsigned char *)&val;
+        ret = _PyLong_AsByteArray((PyLongObject *)x,
+                                    bytes, sizeof(val),
+                                    is_little, !is_unsigned);
+#else
+        PyObject *v;
+        PyObject *stepval = NULL, *mask = NULL, *shift = NULL;
+        int bits, remaining_bits, is_negative = 0;
+        int chunk_size = (sizeof(long) < 8) ? 30 : 62;
+        if (likely(PyLong_CheckExact(x))) {
+            v = __Pyx_NewRef(x);
+        } else {
+            v = PyNumber_Long(x);
+            if (unlikely(!v)) return (int8_t) -1;
+            assert(PyLong_CheckExact(v));
+        }
+        {
+            int result = PyObject_RichCompareBool(v, Py_False, Py_LT);
+            if (unlikely(result < 0)) {
+                Py_DECREF(v);
+                return (int8_t) -1;
+            }
+            is_negative = result == 1;
+        }
+        if (is_unsigned && unlikely(is_negative)) {
+            Py_DECREF(v);
+            goto raise_neg_overflow;
+        } else if (is_negative) {
+            stepval = PyNumber_Invert(v);
+            Py_DECREF(v);
+            if (unlikely(!stepval))
+                return (int8_t) -1;
+        } else {
+            stepval = v;
+        }
+        v = NULL;
+        val = (int8_t) 0;
+        mask = PyLong_FromLong((1L << chunk_size) - 1); if (unlikely(!mask)) goto done;
+        shift = PyLong_FromLong(chunk_size); if (unlikely(!shift)) goto done;
+        for (bits = 0; bits < (int) sizeof(int8_t) * 8 - chunk_size; bits += chunk_size) {
+            PyObject *tmp, *digit;
+            long idigit;
+            digit = PyNumber_And(stepval, mask);
+            if (unlikely(!digit)) goto done;
+            idigit = PyLong_AsLong(digit);
+            Py_DECREF(digit);
+            if (unlikely(idigit < 0)) goto done;
+            val |= ((int8_t) idigit) << bits;
+            tmp = PyNumber_Rshift(stepval, shift);
+            if (unlikely(!tmp)) goto done;
+            Py_DECREF(stepval); stepval = tmp;
+        }
+        Py_DECREF(shift); shift = NULL;
+        Py_DECREF(mask); mask = NULL;
+        {
+            long idigit = PyLong_AsLong(stepval);
+            if (unlikely(idigit < 0)) goto done;
+            remaining_bits = ((int) sizeof(int8_t) * 8) - bits - (is_unsigned ? 0 : 1);
+            if (unlikely(idigit >= (1L << remaining_bits)))
+                goto raise_overflow;
+            val |= ((int8_t) idigit) << bits;
+        }
+        if (!is_unsigned) {
+            if (unlikely(val & (((int8_t) 1) << (sizeof(int8_t) * 8 - 1))))
+                goto raise_overflow;
+            if (is_negative)
+                val = ~val;
+        }
+        ret = 0;
+    done:
+        Py_XDECREF(shift);
+        Py_XDECREF(mask);
+        Py_XDECREF(stepval);
+#endif
+        if (unlikely(ret))
+            return (int8_t) -1;
+        return val;
+    }
+raise_overflow:
+    PyErr_SetString(PyExc_OverflowError,
+        "value too large to convert to int8_t");
+    return (int8_t) -1;
+raise_neg_overflow:
+    PyErr_SetString(PyExc_OverflowError,
+        "can't convert negative value to int8_t");
+    return (int8_t) -1;
+}
+
 /* FormatTypeName */
 #if CYTHON_COMPILING_IN_LIMITED_API
 static __Pyx_TypeName
@@ -23194,7 +27345,7 @@ __Pyx_PyType_GetName(PyTypeObject* tp)
     if (unlikely(name == NULL) || unlikely(!PyUnicode_Check(name))) {
         PyErr_Clear();
         Py_XDECREF(name);
-        name = __Pyx_NewRef(__pyx_n_s__67);
+        name = __Pyx_NewRef(__pyx_n_s__81);
     }
     return name;
 }
