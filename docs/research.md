@@ -6,11 +6,23 @@
 
 - [datacamp llama.cpp tutorial](https://www.datacamp.com/tutorial/llama-cpp-tutorial)
 
+- [llama-cpp-python docs](https://llama-cpp-python.readthedocs.io/en/latest/)
+
+- [langchain-llama-cpp](https://python.langchain.com/v0.2/docs/integrations/llms/llamacpp/)
+
+## Articles
+
+- [Understanding how LLM inference works with llama.cpp](https://www.omrimallis.com/posts/understanding-how-llm-inference-works-with-llama-cpp/)
+
+
+
 ## Releated Projects
 
 - [llama.py](https://github.com/daskol/llama.py)
 
 - [pyllamacpp](https://github.com/abdeladim-s/pyllamacpp)
+
+- [llamaindex](https://docs.llamaindex.ai) and [llama-cpp on llamaindex](https://docs.llamaindex.ai/en/stable/examples/llm/llama_2_llama_cpp/)
 
 
 ## raw pointers and pybind11
