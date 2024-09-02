@@ -292,9 +292,10 @@ cdef class LlamaModel:
                 self.model, text, len(text), tokens.data(), n_tokens, add_bos, special
             )
             if n_tokens < 0:
-                raise RuntimeError(
-                    f'Failed to tokenize: text="{text}" n_tokens={n_tokens}'
-                )
+                raise RuntimeError()
+                # raise RuntimeError(
+                #     f'Failed to tokenize: text="{text}" n_tokens={n_tokens}'
+                # )
 
         return tokens[:n_tokens]
 
