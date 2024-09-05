@@ -1,22 +1,26 @@
 # Research
 
-## Links
+## Llama
 
-- [Tutorial: How to convert HuggingFace model to GGUF format](https://github.com/ggerganov/llama.cpp/discussions/2948)
+- [Meta's Llama page](https://ai.meta.com/blog/large-language-model-llama-meta-ai/)
 
-- [datacamp llama.cpp tutorial](https://www.datacamp.com/tutorial/llama-cpp-tutorial)
+## llama.cpp
 
 - [llama-cpp-python docs](https://llama-cpp-python.readthedocs.io/en/latest/)
 
-- [langchain-llama-cpp](https://python.langchain.com/v0.2/docs/integrations/llms/llamacpp/)
-
-## Articles
-
 - [Understanding how LLM inference works with llama.cpp](https://www.omrimallis.com/posts/understanding-how-llm-inference-works-with-llama-cpp/)
 
+- [datacamp llama.cpp tutorial](https://www.datacamp.com/tutorial/llama-cpp-tutorial)
 
+- [Tutorial: How to convert HuggingFace model to GGUF format](https://github.com/ggerganov/llama.cpp/discussions/2948)
 
-## Releated Projects
+- [langchain-llama-cpp](https://python.langchain.com/v0.2/docs/integrations/llms/llamacpp/)
+
+- [lama.cpp: The Ultimate Guide to Efficient LLM Inference and Applications](https://pyimagesearch.com/2024/08/26/llama-cpp-the-ultimate-guide-to-efficient-llm-inference-and-applications/)
+
+- [Llama.cpp Tutorial: A Complete Guide to Efficient LLM Inference and Implementation](https://www.datacamp.com/tutorial/llama-cpp-tutorial)
+
+## Related Projects
 
 - [llama.py](https://github.com/daskol/llama.py)
 
@@ -25,18 +29,23 @@
 - [llamaindex](https://docs.llamaindex.ai) and [llama-cpp on llamaindex](https://docs.llamaindex.ai/en/stable/examples/llm/llama_2_llama_cpp/)
 
 
-## raw pointers and pybind11
+## pybind11
+
+- [returning numpy arrays via pybind11](https://stackoverflow.com/questions/44659924/returning-numpy-arrays-via-pybind11/44682603#44682603)
+
+- [Pybind11 and std::vector -- How to free data using capsules?](https://stackoverflow.com/questions/54876346/pybind11-and-stdvector-how-to-free-data-using-capsules)
+
+- [How to send a PyCapsule from C++ to python using pybind11](https://stackoverflow.com/questions/61560207/how-to-send-a-pycapsule-from-c-to-python-using-pybind11)
 
 - [How to bind c structure with an array of another structure as a member in pybind11?](https://stackoverflow.com/questions/60950999/how-to-bind-c-structure-with-an-array-of-another-structure-as-a-member-using-py)
 
+- [Returning and passing around raw POD pointers (arrays) with Python, C++, and pybind11](https://stackoverflow.com/questions/48982143/returning-and-passing-around-raw-pod-pointers-arrays-with-python-c-and-pyb)
 
-## numpy and pybind11
+- [passing pointer to C++ from python using pybind11](https://stackoverflow.com/questions/57990269/passing-pointer-to-c-from-python-using-pybind11)
+
+- [Pybind11: Wrap a struct with a pointer member?](https://stackoverflow.com/questions/68292760/pybind11-wrap-a-struct-with-a-pointer-member)
 
 - [pybind11-numpy-example](https://github.com/ssciwr/pybind11-numpy-example)
-
-
-## Opaque Pointers in Pybind11
-
 
 - [Dealing with Opaque Pointers in Pybind11](https://stackoverflow.com/questions/50641461/dealing-with-opaque-pointers-in-pybind11)
 

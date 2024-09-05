@@ -1,5 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/numpy.h>
+
 
 
 #include <common.h>
@@ -14,10 +16,25 @@ struct llama_grammar {};
 struct llama_lora_adapter {};
 
 
-std::vector<llama_token> demo(void)
+template <class T> class ptr_wrapper
 {
-    std::vector<llama_token> v = {8, 4, 5, 9};
-    return v;
+    public:
+        ptr_wrapper() : ptr(nullptr) {}
+        ptr_wrapper(T* ptr) : ptr(ptr) {}
+        ptr_wrapper(const ptr_wrapper& other) : ptr(other.ptr) {}
+        T& operator* () const { return *ptr; }
+        T* operator->() const { return  ptr; }
+        T* get() const { return ptr; }
+        void destroy() { delete ptr; }
+        T& operator[](std::size_t idx) const { return ptr[idx]; }
+    private:
+        T* ptr;
+};
+
+py::array wrap_array_ptr(float *v) {
+  auto capsule = py::capsule(
+      &v, [](void *v) { delete reinterpret_cast<std::vector<float> *>(v); });
+  return py::array(static_cast<pybind11::ssize_t>(sizeof(v)), v, capsule);
 }
 
 
@@ -29,13 +46,6 @@ PYBIND11_MODULE(pbllama, m) {
     // -----------------------------------------------------------------------
     // attributes
     m.attr("LLAMA_DEFAULT_SEED") = 0xFFFFFFFF;
-
-    // -------
-    // 
-    // ----------------------------------------------------------------
-    // scratch
-    
-     m.def("demo", (std::vector<llama_token> (*)()) &demo);
 
     // -----------------------------------------------------------------------
     // ggml.h
@@ -218,6 +228,13 @@ PYBIND11_MODULE(pbllama, m) {
         // int8_t       *  logits; // TODO: rename this to "output"
 
 
+// ptr_wrapper<float> get_ptr(void) { return array; }
+// void use_ptr(ptr_wrapper<float> ptr) {
+//     for (int i = 0; i < 3; ++i)
+//         std::cout << ptr[i] << " ";
+//     std::cout << "\n";
+// }
+
     py::class_<llama_batch, std::shared_ptr<llama_batch>> (m, "llama_batch", "")
         .def( py::init( [](){ return new llama_batch(); } ) )
         .def_readwrite("n_tokens", &llama_batch::n_tokens)
@@ -226,6 +243,7 @@ PYBIND11_MODULE(pbllama, m) {
         // .def_readwrite("pos", &llama_batch::pos)
         // .def_readwrite("n_seq_id", &llama_batch::n_seq_id)
         // .def_readwrite("seq_id", &llama_batch::seq_id)
+        // FIXME: this is WRONG!!
         .def_property_readonly("logits", [](llama_batch& self) -> std::vector<int8_t> {
             std::vector<int8_t> result(self.logits, self.logits + self.n_tokens);
             return result;
@@ -369,7 +387,7 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_supports_mmap", (bool (*)()) &llama_supports_mmap, "C++: llama_supports_mmap() --> bool");
     m.def("llama_supports_mlock", (bool (*)()) &llama_supports_mlock, "C++: llama_supports_mlock() --> bool");
     m.def("llama_supports_gpu_offload", (bool (*)()) &llama_supports_gpu_offload, "C++: llama_supports_gpu_offload() --> bool");
-    m.def("llama_get_model", (const struct llama_model (*)(const struct llama_context *)) &llama_get_model, "get model from context", py::arg("ctx"));
+    m.def("llama_get_model", (const struct llama_model * (*)(const struct llama_context *)) &llama_get_model, "get model from context", py::arg("ctx"));
 
     m.def("llama_n_ctx", (uint32_t (*)(const struct llama_context *)) &llama_n_ctx, "get n_ctx from context", py::arg("ctx"));
     m.def("llama_n_batch", (uint32_t (*)(const struct llama_context *)) &llama_n_batch, "get n_batch from context", py::arg("ctx"));
@@ -473,7 +491,74 @@ PYBIND11_MODULE(pbllama, m) {
         Cols: n_vocab
     )pbdoc", py::arg("ctx"));
 
-    m.def("llama_get_logits_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_logits_ith, R"pbdoc(
+    m.def("llama_get_logits_vec", [](struct llama_context * ctx, int32_t n_tokens) -> py::array_t<float> {
+        float * logits = llama_get_logits(ctx);
+        constexpr size_t elem_size = sizeof(float);
+        size_t shape[1]{static_cast<size_t>(n_tokens),};
+        size_t strides[1]{static_cast<size_t>(n_tokens) * elem_size,};
+        auto arr = py::array_t<float>(shape, strides);
+        auto view = arr.mutable_unchecked<1>();
+        for(size_t i = 0; i < arr.shape(0); i++) {
+            view(i) = logits[i];
+        }
+        return arr;
+    }, R"pbdoc(
+        Token logits obtained from the last call to llama_decode()
+
+        The logits for which llama_batch.logits[i] != 0 are stored contiguously 
+        in the order they have appeared in the batch.
+
+        Rows: number of tokens for which llama_batch.logits[i] != 0
+        Cols: n_vocab
+    )pbdoc", py::arg("ctx"), py::arg("n_tokens"));
+
+    // m.def("llama_get_logits", [](struct llama_context * ctx) -> py::array {
+    //     auto logits = llama_get_logits(ctx);
+    //     return wrap_array_ptr(logits);
+    // }, R"pbdoc(
+    //     Token logits obtained from the last call to llama_decode()
+
+    //     The logits for which llama_batch.logits[i] != 0 are stored contiguously 
+    //     in the order they have appeared in the batch.
+
+    //     Rows: number of tokens for which llama_batch.logits[i] != 0
+    //     Cols: n_vocab
+    // )pbdoc", py::arg("ctx"));
+
+    // m.def("llama_get_logits", [](struct llama_context * ctx) -> std::vector<float> {
+    //     const struct llama_model * model = llama_get_model(ctx);
+    //     int32_t n_vocab = llama_n_vocab(model);
+    //     float * logits = llama_get_logits(ctx);
+    //     std::vector<float> result(logits, logits + n_vocab);
+    //     return result;
+    // }, R"pbdoc(
+    //     Token logits obtained from the last call to llama_decode()
+
+    //     The logits for which llama_batch.logits[i] != 0 are stored contiguously 
+    //     in the order they have appeared in the batch.
+
+    //     Rows: number of tokens for which llama_batch.logits[i] != 0
+    //     Cols: n_vocab
+    // )pbdoc", py::arg("ctx"));
+
+    // m.def("llama_get_logits_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_logits_ith, R"pbdoc(
+    //     Logits for the ith token. 
+
+    //     For positive indices, Equivalent to:
+
+    //         llama_get_logits(ctx) + ctx->output_ids[i] * n_vocab
+        
+    //     Negative indicies can be used to access logits in reverse order, -1 is the last logit.
+    //     returns NULL for invalid ids.
+    // )pbdoc", py::arg("ctx"), py::arg("i"));
+
+    m.def("llama_get_logits_ith", [](struct llama_context * ctx, int32_t i) -> std::vector<float> {
+         const struct llama_model * model = llama_get_model(ctx);
+        int32_t n_vocab = llama_n_vocab(model);
+        float * logits = llama_get_logits_ith(ctx, i);
+        std::vector<float> result(logits, logits + n_vocab);
+        return result;
+    }, R"pbdoc(
         Logits for the ith token. 
 
         For positive indices, Equivalent to:
@@ -483,15 +568,6 @@ PYBIND11_MODULE(pbllama, m) {
         Negative indicies can be used to access logits in reverse order, -1 is the last logit.
         returns NULL for invalid ids.
     )pbdoc", py::arg("ctx"), py::arg("i"));
-
-    // m.def("llama_get_logits_ith", [](struct llama_context * ctx, int32_t i) ->py::capsule<float> {
-    //     // const struct llama_model * model = llama_get_model(ctx);
-    //     // int32_t n_vocab = llama_n_vocab(model);
-    //     float * ptr = llama_get_logits_ith(ctx, i);
-    //     // std::vector<float> vec = { 0.1, 1.1, 2.1 };
-    //     std::vector<float> vec(ptr, ptr + i);
-    //     return vec;
-    // });
 
     m.def("llama_get_embeddings", (float* (*)(const struct llama_context *)) &llama_get_embeddings, R"pbdoc(
         Get all output token embeddings.

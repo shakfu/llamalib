@@ -1619,7 +1619,7 @@ struct __pyx_obj_7cyllama_LlamaContext {
  * 
  * 
  * cdef class LlamaBatch:             # <<<<<<<<<<<<<<
- *     """Intermediate Python wrapper for a llama.cpp llama_context."""
+ *     """Intermediate Python wrapper for a llama.cpp llama_batch."""
  *     cdef llama_cpp.llama_batch * batch
  */
 struct __pyx_obj_7cyllama_LlamaBatch {
@@ -16702,6 +16702,7 @@ static PyObject *__pyx_pf_7cyllama_10LlamaBatch_14add_sequence(struct __pyx_obj_
  *             self.batch.n_seq_id[j] = 1
  *             self.batch.logits[j] = logits_all             # <<<<<<<<<<<<<<
  *         self.batch.logits[n_tokens - 1] = True
+ * 
  */
     __pyx_t_11 = __Pyx_PyInt_As_int8_t(__pyx_v_logits_all); if (unlikely((__pyx_t_11 == ((int8_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 792, __pyx_L1_error)
     __pyx_t_8 = __Pyx_PyIndex_AsSsize_t(__pyx_v_j); if (unlikely((__pyx_t_8 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 792, __pyx_L1_error)
@@ -16721,6 +16722,8 @@ static PyObject *__pyx_pf_7cyllama_10LlamaBatch_14add_sequence(struct __pyx_obj_
  *             self.batch.n_seq_id[j] = 1
  *             self.batch.logits[j] = logits_all
  *         self.batch.logits[n_tokens - 1] = True             # <<<<<<<<<<<<<<
+ * 
+ * 
  */
   __pyx_t_3 = __Pyx_PyInt_SubtractObjC(__pyx_v_n_tokens, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 793, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
@@ -18514,7 +18517,7 @@ static struct PyGetSetDef __pyx_getsets_7cyllama_LlamaBatch[] = {
 #if CYTHON_USE_TYPE_SPECS
 static PyType_Slot __pyx_type_7cyllama_LlamaBatch_slots[] = {
   {Py_tp_dealloc, (void *)__pyx_tp_dealloc_7cyllama_LlamaBatch},
-  {Py_tp_doc, (void *)PyDoc_STR("Intermediate Python wrapper for a llama.cpp llama_context.")},
+  {Py_tp_doc, (void *)PyDoc_STR("Intermediate Python wrapper for a llama.cpp llama_batch.")},
   {Py_tp_methods, (void *)__pyx_methods_7cyllama_LlamaBatch},
   {Py_tp_getset, (void *)__pyx_getsets_7cyllama_LlamaBatch},
   {Py_tp_init, (void *)__pyx_pw_7cyllama_10LlamaBatch_3__init__},
@@ -18561,7 +18564,7 @@ static PyTypeObject __pyx_type_7cyllama_LlamaBatch = {
   0, /*tp_setattro*/
   0, /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE, /*tp_flags*/
-  PyDoc_STR("Intermediate Python wrapper for a llama.cpp llama_context."), /*tp_doc*/
+  PyDoc_STR("Intermediate Python wrapper for a llama.cpp llama_batch."), /*tp_doc*/
   0, /*tp_traverse*/
   0, /*tp_clear*/
   0, /*tp_richcompare*/

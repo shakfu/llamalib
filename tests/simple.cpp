@@ -137,9 +137,26 @@ int main(int argc, char ** argv) {
     // llama_decode will output logits only for the last token of the prompt
     batch.logits[batch.n_tokens - 1] = true;
 
+    // printf("\n");
+    // for (int i=0; i < batch.n_tokens; ++i) {
+    //     printf("batch.logits[%d] = %hhd\n", i, batch.logits[i]);
+    // }
+
+    printf("\nBefore Decode\n");
+    float * logits = llama_get_logits(ctx);
+    for (int i=0; i < batch.n_tokens; ++i) {
+        printf("logits[%d] = %f\n", i, logits[i]);
+    }
+
     if (llama_decode(ctx, batch) != 0) {
         LOG_TEE("%s: llama_decode() failed\n", __func__);
         return 1;
+    }
+
+    printf("\nAfter Decode\n");
+    logits = llama_get_logits(ctx);
+    for (int i=0; i < batch.n_tokens; ++i) {
+        printf("logits[%d] = %f\n", i, logits[i]);
     }
 
     // main loop

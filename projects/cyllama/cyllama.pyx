@@ -728,7 +728,7 @@ cdef class LlamaContext:
 
 
 cdef class LlamaBatch:
-    """Intermediate Python wrapper for a llama.cpp llama_context."""
+    """Intermediate Python wrapper for a llama.cpp llama_batch."""
     cdef llama_cpp.llama_batch * batch
     cdef int _n_tokens
     cdef public int embd
@@ -791,3 +791,47 @@ cdef class LlamaBatch:
             self.batch.n_seq_id[j] = 1
             self.batch.logits[j] = logits_all
         self.batch.logits[n_tokens - 1] = True
+
+
+
+# FIXME: convert to buffer protocol or memoryview
+# class LlamaTokenDataArray:
+#     """Intermediate Python wrapper for a llama.cpp llama_batch."""
+#     cdef llama_cpp.llama_token_data_array * candidates
+#     cdef public int n_vocab
+#     cdef public bint verbose
+#     cdef bint owner
+
+#     def __cinit__(self):
+#         self.candidates = NULL
+#         self.owner = True
+
+#     def __init__(self, *, n_vocab: int):
+#         self.n_vocab = n_vocab
+#         self.candidates_data = np.recarray(
+#             (self.n_vocab,),
+#             dtype=np.dtype(
+#                 [("id", np.intc), ("logit", np.single), ("p", np.single)], align=True
+#             ),
+#         )
+#         self.candidates = llama_cpp.llama_token_data_array(
+#             data=self.candidates_data.ctypes.data_as(llama_cpp.llama_token_data_p),
+#             size=self.n_vocab,
+#             sorted=False,
+#         )
+#         self.default_candidates_data_id = np.arange(self.n_vocab, dtype=np.intc)  # type: ignore
+#         self.default_candidates_data_p = np.zeros(self.n_vocab, dtype=np.single)
+
+#     def copy_logits(self, logits: npt.NDArray[np.single]):
+#         self.candidates_data.id[:] = self.default_candidates_data_id
+#         self.candidates_data.logit[:] = logits
+#         self.candidates_data.p[:] = self.default_candidates_data_p
+#         self.candidates.sorted = False
+#         self.candidates.size = self.n_vocab
+
+#     def __dealloc__(self):
+#         if self.candidates is not NULL and self.owner is True:
+#             llama_cpp.llama_batch_free(self.batch[0])
+#             self.batch = NULL
+
+

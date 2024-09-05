@@ -90,6 +90,8 @@ t_main_start: int = pb.ggml_time_us()
 
 n_vocab: int = pb.llama_n_vocab(model)
 
+# logits = pb.llama_get_logits(ctx)
+
 # logits = pb.llama_get_logits_ith(ctx, batch.n_tokens - 1)
 
 # while (n_cur <= n_predict):

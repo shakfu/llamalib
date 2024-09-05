@@ -49,7 +49,7 @@ test_simple:
 		-framework Metal -framework MetalKit \
 		lib/libllama.a lib/libggml.a lib/libcommon.a \
 		tests/simple.cpp
-	@./build/simple -m $(MODEL) -p "Who invented algebra" -n 512
+	@./build/simple -m $(MODEL) -p "Number of planets in our solar system" -n 512
 
 test_cy:
 	@cd tests && python3 cy_simple.py
