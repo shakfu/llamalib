@@ -395,6 +395,8 @@ extern "C" {
         GGML_TYPE_Q4_0_4_4 = 31,
         GGML_TYPE_Q4_0_4_8 = 32,
         GGML_TYPE_Q4_0_8_8 = 33,
+        GGML_TYPE_TQ1_0   = 34,
+        GGML_TYPE_TQ2_0   = 35,
         GGML_TYPE_COUNT,
     };
 
@@ -591,7 +593,7 @@ extern "C" {
     struct ggml_tensor {
         enum ggml_type         type;
 
-        // GGML_DEPRECATED(enum ggml_backend_type backend, "use the buffer type to find the storage location of the tensor");
+        GGML_DEPRECATED(enum ggml_backend_type backend, "use the buffer type to find the storage location of the tensor");
 
         struct ggml_backend_buffer * buffer;
 
@@ -679,8 +681,8 @@ extern "C" {
 
     struct ggml_hash_set {
         size_t size;
-        ggml_bitset_t * used;
-        struct ggml_tensor ** keys;
+        ggml_bitset_t * used;       // whether or not the keys are in use i.e. set
+        struct ggml_tensor ** keys; // actual tensors in the set, keys[i] is only defined if ggml_bitset_get(used, i)
     };
 
     // computation graph
@@ -758,9 +760,9 @@ extern "C" {
     GGML_API GGML_CALL size_t  ggml_type_size(enum ggml_type type);             // size in bytes for all elements in a block
     GGML_API GGML_CALL size_t  ggml_row_size (enum ggml_type type, int64_t ne); // size in bytes for all elements in a row
 
-    // GGML_DEPRECATED(
-    // GGML_API double ggml_type_sizef(enum ggml_type type), // ggml_type_size()/ggml_blck_size() as float
-    // "use ggml_row_size() instead");
+    GGML_DEPRECATED(
+    GGML_API double ggml_type_sizef(enum ggml_type type), // ggml_type_size()/ggml_blck_size() as float
+    "use ggml_row_size() instead");
 
     GGML_API GGML_CALL const char * ggml_type_name(enum ggml_type type);
     GGML_API GGML_CALL const char * ggml_op_name  (enum ggml_op   op);
@@ -1270,7 +1272,7 @@ extern "C" {
             size_t                nb1,
             size_t                nb2,
             size_t                nb3,
-            size_t                offset);
+            size_t                offset); // in bytes
 
     // b -> view(a,offset,nb1,nb2,3), return view(a)
     GGML_API struct ggml_tensor * ggml_set_inplace(
@@ -1280,19 +1282,19 @@ extern "C" {
             size_t                nb1,
             size_t                nb2,
             size_t                nb3,
-            size_t                offset);
+            size_t                offset); // in bytes
 
     GGML_API struct ggml_tensor * ggml_set_1d(
             struct ggml_context * ctx,
             struct ggml_tensor  * a,
             struct ggml_tensor  * b,
-            size_t                offset);
+            size_t                offset); // in bytes
 
     GGML_API struct ggml_tensor * ggml_set_1d_inplace(
             struct ggml_context * ctx,
             struct ggml_tensor  * a,
             struct ggml_tensor  * b,
-            size_t                offset);
+            size_t                offset); // in bytes
 
     // b -> view(a,offset,nb1,nb2,3), return modified a
     GGML_API struct ggml_tensor * ggml_set_2d(
@@ -1300,7 +1302,7 @@ extern "C" {
             struct ggml_tensor  * a,
             struct ggml_tensor  * b,
             size_t                nb1,
-            size_t                offset);
+            size_t                offset); // in bytes
 
     // b -> view(a,offset,nb1,nb2,3), return view(a)
     GGML_API struct ggml_tensor * ggml_set_2d_inplace(
@@ -1308,7 +1310,7 @@ extern "C" {
             struct ggml_tensor  * a,
             struct ggml_tensor  * b,
             size_t                nb1,
-            size_t                offset);
+            size_t                offset); // in bytes
 
     // a -> b, return view(b)
     GGML_API struct ggml_tensor * ggml_cpy(
@@ -1563,35 +1565,35 @@ extern "C" {
             float                 beta_fast,
             float                 beta_slow);
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_rope_custom(
-    //         struct ggml_context * ctx,
-    //         struct ggml_tensor  * a,
-    //         struct ggml_tensor  * b,
-    //         int                   n_dims,
-    //         int                   mode,
-    //         int                   n_ctx_orig,
-    //         float                 freq_base,
-    //         float                 freq_scale,
-    //         float                 ext_factor,
-    //         float                 attn_factor,
-    //         float                 beta_fast,
-    //         float                 beta_slow),
-    //     "use ggml_rope_ext instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_rope_custom(
+            struct ggml_context * ctx,
+            struct ggml_tensor  * a,
+            struct ggml_tensor  * b,
+            int                   n_dims,
+            int                   mode,
+            int                   n_ctx_orig,
+            float                 freq_base,
+            float                 freq_scale,
+            float                 ext_factor,
+            float                 attn_factor,
+            float                 beta_fast,
+            float                 beta_slow),
+        "use ggml_rope_ext instead");
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_rope_custom_inplace(
-    //         struct ggml_context * ctx,
-    //         struct ggml_tensor  * a,
-    //         struct ggml_tensor  * b,
-    //         int                   n_dims,
-    //         int                   mode,
-    //         int                   n_ctx_orig,
-    //         float                 freq_base,
-    //         float                 freq_scale,
-    //         float                 ext_factor,
-    //         float                 attn_factor,
-    //         float                 beta_fast,
-    //         float                 beta_slow),
-    //     "use ggml_rope_ext_inplace instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_rope_custom_inplace(
+            struct ggml_context * ctx,
+            struct ggml_tensor  * a,
+            struct ggml_tensor  * b,
+            int                   n_dims,
+            int                   mode,
+            int                   n_ctx_orig,
+            float                 freq_base,
+            float                 freq_scale,
+            float                 ext_factor,
+            float                 attn_factor,
+            float                 beta_fast,
+            float                 beta_slow),
+        "use ggml_rope_ext_inplace instead");
 
     // compute correction dims for YaRN RoPE scaling
     GGML_CALL void ggml_rope_yarn_corr_dims(
@@ -1941,73 +1943,73 @@ extern "C" {
     typedef void (*ggml_custom2_op_f32_t)(struct ggml_tensor *, const struct ggml_tensor *, const struct ggml_tensor *);
     typedef void (*ggml_custom3_op_f32_t)(struct ggml_tensor *, const struct ggml_tensor *, const struct ggml_tensor *, const struct ggml_tensor *);
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_unary_f32(
-    //         struct ggml_context        * ctx,
-    //         struct ggml_tensor         * a,
-    //                ggml_unary_op_f32_t   fun),
-    //     "use ggml_map_custom1 instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_unary_f32(
+            struct ggml_context        * ctx,
+            struct ggml_tensor         * a,
+                   ggml_unary_op_f32_t   fun),
+        "use ggml_map_custom1 instead");
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_unary_inplace_f32(
-    //         struct ggml_context        * ctx,
-    //         struct ggml_tensor         * a,
-    //                ggml_unary_op_f32_t   fun),
-    //     "use ggml_map_custom1_inplace instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_unary_inplace_f32(
+            struct ggml_context        * ctx,
+            struct ggml_tensor         * a,
+                   ggml_unary_op_f32_t   fun),
+        "use ggml_map_custom1_inplace instead");
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_binary_f32(
-    //         struct ggml_context         * ctx,
-    //         struct ggml_tensor          * a,
-    //         struct ggml_tensor          * b,
-    //                ggml_binary_op_f32_t   fun),
-    //     "use ggml_map_custom2 instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_binary_f32(
+            struct ggml_context         * ctx,
+            struct ggml_tensor          * a,
+            struct ggml_tensor          * b,
+                   ggml_binary_op_f32_t   fun),
+        "use ggml_map_custom2 instead");
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_binary_inplace_f32(
-    //         struct ggml_context         * ctx,
-    //         struct ggml_tensor          * a,
-    //         struct ggml_tensor          * b,
-    //                ggml_binary_op_f32_t   fun),
-    //     "use ggml_map_custom2_inplace instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_binary_inplace_f32(
+            struct ggml_context         * ctx,
+            struct ggml_tensor          * a,
+            struct ggml_tensor          * b,
+                   ggml_binary_op_f32_t   fun),
+        "use ggml_map_custom2_inplace instead");
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom1_f32(
-    //         struct ggml_context          * ctx,
-    //         struct ggml_tensor           * a,
-    //                ggml_custom1_op_f32_t   fun),
-    //     "use ggml_map_custom1 instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom1_f32(
+            struct ggml_context          * ctx,
+            struct ggml_tensor           * a,
+                   ggml_custom1_op_f32_t   fun),
+        "use ggml_map_custom1 instead");
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom1_inplace_f32(
-    //         struct ggml_context          * ctx,
-    //         struct ggml_tensor           * a,
-    //                ggml_custom1_op_f32_t   fun),
-    //     "use ggml_map_custom1_inplace instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom1_inplace_f32(
+            struct ggml_context          * ctx,
+            struct ggml_tensor           * a,
+                   ggml_custom1_op_f32_t   fun),
+        "use ggml_map_custom1_inplace instead");
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom2_f32(
-    //         struct ggml_context          * ctx,
-    //         struct ggml_tensor           * a,
-    //         struct ggml_tensor           * b,
-    //                ggml_custom2_op_f32_t   fun),
-    //     "use ggml_map_custom2 instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom2_f32(
+            struct ggml_context          * ctx,
+            struct ggml_tensor           * a,
+            struct ggml_tensor           * b,
+                   ggml_custom2_op_f32_t   fun),
+        "use ggml_map_custom2 instead");
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom2_inplace_f32(
-    //         struct ggml_context          * ctx,
-    //         struct ggml_tensor           * a,
-    //         struct ggml_tensor           * b,
-    //                ggml_custom2_op_f32_t   fun),
-    //     "use ggml_map_custom2_inplace instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom2_inplace_f32(
+            struct ggml_context          * ctx,
+            struct ggml_tensor           * a,
+            struct ggml_tensor           * b,
+                   ggml_custom2_op_f32_t   fun),
+        "use ggml_map_custom2_inplace instead");
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom3_f32(
-    //         struct ggml_context          * ctx,
-    //         struct ggml_tensor           * a,
-    //         struct ggml_tensor           * b,
-    //         struct ggml_tensor           * c,
-    //                ggml_custom3_op_f32_t   fun),
-    //     "use ggml_map_custom3 instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom3_f32(
+            struct ggml_context          * ctx,
+            struct ggml_tensor           * a,
+            struct ggml_tensor           * b,
+            struct ggml_tensor           * c,
+                   ggml_custom3_op_f32_t   fun),
+        "use ggml_map_custom3 instead");
 
-    // GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom3_inplace_f32(
-    //         struct ggml_context          * ctx,
-    //         struct ggml_tensor           * a,
-    //         struct ggml_tensor           * b,
-    //         struct ggml_tensor           * c,
-    //                ggml_custom3_op_f32_t   fun),
-    //     "use ggml_map_custom3_inplace instead");
+    GGML_DEPRECATED(GGML_API struct ggml_tensor * ggml_map_custom3_inplace_f32(
+            struct ggml_context          * ctx,
+            struct ggml_tensor           * a,
+            struct ggml_tensor           * b,
+            struct ggml_tensor           * c,
+                   ggml_custom3_op_f32_t   fun),
+        "use ggml_map_custom3_inplace instead");
 
     // custom operators v2
 

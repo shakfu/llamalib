@@ -189,6 +189,7 @@ cdef extern from "llama.h":
 
     ctypedef struct llama_model
     ctypedef struct llama_context
+    ctypedef struct llama_sampler
 
     ctypedef int32_t llama_pos
     ctypedef int32_t llama_token
@@ -291,6 +292,8 @@ cdef extern from "llama.h":
         LLAMA_FTYPE_MOSTLY_Q4_0_4_4      = 33
         LLAMA_FTYPE_MOSTLY_Q4_0_4_8      = 34
         LLAMA_FTYPE_MOSTLY_Q4_0_8_8      = 35
+        LLAMA_FTYPE_MOSTLY_TQ1_0         = 36 # except 1d tensors
+        LLAMA_FTYPE_MOSTLY_TQ2_0         = 37 # except 1d tensors
         LLAMA_FTYPE_GUESSED              = 1024
 
     ctypedef enum llama_rope_scaling_type:
@@ -325,6 +328,7 @@ cdef extern from "llama.h":
     ctypedef struct llama_token_data_array:
         llama_token_data * data
         size_t size
+        int64_t selected  # this is the index in the data array (i.e. not the token id)
         bint sorted
 
     ctypedef bint (*llama_progress_callback)(float progress, void * user_data)
@@ -372,7 +376,6 @@ cdef extern from "llama.h":
         bint check_tensors
 
     ctypedef struct llama_context_params:
-        uint32_t seed              # RNG seed, -1 for random
         uint32_t n_ctx             # text context, 0 = from model
         uint32_t n_batch           # logical maximum batch size that can be submitted to llama_decode
         uint32_t n_ubatch          # physical maximum batch size
@@ -399,7 +402,7 @@ cdef extern from "llama.h":
         ggml_type type_k # data type for K cache [EXPERIMENTAL]
         ggml_type type_v # data type for V cache [EXPERIMENTAL]
 
-        # Keep the booleans together to avoid misalignment during copy-by-value.
+        # Keep the booleans together and at the end of the struct to avoid misalignment during copy-by-value.
         bint logits_all  # the llama_decode() call computes all logits, not just the last one (DEPRECATED - set llama_batch.logits instead)
         bint embeddings  # if true, extract embeddings (together with logits)
         bint offload_kqv # whether to offload the KQV ops (including the KV cache) to GPU
@@ -425,33 +428,12 @@ cdef extern from "llama.h":
         void * imatrix                      # pointer to importance matrix data
         void * kv_overrides                 # pointer to vector containing overrides
 
-    ctypedef struct llama_grammar
+    ctypedef struct llama_logit_bias:
+        llama_token token
+        float bias
 
-    ctypedef enum llama_gretype:
-        LLAMA_GRETYPE_END            = 0
-        LLAMA_GRETYPE_ALT            = 1
-        LLAMA_GRETYPE_RULE_REF       = 2
-        LLAMA_GRETYPE_CHAR           = 3
-        LLAMA_GRETYPE_CHAR_NOT       = 4
-        LLAMA_GRETYPE_CHAR_RNG_UPPER = 5
-        LLAMA_GRETYPE_CHAR_ALT       = 6
-        LLAMA_GRETYPE_CHAR_ANY       = 7
-
-    ctypedef struct llama_grammar_element:
-        llama_gretype type
-        uint32_t value
-
-    ctypedef struct llama_timings:
-        double t_start_ms
-        double t_end_ms
-        double t_load_ms
-        double t_sample_ms
-        double t_p_eval_ms
-        double t_eval_ms
-
-        int32_t n_sample
-        int32_t n_p_eval
-        int32_t n_eval
+    ctypedef struct llama_sampler_chain_params:
+        bint no_perf # whether to measure performance timings
 
     ctypedef struct llama_chat_message:
         const char * role
@@ -463,8 +445,10 @@ cdef extern from "llama.h":
     # -------------------------------------------------------------------------
     # functions
 
+    # TODO: update API to start accepting pointers to params structs (https://github.com/ggerganov/llama.cpp/discussions/9172)
     cdef llama_model_params llama_model_default_params()
     cdef llama_context_params llama_context_default_params()
+    cdef llama_sampler_chain_params  llama_sampler_chain_default_params()
     cdef llama_model_quantize_params llama_model_quantize_default_params()
 
 
@@ -486,6 +470,7 @@ cdef extern from "llama.h":
 
     cdef void llama_free_model(llama_model * model)
 
+    # TODO: rename to llama_init_from_model
     cdef llama_context * llama_new_context_with_model(
                      llama_model * model,
             llama_context_params   params)
@@ -501,21 +486,21 @@ cdef extern from "llama.h":
     cdef bint llama_supports_mlock      ()
     cdef bint llama_supports_gpu_offload()
 
-    cdef const llama_model * llama_get_model(const llama_context * ctx)
-
     cdef uint32_t llama_n_ctx      (const llama_context * ctx)
     cdef uint32_t llama_n_batch    (const llama_context * ctx)
     cdef uint32_t llama_n_ubatch   (const llama_context * ctx)
     cdef uint32_t llama_n_seq_max  (const llama_context * ctx)
 
-    cdef llama_pooling_type get_llama_pooling_type(const llama_context * ctx)
-    cdef llama_vocab_type get_llama_vocab_type(const llama_model * model)
-    cdef llama_rope_type    get_llama_rope_type   (const llama_model * model)
-
     cdef int32_t llama_n_vocab    (const llama_model * model)
     cdef int32_t llama_n_ctx_train(const llama_model * model)
     cdef int32_t llama_n_embd     (const llama_model * model)
     cdef int32_t llama_n_layer    (const llama_model * model)
+
+    cdef const llama_model * llama_get_model(const llama_context * ctx)
+
+    cdef llama_pooling_type get_llama_pooling_type "llama_pooling_type" (const llama_context * ctx)
+    cdef llama_vocab_type   get_llama_vocab_type "llama_vocab_type" (const llama_model * model)
+    cdef llama_rope_type    get_llama_rope_type  "llama_rope_type" (const llama_model * model)
 
     # Get the model's RoPE frequency scaling factor
     cdef float llama_rope_freq_scale_train(const llama_model * model)
@@ -730,7 +715,7 @@ cdef extern from "llama.h":
     #
 
     # Returns the *actual* size in bytes of the state
-    # (rng, logits, embedding and kv_cache)
+    # (logits, embedding and kv_cache)
     # Only use when saving the state, not when restoring it, otherwise the size may be too small.
     cdef size_t llama_state_get_size( llama_context * ctx)
 
@@ -1014,117 +999,105 @@ cdef extern from "llama.h":
                                   char * buf,
                                int32_t   length)
 
+    # Sampling API
     #
-    # Grammar
+    # Sample usage:
     #
-
-    # Initialize a llama_grammar.
+    #    # prepare the sampling chain at the start
+    #    auto sparams = llama_sampler_chain_default_params();
     #
-    # @param rules The rule elements of the grammar to initialize.
-    # @param n_rules The number of rules.
-    # @param start_rule_index The index of the root rule (the starting point of the grammar).
-    # @return The initialized llama_grammar or nullptr if initialization failed.
-    cdef  llama_grammar * llama_grammar_init(
-            const llama_grammar_element ** rules,
-                                 size_t    n_rules,
-                                 size_t    start_rule_index)
-
-    cdef void llama_grammar_free( llama_grammar * grammar)
-
-    cdef  llama_grammar * llama_grammar_copy(const  llama_grammar * grammar)
-
-    # @details Apply constraints from grammar
-    cdef void llama_grammar_sample(
-            const llama_grammar * grammar,
-            const llama_context * ctx,
-            llama_token_data_array * candidates)
-
-    # @details Accepts the sampled token into the grammar
-    cdef void llama_grammar_accept_token(
-             llama_grammar * grammar,
-             llama_context * ctx,
-                     llama_token   token)
-
+    #    llama_sampler * smpl = llama_sampler_chain_init(sparams);
     #
-    # Sampling functions
+    #    llama_sampler_chain_add(smpl, llama_sampler_init_top_k(50));
+    #    llama_sampler_chain_add(smpl, llama_sampler_init_top_p(0.9, 1));
+    #    llama_sampler_chain_add(smpl, llama_sampler_init_temp (0.8));
     #
+    #    # typically, the chain should end with a sampler such as "greedy", "dist" or "mirostat"
+    #    # this sampler will be responsible to select the actual token
+    #    llama_sampler_chain_add(smpl, llama_sampler_init_dist(seed));
+    #
+    #    ...
+    #
+    #    # decoding loop:
+    #    while (...) {
+    #        ...
+    #
+    #        llama_decode(ctx, batch);
+    #
+    #        # sample from the logits of the last token in the batch
+    #        const llama_token id = llama_sampler_sample(smpl, ctx, -1);
+    #
+    #        # accepting the token updates the internal state of certain samplers (e.g. grammar, repetition, etc.)
+    #        llama_sampler_accept(smpl, id);
+    #        ...
+    #    }
+    #
+    #    llama_sampler_free(smpl);
+    #
+    # TODO: In the future, llama_sampler will be utilized to offload the sampling to the backends (e.g. GPU).
+    # TODO: in the future, the entire sampling API that uses llama_model should start using llama_vocab
 
-    # Sets the current rng seed.
-    cdef void llama_set_rng_seed( llama_context * ctx, uint32_t seed)
+    ctypedef void * llama_sampler_context_t
 
-    # @details Repetition penalty described in CTRL academic paper https:#arxiv.org/abs/1909.05858, with negative logit fix.
-    # @details Frequency and presence penalties described in OpenAI API https:#platform.openai.com/docs/api-reference/parameter-details.
-    cdef void llama_sample_repetition_penalties(
-             llama_context * ctx,
-          llama_token_data_array * candidates,
-               const llama_token * last_tokens,
-                          size_t   penalty_last_n,
-                           float   penalty_repeat,
-                           float   penalty_freq,
-                           float   penalty_present)
+    # user code can implement the interface below in order to create custom llama_sampler
+    ctypedef struct llama_sampler_i:
+        const char *           (*name)  (const llama_sampler * smpl)                                 # can be NULL
+        void                   (*accept)(      llama_sampler * smpl, llama_token token)              # can be NULL
+        void                   (*apply) (      llama_sampler * smpl, llama_token_data_array * cur_p) # required
+        void                   (*reset) (      llama_sampler * smpl)                                 # can be NULL
+        llama_sampler *        (*clone) (const llama_sampler * smpl)                                 # can be NULL if ctx is NULL
+        void                   (*free)  (      llama_sampler * smpl)      
 
-    # @details Apply classifier-free guidance to the logits as described in academic paper "Stay on topic with Classifier-Free Guidance" https:#arxiv.org/abs/2306.17806
-    # @param logits Logits extracted from the original generation context.
-    # @param logits_guidance Logits extracted from a separate context from the same model. Other than a negative prompt at the beginning, it should have all generated and user input tokens copied from the main context.
-    # @param scale Guidance strength. 1.0f means no guidance. Higher values mean stronger guidance.
-    cdef void llama_sample_apply_guidance(
-               llama_context * ctx,
-                             float * logits,
-                             float * logits_guidance,
-                             float   scale)
+    ctypedef struct llama_sampler:
+        llama_sampler_i * iface
+        llama_sampler_context_t ctx
+
+    # mirror of llama_sampler_i:
+    cdef const char *           llama_sampler_name  (const llama_sampler * smpl)
+    cdef void                   llama_sampler_accept(      llama_sampler * smpl, llama_token token)
+    cdef void                   llama_sampler_apply (      llama_sampler * smpl, llama_token_data_array * cur_p)
+    cdef void                   llama_sampler_reset (      llama_sampler * smpl)
+    cdef llama_sampler *        llama_sampler_clone (const llama_sampler * smpl)
+    # important: do not free if the sampler has been added to a llama_sampler_chain (via llama_sampler_chain_add)
+    cdef void                   llama_sampler_free  (      llama_sampler * smpl)
+
+    # llama_sampler_chain
+    # a type of llama_sampler that can chain multiple samplers one after another
+
+    cdef llama_sampler * llama_sampler_chain_init(llama_sampler_chain_params params)
+
+    # important: takes ownership of the sampler object and will free it when llama_sampler_free is called
+    cdef void                   llama_sampler_chain_add(       llama_sampler * chain, llama_sampler * smpl)
+    cdef llama_sampler *        llama_sampler_chain_get(const  llama_sampler * chain, int32_t i)
+    cdef int                    llama_sampler_chain_n  (const  llama_sampler * chain)
+
+    # available samplers:
+
+    cdef llama_sampler * llama_sampler_init_greedy()
+    cdef llama_sampler * llama_sampler_init_dist(uint32_t seed)
+
 
     # @details Sorts candidate tokens by their logits in descending order and calculate probabilities based on logits.
-    cdef void llama_sample_softmax(
-             llama_context * ctx,
-          llama_token_data_array * candidates)
+    cdef llama_sampler * llama_sampler_init_softmax()
 
     # @details Top-K sampling described in academic paper "The Curious Case of Neural Text Degeneration" https:#arxiv.org/abs/1904.09751
-    cdef void llama_sample_top_k(
-             llama_context * ctx,
-          llama_token_data_array * candidates,
-                         int32_t   k,
-                          size_t   min_keep)
+    cdef llama_sampler * llama_sampler_init_top_k(int32_t k)
 
     # @details Nucleus sampling described in academic paper "The Curious Case of Neural Text Degeneration" https:#arxiv.org/abs/1904.09751
-    cdef void llama_sample_top_p(
-             llama_context * ctx,
-          llama_token_data_array * candidates,
-                           float   p,
-                          size_t   min_keep)
+    cdef llama_sampler * llama_sampler_init_top_p      (float   p, size_t min_keep)
 
     # @details Minimum P sampling as described in https:#github.com/ggerganov/llama.cpp/pull/3841
-    cdef void llama_sample_min_p(
-             llama_context * ctx,
-          llama_token_data_array * candidates,
-                           float   p,
-                          size_t   min_keep)
+    cdef llama_sampler * llama_sampler_init_min_p      (float   p, size_t min_keep)
 
     # @details Tail Free Sampling described in https:#www.trentonbricken.com/Tail-Free-Sampling/.
-    cdef void llama_sample_tail_free(
-             llama_context * ctx,
-          llama_token_data_array * candidates,
-                           float   z,
-                          size_t   min_keep)
+    cdef llama_sampler * llama_sampler_init_tail_free  (float   z, size_t min_keep)
 
     # @details Locally Typical Sampling implementation described in the paper https:#arxiv.org/abs/2202.00666.
-    cdef void llama_sample_typical(
-             llama_context * ctx,
-          llama_token_data_array * candidates,
-                           float   p,
-                          size_t   min_keep)
+    cdef llama_sampler * llama_sampler_init_typical    (float   p, size_t min_keep)
+    cdef llama_sampler * llama_sampler_init_temp       (float   t)
 
     # @details Dynamic temperature implementation described in the paper https:#arxiv.org/abs/2309.02772.
-    cdef void llama_sample_entropy(
-             llama_context * ctx,
-          llama_token_data_array * candidates_p,
-                           float   min_temp,
-                           float   max_temp,
-                           float   exponent_val)
-
-    cdef void llama_sample_temp(
-             llama_context * ctx,
-          llama_token_data_array * candidates,
-                           float   temp)
+    cdef llama_sampler * llama_sampler_init_temp_ext   (float   t, float   delta, float exponent)
 
     # @details Mirostat 1.0 algorithm described in the paper https:#arxiv.org/abs/2007.14966. Uses tokens instead of words.
     # @param candidates A vector of `llama_token_data` containing the candidate tokens, their probabilities (p), and log-odds (logit) for the current position in the generated text.
@@ -1132,36 +1105,59 @@ cdef extern from "llama.h":
     # @param eta The learning rate used to update `mu` based on the error between the target and observed surprisal of the sampled word. A larger learning rate will cause `mu` to be updated more quickly, while a smaller learning rate will result in slower updates.
     # @param m The number of tokens considered in the estimation of `s_hat`. This is an arbitrary value that is used to calculate `s_hat`, which in turn helps to calculate the value of `k`. In the paper, they use `m = 100`, but you can experiment with different values to see how it affects the performance of the algorithm.
     # @param mu Maximum cross-entropy. This value is initialized to be twice the target cross-entropy (`2 * tau`) and is updated in the algorithm based on the error between the target and observed surprisal.
-    cdef llama_token llama_sample_token_mirostat(
-             llama_context * ctx,
-          llama_token_data_array * candidates,
-                           float   tau,
-                           float   eta,
-                         int32_t   m,
-                           float * mu)
+    cdef llama_sampler * llama_sampler_init_mirostat(
+                 int32_t   n_vocab,
+                uint32_t   seed,
+                   float   tau,
+                   float   eta,
+                 int32_t   m)
 
     # @details Mirostat 2.0 algorithm described in the paper https:#arxiv.org/abs/2007.14966. Uses tokens instead of words.
     # @param candidates A vector of `llama_token_data` containing the candidate tokens, their probabilities (p), and log-odds (logit) for the current position in the generated text.
     # @param tau  The target cross-entropy (or surprise) value you want to achieve for the generated text. A higher value corresponds to more surprising or less predictable text, while a lower value corresponds to less surprising or more predictable text.
     # @param eta The learning rate used to update `mu` based on the error between the target and observed surprisal of the sampled word. A larger learning rate will cause `mu` to be updated more quickly, while a smaller learning rate will result in slower updates.
     # @param mu Maximum cross-entropy. This value is initialized to be twice the target cross-entropy (`2 * tau`) and is updated in the algorithm based on the error between the target and observed surprisal.
-    cdef llama_token llama_sample_token_mirostat_v2(
-             llama_context * ctx,
-          llama_token_data_array * candidates,
-                           float   tau,
-                           float   eta,
-                           float * mu)
 
-    # @details Selects the token with the highest probability.
-    #          Does not compute the token probabilities. Use llama_sample_softmax() instead.
-    cdef llama_token llama_sample_token_greedy(
-             llama_context * ctx,
-          llama_token_data_array * candidates)
 
-    # @details Randomly selects a token from the candidates based on their probabilities using the RNG of ctx.
-    cdef llama_token llama_sample_token(
-             llama_context * ctx,
-          llama_token_data_array * candidates)
+    cdef llama_sampler * llama_sampler_init_mirostat_v2(
+                                uint32_t   seed,
+                                   float   tau,
+                                   float   eta)
+
+    cdef llama_sampler * llama_sampler_init_grammar(
+                          const llama_model * model,
+                          const char * grammar_str,
+                          const char * grammar_root)
+
+    cdef llama_sampler * llama_sampler_init_penalties(
+                             int32_t   n_vocab,         # llama_n_vocab()
+                         llama_token   special_eos_id,  # llama_token_eos()
+                         llama_token   linefeed_id,     # llama_token_nl()
+                             int32_t   penalty_last_n,  # last n tokens to penalize (0 = disable penalty, -1 = context size)
+                               float   penalty_repeat,  # 1.0 = disabled
+                               float   penalty_freq,    # 0.0 = disabled
+                               float   penalty_present, # 0.0 = disabled
+                                bint   penalize_nl,     # consider newlines as a repeatable token
+                                bint   ignore_eos)      # ignore the end-of-sequence token
+
+    cdef llama_sampler * llama_sampler_init_logit_bias(
+                             int32_t   n_vocab,
+                             int32_t   n_logit_bias,
+              const llama_logit_bias * logit_bias)
+
+    # Shorthand for:
+    #
+    #    const auto * logits = llama_get_logits_ith(ctx, idx)
+    #    llama_token_data_array cur_p = { ... init from logits ... }
+    #    llama_sampler_apply(smpl, &cur_p)
+    #    return cur_p.data[cur_p.selected].id
+    #
+    # At this point, this is mostly a convenience function.
+    
+    cdef llama_token llama_sampler_sample(llama_sampler * smpl, llama_context * ctx, int32_t idx)
+
+    # TODO: extend in the future
+    # void llama_decode_with_sampler(llama_context * ctx, llama_sampler * smpl, llama_batch batch, ...)
 
     #
     # Model split
@@ -1177,17 +1173,9 @@ cdef extern from "llama.h":
     #  Returns the split_prefix length.
     cdef int llama_split_prefix(char * split_prefix, size_t maxlen, const char * split_path, int split_no, int split_count)
 
-    # Performance information
-    cdef  llama_timings llama_get_timings( llama_context * ctx)
-
-    cdef void llama_print_timings( llama_context * ctx)
-    cdef void llama_reset_timings( llama_context * ctx)
-
     # Print system information
     cdef const char * llama_print_system_info()
 
     # Set callback for all future logging events.
     # If this is not called, or NULL is supplied, everything is output on stderr.
     # cdef void llama_log_set(ggml_log_callback log_callback, void * user_data) #TODO
-
-    cdef void llama_dump_timing_info_yaml(FILE * stream, const  llama_context * ctx)

@@ -28,6 +28,49 @@
 
 - [llamaindex](https://docs.llamaindex.ai) and [llama-cpp on llamaindex](https://docs.llamaindex.ai/en/stable/examples/llm/llama_2_llama_cpp/)
 
+## Allocating Memory for 2d Matrices in c/c++
+
+- [Three ways to allocate memory for a 2-dimensional matrix in C++](https://secure.eld.leidenuniv.nl/~moene/Home/tips/matrix2d/)
+
+- [Contiguous allocation of 2-D arrays in c++](https://dev.to/drakargx/c-contiguous-allocation-of-2-d-arrays-446m)
+
+- [How to dynamically allocate a contiguous block of memory for a 2D array](https://stackoverflow.com/questions/13534966/how-to-dynamically-allocate-a-contiguous-block-of-memory-for-a-2d-array)
+
+- [Freaky way of allocating two-dimensional array?](https://stackoverflow.com/questions/36794202/freaky-way-of-allocating-two-dimensional-array)
+
+- [How to dynamically allocate a 2D array in C?](https://www.geeksforgeeks.org/dynamically-allocate-2d-array-c/)
+
+- [2D dynamic array in continuous memory locations (C)](https://gsamaras.wordpress.com/code/2d-dynamic-array-in-continuous-memory-locations-c/)
+
+also [2d-dynamic-array-c](https://gsamaras.wordpress.com/code/2d-dynamic-array-c/)
+
+```c++
+int** allocate2D(int** A, const int N, const int M) {
+    int i;
+    int *t0;
+ 
+    A = malloc(M * sizeof (int*)); /* Allocating pointers */
+    t0 = malloc(N * M * sizeof (int)); /* Allocating data */
+    for (i = 0; i < M; i++)
+        A[i] = t0 + i * (N);
+ 
+    return A;
+}
+ 
+void free2Darray(int** p) {
+    free(p[0]);
+    free(p);
+}
+```
+
+- [cprogramming.com: Dynamically allocate memory to create 2D array](https://cboard.cprogramming.com/c-programming/143055-dynamically-allocate-memory-create-2d-array.html#post1067593)
+
+- [The proper way to dynamically create a two-dimensional array in C](https://www.dimlucas.com/index.php/2017/02/18/the-proper-way-to-dynamically-create-a-two-dimensional-array-in-c/)
+
+- [Arrays in C: dynamically allocated 2D arrays](https://www.cs.swarthmore.edu/~newhall/unixhelp/C_arrays.html)
+
+- [How to understand numpy strides for layman?](https://stackoverflow.com/questions/53097952/how-to-understand-numpy-strides-for-layman)
+
 
 ## pybind11
 

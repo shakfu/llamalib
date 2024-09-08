@@ -489,17 +489,25 @@ PYBIND11_MODULE(pbllama, m) {
 
         Rows: number of tokens for which llama_batch.logits[i] != 0
         Cols: n_vocab
+
+        Rows: n_tokens provided with llama_batch
+        Cols: n_vocab
+
+        Returns:
+            Pointer to the logits buffer of shape (n_tokens, n_vocab)
     )pbdoc", py::arg("ctx"));
 
-    m.def("llama_get_logits_vec", [](struct llama_context * ctx, int32_t n_tokens) -> py::array_t<float> {
+    m.def("llama_get_logits_vec", [](struct llama_context * ctx, size_t n_tokens, size_t n_vocab) -> py::array_t<float> {
         float * logits = llama_get_logits(ctx);
         constexpr size_t elem_size = sizeof(float);
-        size_t shape[1]{static_cast<size_t>(n_tokens),};
-        size_t strides[1]{static_cast<size_t>(n_tokens) * elem_size,};
+        size_t shape[2]{n_tokens, n_vocab};
+        size_t strides[2]{n_tokens * elem_size, elem_size};
         auto arr = py::array_t<float>(shape, strides);
-        auto view = arr.mutable_unchecked<1>();
+        auto view = arr.mutable_unchecked<2>();
         for(size_t i = 0; i < arr.shape(0); i++) {
-            view(i) = logits[i];
+            for(size_t j = 0; j < arr.shape(1); j++) {
+                view(i,j) = logits[i];
+            }
         }
         return arr;
     }, R"pbdoc(
@@ -510,7 +518,28 @@ PYBIND11_MODULE(pbllama, m) {
 
         Rows: number of tokens for which llama_batch.logits[i] != 0
         Cols: n_vocab
-    )pbdoc", py::arg("ctx"), py::arg("n_tokens"));
+    )pbdoc", py::arg("ctx"), py::arg("n_tokens"), py::arg("n_vocab"));
+
+    // m.def("llama_get_logits_vec", [](struct llama_context * ctx, int32_t n_tokens) -> py::array_t<float> {
+    //     float * logits = llama_get_logits(ctx);
+    //     constexpr size_t elem_size = sizeof(float);
+    //     size_t shape[1]{static_cast<size_t>(n_tokens),};
+    //     size_t strides[1]{static_cast<size_t>(n_tokens) * elem_size,};
+    //     auto arr = py::array_t<float>(shape, strides);
+    //     auto view = arr.mutable_unchecked<1>();
+    //     for(size_t i = 0; i < arr.shape(0); i++) {
+    //         view(i) = logits[i];
+    //     }
+    //     return arr;
+    // }, R"pbdoc(
+    //     Token logits obtained from the last call to llama_decode()
+
+    //     The logits for which llama_batch.logits[i] != 0 are stored contiguously 
+    //     in the order they have appeared in the batch.
+
+    //     Rows: number of tokens for which llama_batch.logits[i] != 0
+    //     Cols: n_vocab
+    // )pbdoc", py::arg("ctx"), py::arg("n_tokens"));
 
     // m.def("llama_get_logits", [](struct llama_context * ctx) -> py::array {
     //     auto logits = llama_get_logits(ctx);

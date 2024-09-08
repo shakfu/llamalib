@@ -395,14 +395,14 @@ cdef class ContextParams:
     def __init__(self):
         self.p = llama_cpp.llama_context_default_params()
 
-    @property
-    def seed(self) -> int:
-        """RNG seed, -1 for random."""
-        return self.p.seed
+    # @property
+    # def seed(self) -> int:
+    #     """RNG seed, -1 for random."""
+    #     return self.p.seed
 
-    @seed.setter
-    def seed(self, value: int):
-        self.p.seed = value
+    # @seed.setter
+    # def seed(self, value: int):
+    #     self.p.seed = value
 
     @property
     def n_ctx(self) -> int:
@@ -578,10 +578,6 @@ cdef class LlamaContext:
 
     # Sampling functions
 
-    def set_rng_seed(self, seed: int):
-        assert self.ctx is not NULL
-        llama_cpp.llama_set_rng_seed(self.ctx, seed)
-
     # def sample_repetition_penalties(
     #     self,
     #     candidates: "_LlamaTokenDataArray",
@@ -712,13 +708,6 @@ cdef class LlamaContext:
     #     assert grammar.grammar is not None
     #     llama_cpp.llama_grammar_accept_token(grammar.grammar, self.ctx, token)
 
-    def reset_timings(self):
-        assert self.ctx is not NULL
-        llama_cpp.llama_reset_timings(self.ctx)
-
-    def print_timings(self):
-        assert self.ctx is not NULL
-        llama_cpp.llama_print_timings(self.ctx)
 
     # Utility functions
     @staticmethod

@@ -1,7 +1,8 @@
 CWD=`pwd`
 LIB=${CWD}/lib/
 INCLUDE=${CWD}/include/
-LLAMACPP_VERSION="0832de7"
+LLAMACPP_VERSION="bdf314f"
+# git checkout bdf314f38a2c90e18285f7d7067e8d736a14000a
 
 get_llamacpp() {
 	echo "update from llama.cpp main repo"

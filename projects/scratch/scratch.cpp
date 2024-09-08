@@ -2,39 +2,82 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
-
 namespace py = pybind11;
 
 
+float square(float x) {
+    return x * x;
+}
+
+
+class Matrix {
+public:
+    Matrix(size_t rows, size_t cols) : m_rows(rows), m_cols(cols) {
+        m_data = new float[rows*cols];
+    }
+    float *data() { return m_data; }
+    size_t rows() const { return m_rows; }
+    size_t cols() const { return m_cols; }
+private:
+    size_t m_rows, m_cols;
+    float *m_data;
+};
+
+typedef struct _Foo {
+    std::array<int, 10> array;
+} Foo;
+
+
+
 typedef struct _config {
+    std::vector<int> nums;
     int n_probs;
     float * probs;
 } config;
 
+
 config config_init(int n_probs) {
-    config cfg = { 0, nullptr };
+    config cfg = {
+        {8, 4, 5, 9},
+        0, 
+        nullptr
+    };
     cfg.n_probs = n_probs;
     cfg.probs = (float *) malloc(sizeof(float) * n_probs);
     return cfg;
 }
 
 
-std::vector<int> demo(void)
+std::vector<int> get_vector(void)
 {
-    std::vector<int> v = {8, 4, 5, 9};
-    return v;
+    config cfg = config_init(10);
+    return cfg.nums;
 }
-
 
 
 template <typename T>
 py::array_t<T> to_array(T * carr, size_t carr_size)
+{
+    py::array_t<T> arr({static_cast<ssize_t>(carr_size)});
+    auto view = arr.mutable_unchecked();
+    for(size_t i = 0; i < arr.shape(0); ++i) {
+        printf("view(%zu) = %f\n", i, carr[i]);
+        view(i) = carr[i];
+    }
+    return arr;
+}
+
+template <typename T>
+py::array_t<T> to_array2(T * carr, size_t carr_size)
 {
     constexpr size_t elem_size = sizeof(T);
     // size_t carr_size = sizeof(carr) / elem_size;
     size_t shape[1]{carr_size,};
     size_t strides[1]{carr_size * elem_size,};
     auto arr = py::array_t<T>(shape, strides);
+    // py::array_t<T, py::array::c_style | py::array::forcecast> arr({static_cast<ssize_t>(carr_size)});
+    // py::array_t<T, py::array::c_style | py::array::forcecast> arr({shape});
+    // py::array_t<T> arr({shape});
     auto view = arr.mutable_unchecked();
     for(size_t i = 0; i < arr.shape(0); ++i) {
         printf("view(%zu) = %f\n", i, carr[i]);
@@ -54,9 +97,41 @@ py::array_t<float> get_array(void)
     return to_array<float>(cfg.probs, cfg.n_probs);
 }
 
+template <typename T> 
+py::array_t<T> to_matrix(T ** vals, size_t n_rows, size_t n_cols)
+{
+    py::array_t<T, py::array::c_style | py::array::forcecast> arr({n_rows, n_cols});
+    auto ra = arr.mutable_unchecked();
+    for (size_t i = 0; i < n_rows; i++) {
+        for (size_t j = 0; j < n_cols; j++) {
+            ra(i, j) = vals[i][j];
+        };
+    };
+    return arr;
+};
+
+
+py::array_t<float> get_matrix2(void)
+{
+    // allocate
+    int n_rows = 4;
+    int n_cols = 3; 
+    float ** arr2d = (float **)malloc(n_rows * sizeof(float *));    
+    for (int i = 0; i < n_rows; i++) {
+        arr2d[i] = (float *)malloc(n_cols * sizeof(float));
+    }
+    // populate
+    for (int i = 0; i < n_rows; ++i) {
+        for (int j = 0; j < n_cols; ++j) {
+            arr2d[i][j] = 0.5;
+        }
+    }
+    // return as numpy matrix
+    return to_matrix<float>(arr2d, n_rows, n_cols);
+}
 
 template <typename T> 
-py::array_t<T> to_matrix(void)
+py::array_t<T> get_matrix(void)
 {
     std::vector<std::vector<T>> vals = {
         {1, 2, 3, 4, 5},
@@ -154,20 +229,45 @@ PYBIND11_MODULE(scratch, m) {
     m.doc() = "scratch: pybind11 dummy wrapper"; // optional module docstring
     m.attr("__version__") = "0.0.1";
 
+
+    PYBIND11_NUMPY_DTYPE(Foo, array);
+
     // -----------------------------------------------------------------------
     // scratch
-    
-    m.def("demo", (std::vector<int> (*)()) &demo);
 
-    // m.def("to_matrix", &to_matrix); // doesn't work
-    m.def("to_matrix", &to_matrix<float>);
-    // m.def("to_matrix", &to_matrix<int>);
+    m.def("square", py::vectorize(square)); // vectorized for use w/ np arrays
+
+    py::class_<Foo>(m, "Foo")
+        .def(py::init<>())
+        .def_readwrite("array", &Foo::array);
+    
+    m.def("get_vector", &get_vector);
+
+    // m.def("get_matrix", &get_matrix); // doesn't work
+    m.def("get_matrix", &get_matrix<float>);
+    // m.def("get_matrix", &get_matrix<int>);
 
     // this also works
     // m.def("to_matrix", (py::array_t<float> (*)(void)) &to_matrix);
     // m.def("to_matrix", (py::array_t<int> (*)(void)) &to_matrix);
 
+    m.def("get_matrix2", &get_matrix2);
+
     m.def("get_array", &get_array);
+
+    py::class_<Matrix, std::shared_ptr<Matrix>>(m, "Matrix", py::buffer_protocol())
+       .def(py::init<size_t, size_t>()) // can be used: np.array(m) or np.array(m, copy = False)
+       .def_buffer([](Matrix &m) -> py::buffer_info {
+            return py::buffer_info(
+                m.data(),                               /* Pointer to buffer */
+                sizeof(float),                          /* Size of one scalar */
+                py::format_descriptor<float>::format(), /* Python struct-style format descriptor */
+                2,                                      /* Number of dimensions */
+                { m.rows(), m.cols() },                 /* Buffer dimensions */
+                { sizeof(float) * m.cols(),             /* Strides (in bytes) for each index */
+                  sizeof(float) }
+            );
+        });
 
     py::class_<WrappedPerson>(m, "WrappedPerson")
         .def(py::init<>())

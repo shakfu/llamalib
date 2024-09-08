@@ -1,40 +1,3 @@
-/* common:
- *  gpt_params
- *  gpt_params_parse (for commandline parsing: so not needed)
- *  llama_model_params_from_gpt_params
- *  llama_context_params_from_gpt_params
- *  llama_tokenize (overloaded)
- *  llama_tokenize (overloaded)
- *  
- * llama:
- *  llama_backend_init
- *  llama_numa_init
- *  llama_tokenize
- *  llama_n_ctx
- *  llama_token_to_piece
- *  llama_batch_init
- *  llama_batch_add
- *  llama_decode
- *  llama_n_vocab
- *  llama_get_logits_ith
- *  llama_token_data
- *  llama_sample_token_greedy
- *  llama_token_is_eog
- *  llama_token_to_piece
- *  llama_batch_clear
- *  llama_batch_add
- *  llama_print_timings
- *  llama_batch_free
- *  llama_free
- *  llama_free_model
- *  llama_backend_free
- *
- * ggml:
- *  ggml_time_us
- *
- *
- */
-
 #include "common.h"
 #include "llama.h"
 
@@ -43,9 +6,7 @@
 #include <string>
 #include <vector>
 
-static void print_usage(int argc, char ** argv, const gpt_params & params) {
-    gpt_params_print_usage(argc, argv, params);
-
+static void print_usage(int, char ** argv) {
     LOG_TEE("\nexample usage:\n");
     LOG_TEE("\n    %s -m model.gguf -p \"Hello my name is\" -n 32\n", argv[0]);
     LOG_TEE("\n");
@@ -57,8 +18,8 @@ int main(int argc, char ** argv) {
     params.prompt = "Hello my name is";
     params.n_predict = 32;
 
-    if (!gpt_params_parse(argc, argv, params)) {
-        print_usage(argc, argv, params);
+    auto options = gpt_params_parser_init(params, LLAMA_EXAMPLE_COMMON, print_usage);
+    if (!gpt_params_parse(argc, argv, params, options)) {
         return 1;
     }
 
@@ -92,15 +53,18 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
+    auto sparams = llama_sampler_chain_default_params();
+
+    sparams.no_perf = false;
+
+    llama_sampler * smpl = llama_sampler_chain_init(sparams);
+
+    llama_sampler_chain_add(smpl, llama_sampler_init_greedy());
+
     // tokenize the prompt
 
     std::vector<llama_token> tokens_list;
     tokens_list = ::llama_tokenize(ctx, params.prompt, true);
-
-    // std::cout << "List of Tokens:" << std::endl;
-    // for (auto i : tokens_list) {
-    //     std::cout << i << std::endl;
-    // }
 
     const int n_ctx    = llama_n_ctx(ctx);
     const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size());
@@ -137,26 +101,9 @@ int main(int argc, char ** argv) {
     // llama_decode will output logits only for the last token of the prompt
     batch.logits[batch.n_tokens - 1] = true;
 
-    // printf("\n");
-    // for (int i=0; i < batch.n_tokens; ++i) {
-    //     printf("batch.logits[%d] = %hhd\n", i, batch.logits[i]);
-    // }
-
-    printf("\nBefore Decode\n");
-    float * logits = llama_get_logits(ctx);
-    for (int i=0; i < batch.n_tokens; ++i) {
-        printf("logits[%d] = %f\n", i, logits[i]);
-    }
-
     if (llama_decode(ctx, batch) != 0) {
         LOG_TEE("%s: llama_decode() failed\n", __func__);
         return 1;
-    }
-
-    printf("\nAfter Decode\n");
-    logits = llama_get_logits(ctx);
-    for (int i=0; i < batch.n_tokens; ++i) {
-        printf("logits[%d] = %f\n", i, logits[i]);
     }
 
     // main loop
@@ -169,24 +116,9 @@ int main(int argc, char ** argv) {
     while (n_cur <= n_predict) {
         // sample the next token
         {
-            auto   n_vocab = llama_n_vocab(model);
-            auto * logits  = llama_get_logits_ith(ctx, batch.n_tokens - 1);
+            const llama_token new_token_id = llama_sampler_sample(smpl, ctx, batch.n_tokens - 1);
 
-            // for (int i=0; i < n_vocab; ++i) {
-            //     printf("logits[%d] = %f\n", i, logits[i]);
-            // }
-
-            std::vector<llama_token_data> candidates;
-            candidates.reserve(n_vocab);
-
-            for (llama_token token_id = 0; token_id < n_vocab; token_id++) {
-                candidates.emplace_back(llama_token_data{ token_id, logits[token_id], 0.0f });
-            }
-
-            llama_token_data_array candidates_p = { candidates.data(), candidates.size(), false };
-
-            // sample the most likely token
-            const llama_token new_token_id = llama_sample_token_greedy(ctx, &candidates_p);
+            llama_sampler_accept(smpl, new_token_id);
 
             // is it an end of generation?
             if (llama_token_is_eog(model, new_token_id) || n_cur == n_predict) {
@@ -223,12 +155,14 @@ int main(int argc, char ** argv) {
     LOG_TEE("%s: decoded %d tokens in %.2f s, speed: %.2f t/s\n",
             __func__, n_decode, (t_main_end - t_main_start) / 1000000.0f, n_decode / ((t_main_end - t_main_start) / 1000000.0f));
 
-    llama_print_timings(ctx);
+    LOG_TEE("\n");
+    llama_perf_print(smpl, LLAMA_PERF_TYPE_SAMPLER_CHAIN);
+    llama_perf_print(ctx,  LLAMA_PERF_TYPE_CONTEXT);
 
     fprintf(stderr, "\n");
 
     llama_batch_free(batch);
-
+    llama_sampler_free(smpl);
     llama_free(ctx);
     llama_free_model(model);
 
