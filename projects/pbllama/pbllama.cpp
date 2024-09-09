@@ -651,7 +651,16 @@ PYBIND11_MODULE(pbllama, m) {
 
     // Set callback for all future logging events.
     // If this is not called, or NULL is supplied, everything is output on stderr.
-    // LLAMA_API void llama_log_set(ggml_log_callback log_callback, void * user_data);
+    m.def("llama_log_set", (void (*)(ggml_log_callback log_callback, void * user_data)) &llama_log_set, "", py::arg("log_callback"), py::arg("user_data"));
+
+    py::enum_<enum llama_perf_type>(m, "llama_perf_type", py::arithmetic(), "")
+        .value("LLAMA_PERF_TYPE_CONTEXT", LLAMA_PERF_TYPE_CONTEXT)
+        .value("LLAMA_PERF_TYPE_SAMPLER_CHAIN", LLAMA_PERF_TYPE_SAMPLER_CHAIN)
+        .export_values();
+    
+    m.def("llama_perf_print", (const void * (*)(enum llama_perf_type)) &llama_perf_print, "", py::arg("type"));
+    m.def("llama_perf_reset", (const void * (*)(enum llama_perf_type)) &llama_perf_reset, "", py::arg("type"));
+    m.def("llama_perf_dump_yaml", (const char * (*)(FILE *, const struct llama_context *)) &llama_perf_dump_yaml, "", py::arg("stream"), py::arg("ctx"));
 
     // -----------------------------------------------------------------------
     // common.h

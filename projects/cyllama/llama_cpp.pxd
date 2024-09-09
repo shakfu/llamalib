@@ -4,6 +4,13 @@ from libc.stdio cimport FILE
 
 cdef extern from "ggml.h":
 
+    ctypedef enum ggml_log_level:
+        GGML_LOG_LEVEL_ERROR = 2
+        GGML_LOG_LEVEL_WARN  = 3
+        GGML_LOG_LEVEL_INFO  = 4
+        GGML_LOG_LEVEL_DEBUG = 5
+
+    ctypedef void (*ggml_log_callback)(ggml_log_level level, const char * text, void * user_data)
     ctypedef bint (*ggml_abort_callback)(void * data)
 
     ctypedef enum ggml_type:
@@ -1178,4 +1185,21 @@ cdef extern from "llama.h":
 
     # Set callback for all future logging events.
     # If this is not called, or NULL is supplied, everything is output on stderr.
-    # cdef void llama_log_set(ggml_log_callback log_callback, void * user_data) #TODO
+    cdef void llama_log_set(ggml_log_callback log_callback, void * user_data)
+
+    #
+    # Performance utils
+    #
+    # NOTE: Used by llama.cpp examples, avoid using in third-party apps. Instead, do your own performance measurements.
+    #
+
+    ctypedef enum llama_perf_type:
+        LLAMA_PERF_TYPE_CONTEXT       = 0
+        LLAMA_PERF_TYPE_SAMPLER_CHAIN = 1
+
+    cdef void llama_perf_print(const void * ctx, llama_perf_type type)
+    cdef void llama_perf_reset(      void * ctx, llama_perf_type type)
+
+    cdef void llama_perf_dump_yaml(FILE * stream, const llama_context * ctx)
+
+

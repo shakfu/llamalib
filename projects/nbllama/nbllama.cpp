@@ -502,10 +502,20 @@ NB_MODULE(nbllama, m) {
 
     // Set callback for all future logging events.
     // If this is not called, or NULL is supplied, everything is output on stderr.
-    // LLAMA_API void llama_log_set(ggml_log_callback log_callback, void * user_data);
+    m.def("llama_log_set", (void (*)(ggml_log_callback log_callback, void * user_data)) &llama_log_set, "", nb::arg("log_callback"), nb::arg("user_data"));
 
-    // LLAMA_API void llama_dump_timing_info_yaml(FILE * stream, const struct llama_context * ctx);
+    nb::enum_<enum llama_perf_type>(m, "llama_perf_type", "")
+        .value("LLAMA_PERF_TYPE_CONTEXT", LLAMA_PERF_TYPE_CONTEXT)
+        .value("LLAMA_PERF_TYPE_SAMPLER_CHAIN", LLAMA_PERF_TYPE_SAMPLER_CHAIN)
+        .export_values();
+    
+    m.def("llama_perf_print", (void * (*)(enum llama_perf_type)) &llama_perf_print, "", nb::arg("type"));
+    m.def("llama_perf_reset", (void * (*)(enum llama_perf_type)) &llama_perf_reset, "", nb::arg("type"));
+    m.def("llama_perf_dump_yaml", (const char * (*)(FILE *, const struct llama_context *)) &llama_perf_dump_yaml, "", nb::arg("stream"), nb::arg("ctx"));
 
+
+    // -----------------------------------------------------------------------
+    // common.h
 
     nb::class_<gpt_params> (m, "gpt_params", "")
         .def(nb::init<>())
