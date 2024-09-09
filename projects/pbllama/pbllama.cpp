@@ -12,7 +12,7 @@ namespace py = pybind11;
 
 struct llama_model {};
 struct llama_context {};
-struct llama_grammar {};
+// struct llama_sampler {};
 struct llama_lora_adapter {};
 
 
@@ -70,7 +70,7 @@ PYBIND11_MODULE(pbllama, m) {
     py::class_<llama_context> (m, "llama_context", "")
         .def(py::init<>());
 
-    py::class_<llama_grammar> (m, "llama_grammar", "")
+    py::class_<llama_sampler> (m, "llama_sampler", "")
         .def(py::init<>());
 
     py::class_<llama_lora_adapter> (m, "llama_lora_adapter", "")
@@ -177,6 +177,8 @@ PYBIND11_MODULE(pbllama, m) {
         .value("LLAMA_FTYPE_MOSTLY_Q4_0_4_4", LLAMA_FTYPE_MOSTLY_Q4_0_4_4)
         .value("LLAMA_FTYPE_MOSTLY_Q4_0_4_8", LLAMA_FTYPE_MOSTLY_Q4_0_4_8)
         .value("LLAMA_FTYPE_MOSTLY_Q4_0_8_8", LLAMA_FTYPE_MOSTLY_Q4_0_8_8)
+        .value("LLAMA_FTYPE_MOSTLY_TQ1_0", LLAMA_FTYPE_MOSTLY_TQ1_0)
+        .value("LLAMA_FTYPE_MOSTLY_TQ2_0", LLAMA_FTYPE_MOSTLY_TQ2_0)
         .value("LLAMA_FTYPE_GUESSED", LLAMA_FTYPE_GUESSED)
         .export_values();
 
@@ -218,8 +220,8 @@ PYBIND11_MODULE(pbllama, m) {
     py::class_<llama_token_data_array, std::shared_ptr<llama_token_data_array>> (m, "llama_token_data_array", "")
         .def( py::init( [](){ return new llama_token_data_array(); } ) )
         .def_readwrite("size", &llama_token_data_array::size)
+        .def_readwrite("selected", &llama_token_data_array::selected)
         .def_readwrite("sorted", &llama_token_data_array::sorted);
-
         // llama_token  *  token;
         // float        *  embd;
         // llama_pos    *  pos;
@@ -295,7 +297,6 @@ PYBIND11_MODULE(pbllama, m) {
     
     py::class_<llama_context_params, std::shared_ptr<llama_context_params>> (m, "llama_context_params", "")
         .def( py::init( [](){ return new llama_context_params(); } ) )
-        .def_readwrite("seed", &llama_context_params::seed)
         .def_readwrite("n_ctx", &llama_context_params::n_ctx)
         .def_readwrite("n_batch", &llama_context_params::n_batch)
         .def_readwrite("n_ubatch", &llama_context_params::n_ubatch)
@@ -331,35 +332,14 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("only_copy", &llama_model_quantize_params::only_copy)
         .def_readwrite("pure", &llama_model_quantize_params::pure);
 
+    py::class_<llama_logit_bias, std::shared_ptr<llama_logit_bias>> (m, "llama_logit_bias", "")
+        .def( py::init( [](){ return new llama_logit_bias(); } ) );
+        // .def_readwrite("token", &llama_model_quantize_params::token)
+        // .def_readwrite("bias", &llama_model_quantize_params::bias);
 
-    py::enum_<enum llama_gretype>(m, "llama_gretype", py::arithmetic(), "")
-        .value("LLAMA_GRETYPE_END", LLAMA_GRETYPE_END)
-        .value("LLAMA_GRETYPE_ALT", LLAMA_GRETYPE_ALT)
-        .value("LLAMA_GRETYPE_RULE_REF", LLAMA_GRETYPE_RULE_REF)
-        .value("LLAMA_GRETYPE_CHAR", LLAMA_GRETYPE_CHAR)
-        .value("LLAMA_GRETYPE_CHAR_NOT", LLAMA_GRETYPE_CHAR_NOT)
-        .value("LLAMA_GRETYPE_CHAR_RNG_UPPER", LLAMA_GRETYPE_CHAR_RNG_UPPER)
-        .value("LLAMA_GRETYPE_CHAR_ALT", LLAMA_GRETYPE_CHAR_ALT)
-        .value("LLAMA_GRETYPE_CHAR_ANY", LLAMA_GRETYPE_CHAR_ANY)
-        .export_values();
-
-
-    py::class_<llama_grammar_element, std::shared_ptr<llama_grammar_element>> (m, "llama_grammar_element", "")
-        .def( py::init( [](){ return new llama_grammar_element(); } ) )
-        .def_readwrite("type", &llama_grammar_element::type)
-        .def_readwrite("value", &llama_grammar_element::value);
-
-    py::class_<llama_timings, std::shared_ptr<llama_timings>> (m, "llama_timings", "")
-        .def( py::init( [](){ return new llama_timings(); } ) )
-        .def_readwrite("t_start_ms", &llama_timings::t_start_ms)
-        .def_readwrite("t_end_ms", &llama_timings::t_end_ms)
-        .def_readwrite("t_load_ms", &llama_timings::t_load_ms)
-        .def_readwrite("t_sample_ms", &llama_timings::t_sample_ms)
-        .def_readwrite("t_p_eval_ms", &llama_timings::t_p_eval_ms)
-        .def_readwrite("t_eval_ms", &llama_timings::t_eval_ms)
-        .def_readwrite("n_sample", &llama_timings::n_sample)
-        .def_readwrite("n_p_eval", &llama_timings::n_p_eval)
-        .def_readwrite("n_eval", &llama_timings::n_eval);
+    py::class_<llama_sampler_chain_params, std::shared_ptr<llama_sampler_chain_params>> (m, "llama_sampler_chain_params", "")
+        .def( py::init( [](){ return new llama_sampler_chain_params(); } ) )
+        .def_readwrite("no_perf", &llama_sampler_chain_params::no_perf);
 
     py::class_<llama_chat_message, std::shared_ptr<llama_chat_message>> (m, "llama_chat_message", "")
         .def( py::init( [](){ return new llama_chat_message(); } ) )
@@ -367,12 +347,10 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("content", &llama_chat_message::content);
 
 
-    // m.def("llama_model_default_params", (struct llama_model_params (*)()) &llama_model_default_params, R"pbdoc(
-    //     multiline docs here
-    // )pbdoc");
-    m.def("llama_model_default_params", (struct llama_model_params (*)()) &llama_model_default_params, "C++: llama_model_default_params() --> struct llama_model_params");
-    m.def("llama_context_default_params", (struct llama_context_params (*)()) &llama_context_default_params, "C++: llama_context_default_params() --> struct llama_context_params");
-    m.def("llama_model_quantize_default_params", (struct llama_model_quantize_params (*)()) &llama_model_quantize_default_params, "C++: llama_model_quantize_default_params() --> struct llama_model_quantize_params");
+    m.def("llama_model_default_params", (struct llama_model_params (*)()) &llama_model_default_params);
+    m.def("llama_context_default_params", (struct llama_context_params (*)()) &llama_context_default_params);
+    m.def("llama_sampler_chain_default_params", (struct llama_sampler_chain_params (*)()) &llama_sampler_chain_default_params);
+    m.def("llama_model_quantize_default_params", (struct llama_model_quantize_params (*)()) &llama_model_quantize_default_params);
     m.def("llama_backend_init", (void (*)()) &llama_backend_init, "Initialize the llama + ggml backend.");
     m.def("llama_numa_init", (void (*)(enum ggml_numa_strategy)) &llama_numa_init, "C++: llama_numa_init(enum ggml_numa_strategy) --> void", py::arg("numa"));
     m.def("llama_backend_free", (void (*)()) &llama_backend_free, "Call once at the end of the program.");
@@ -387,22 +365,21 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_supports_mmap", (bool (*)()) &llama_supports_mmap, "C++: llama_supports_mmap() --> bool");
     m.def("llama_supports_mlock", (bool (*)()) &llama_supports_mlock, "C++: llama_supports_mlock() --> bool");
     m.def("llama_supports_gpu_offload", (bool (*)()) &llama_supports_gpu_offload, "C++: llama_supports_gpu_offload() --> bool");
-    m.def("llama_get_model", (const struct llama_model * (*)(const struct llama_context *)) &llama_get_model, "get model from context", py::arg("ctx"));
 
     m.def("llama_n_ctx", (uint32_t (*)(const struct llama_context *)) &llama_n_ctx, "get n_ctx from context", py::arg("ctx"));
     m.def("llama_n_batch", (uint32_t (*)(const struct llama_context *)) &llama_n_batch, "get n_batch from context", py::arg("ctx"));
     m.def("llama_n_ubatch", (uint32_t (*)(const struct llama_context *)) &llama_n_ubatch, "get n_ubatch from context", py::arg("ctx"));
     m.def("llama_n_seq_max", (uint32_t (*)(const struct llama_context *)) &llama_n_seq_max, "get n_seq_max from context", py::arg("ctx"));
 
-    m.def("get_llama_pooling_type", (enum llama_pooling_type (*)(const struct llama_context *)) &llama_pooling_type, "get pooling_type from context", py::arg("ctx"));
-
-    m.def("get_llama_vocab_type", (enum llama_vocab_type (*)(const struct llama_model *)) &llama_vocab_type, "get vocab_type from model", py::arg("model"));
-    m.def("get_llama_rope_type", (enum llama_rope_type (*)(const struct llama_model *)) &llama_rope_type, "get rope_type from model", py::arg("model"));
-
     m.def("llama_n_vocab", (int32_t (*)(const struct llama_model *)) &llama_n_vocab, "get n_vocab from model", py::arg("model"));
     m.def("llama_n_ctx_train", (int32_t (*)(const struct llama_model *)) &llama_n_ctx_train, "get n_ctx_train from model", py::arg("model"));
     m.def("llama_n_embd", (int32_t (*)(const struct llama_model *)) &llama_n_embd, "get n_embed from model", py::arg("model"));
     m.def("llama_n_layer", (int32_t (*)(const struct llama_model *)) &llama_n_layer, "get n_layer from model", py::arg("model"));
+
+    m.def("llama_get_model", (const struct llama_model * (*)(const struct llama_context *)) &llama_get_model, "get model from context", py::arg("ctx"));
+    m.def("get_llama_pooling_type", (enum llama_pooling_type (*)(const struct llama_context *)) &llama_pooling_type, "get pooling_type from context", py::arg("ctx"));
+    m.def("get_llama_vocab_type", (enum llama_vocab_type (*)(const struct llama_model *)) &llama_vocab_type, "get vocab_type from model", py::arg("model"));
+    m.def("get_llama_rope_type", (enum llama_rope_type (*)(const struct llama_model *)) &llama_rope_type, "get rope_type from model", py::arg("model"));
 
     m.def("llama_rope_freq_scale_train", (float (*)(const struct llama_model *)) &llama_rope_freq_scale_train, "get rope_freq_scale_train from model", py::arg("model"));
 
@@ -497,28 +474,28 @@ PYBIND11_MODULE(pbllama, m) {
             Pointer to the logits buffer of shape (n_tokens, n_vocab)
     )pbdoc", py::arg("ctx"));
 
-    m.def("llama_get_logits_vec", [](struct llama_context * ctx, size_t n_tokens, size_t n_vocab) -> py::array_t<float> {
-        float * logits = llama_get_logits(ctx);
-        constexpr size_t elem_size = sizeof(float);
-        size_t shape[2]{n_tokens, n_vocab};
-        size_t strides[2]{n_tokens * elem_size, elem_size};
-        auto arr = py::array_t<float>(shape, strides);
-        auto view = arr.mutable_unchecked<2>();
-        for(size_t i = 0; i < arr.shape(0); i++) {
-            for(size_t j = 0; j < arr.shape(1); j++) {
-                view(i,j) = logits[i];
-            }
-        }
-        return arr;
-    }, R"pbdoc(
-        Token logits obtained from the last call to llama_decode()
+    // m.def("llama_get_logits_vec", [](struct llama_context * ctx, size_t n_tokens, size_t n_vocab) -> py::array_t<float> {
+    //     float * logits = llama_get_logits(ctx);
+    //     constexpr size_t elem_size = sizeof(float);
+    //     size_t shape[2]{n_tokens, n_vocab};
+    //     size_t strides[2]{n_tokens * elem_size, elem_size};
+    //     auto arr = py::array_t<float>(shape, strides);
+    //     auto view = arr.mutable_unchecked<2>();
+    //     for(size_t i = 0; i < arr.shape(0); i++) {
+    //         for(size_t j = 0; j < arr.shape(1); j++) {
+    //             view(i,j) = logits[i];
+    //         }
+    //     }
+    //     return arr;
+    // }, R"pbdoc(
+    //     Token logits obtained from the last call to llama_decode()
 
-        The logits for which llama_batch.logits[i] != 0 are stored contiguously 
-        in the order they have appeared in the batch.
+    //     The logits for which llama_batch.logits[i] != 0 are stored contiguously 
+    //     in the order they have appeared in the batch.
 
-        Rows: number of tokens for which llama_batch.logits[i] != 0
-        Cols: n_vocab
-    )pbdoc", py::arg("ctx"), py::arg("n_tokens"), py::arg("n_vocab"));
+    //     Rows: number of tokens for which llama_batch.logits[i] != 0
+    //     Cols: n_vocab
+    // )pbdoc", py::arg("ctx"), py::arg("n_tokens"), py::arg("n_vocab"));
 
     // m.def("llama_get_logits_vec", [](struct llama_context * ctx, int32_t n_tokens) -> py::array_t<float> {
     //     float * logits = llama_get_logits(ctx);
@@ -570,24 +547,7 @@ PYBIND11_MODULE(pbllama, m) {
     //     Cols: n_vocab
     // )pbdoc", py::arg("ctx"));
 
-    // m.def("llama_get_logits_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_logits_ith, R"pbdoc(
-    //     Logits for the ith token. 
-
-    //     For positive indices, Equivalent to:
-
-    //         llama_get_logits(ctx) + ctx->output_ids[i] * n_vocab
-        
-    //     Negative indicies can be used to access logits in reverse order, -1 is the last logit.
-    //     returns NULL for invalid ids.
-    // )pbdoc", py::arg("ctx"), py::arg("i"));
-
-    m.def("llama_get_logits_ith", [](struct llama_context * ctx, int32_t i) -> std::vector<float> {
-         const struct llama_model * model = llama_get_model(ctx);
-        int32_t n_vocab = llama_n_vocab(model);
-        float * logits = llama_get_logits_ith(ctx, i);
-        std::vector<float> result(logits, logits + n_vocab);
-        return result;
-    }, R"pbdoc(
+    m.def("llama_get_logits_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_logits_ith, R"pbdoc(
         Logits for the ith token. 
 
         For positive indices, Equivalent to:
@@ -597,6 +557,23 @@ PYBIND11_MODULE(pbllama, m) {
         Negative indicies can be used to access logits in reverse order, -1 is the last logit.
         returns NULL for invalid ids.
     )pbdoc", py::arg("ctx"), py::arg("i"));
+
+    // m.def("llama_get_logits_ith", [](struct llama_context * ctx, int32_t i) -> std::vector<float> {
+    //      const struct llama_model * model = llama_get_model(ctx);
+    //     int32_t n_vocab = llama_n_vocab(model);
+    //     float * logits = llama_get_logits_ith(ctx, i);
+    //     std::vector<float> result(logits, logits + n_vocab);
+    //     return result;
+    // }, R"pbdoc(
+    //     Logits for the ith token. 
+
+    //     For positive indices, Equivalent to:
+
+    //         llama_get_logits(ctx) + ctx->output_ids[i] * n_vocab
+        
+    //     Negative indicies can be used to access logits in reverse order, -1 is the last logit.
+    //     returns NULL for invalid ids.
+    // )pbdoc", py::arg("ctx"), py::arg("i"));
 
     m.def("llama_get_embeddings", (float* (*)(const struct llama_context *)) &llama_get_embeddings, R"pbdoc(
         Get all output token embeddings.
@@ -645,48 +622,60 @@ PYBIND11_MODULE(pbllama, m) {
 
     m.def("llama_chat_apply_template", (int32_t (*)(const struct llama_model *, const char*, const struct llama_chat_message*, size_t, bool, char*, int32_t)) &llama_chat_apply_template, "", py::arg("model"), py::arg("tmpl"), py::arg("chat"), py::arg("n_msg"), py::arg("add_ass"), py::arg("buf"), py::arg("length"));
 
-    // struct llama_grammar* llama_grammar_init(const llama_grammar_element** rules, size_t n_rules, size_t start_rule_index);
-    m.def("llama_grammar_init", [](std::vector<llama_grammar_element> rules, size_t start_rule_index) -> struct llama_grammar * {
-        std::vector<const llama_grammar_element *> elems;
-        elems.reserve(rules.size());
-        for (auto rule : rules) {
-            elems.push_back(&rule);
-        }
-        return (struct llama_grammar *)llama_grammar_init(elems.data(), elems.size(), start_rule_index);
-    });
+    py::class_<llama_sampler_i, std::shared_ptr<llama_sampler_i>> (m, "llama_sampler_i", "")
+        .def( py::init( [](){ return new llama_sampler_i(); } ) );
+        // .def_readwrite("name", &llama_sampler_i::name)
+        // .def_readwrite("accept", &llama_sampler_i::accept);
+        // const char *           (*name)  (const struct llama_sampler * smpl);                                 // can be NULL
+        // void                   (*accept)(      struct llama_sampler * smpl, llama_token token);              // can be NULL
+        // void                   (*apply) (      struct llama_sampler * smpl, llama_token_data_array * cur_p); // required
+        // void                   (*reset) (      struct llama_sampler * smpl);                                 // can be NULL
+        // struct llama_sampler * (*clone) (const struct llama_sampler * smpl);                                 // can be NULL if ctx is NULL
+        // void                   (*free)  (      struct llama_sampler * smpl);                                 // can be NULL if ctx is NULL
 
-    m.def("llama_grammar_free", (void (*)(struct llama_grammar *)) &llama_grammar_free, "", py::arg("grammar"));
-    m.def("llama_grammar_copy", (struct llama_grammar* (*)(const struct llama_grammar *)) &llama_grammar_copy, "", py::arg("grammar"));
-    m.def("llama_grammar_sample", (void (*)(const struct llama_grammar *, const struct llama_context*, llama_token_data_array*)) &llama_grammar_sample, "", py::arg("grammar"), py::arg("ctx"), py::arg("candidates"));
-    m.def("llama_grammar_accept_token", (void (*)(const struct llama_grammar *, const struct llama_context*, llama_token)) &llama_grammar_accept_token, "", py::arg("grammar"), py::arg("ctx"), py::arg("token"));
+    py::class_<llama_sampler, std::shared_ptr<llama_sampler>> (m, "llama_sampler", "")
+        .def( py::init( [](){ return new llama_sampler(); } ) )
+        .def_readwrite("iface", &llama_sampler::iface)
+        .def_readwrite("ctx", &llama_sampler::ctx);
 
-    m.def("llama_set_rng_seed", (void (*)(const struct llama_context *, uint32_t)) &llama_set_rng_seed, "", py::arg("ctx"), py::arg("seed"));
+    m.def("llama_sampler_name", (const char * (*)(const struct llama_sampler *)) &llama_sampler_name, "", py::arg("smpl"));
+    m.def("llama_sampler_accept", (void (*)(struct llama_sampler *, llama_token)) &llama_sampler_accept, "", py::arg("smpl"),  py::arg("token"));
+    m.def("llama_sampler_apply", (void (*)(struct llama_sampler *, llama_token_data_array *)) &llama_sampler_apply, "", py::arg("smpl"),  py::arg("cur_p"));
+    m.def("llama_sampler_reset", (void (*)(struct llama_sampler *)) &llama_sampler_apply, "", py::arg("smpl"));
+    m.def("llama_sampler_clone", (struct llama_sampler * (*)(const struct llama_sampler *)) &llama_sampler_clone, "", py::arg("smpl"));
+    m.def("llama_sampler_free", (void (*)(const struct llama_sampler *)) &llama_sampler_free, "", py::arg("smpl"));
+    m.def("llama_sampler_chain_init", (struct llama_sampler *  (*)(struct llama_sampler_chain_params)) &llama_sampler_chain_init, "", py::arg("params"));
+    m.def("llama_sampler_chain_add", (void (*)(struct llama_sampler *, struct llama_sampler *)) &llama_sampler_chain_add, "", py::arg("chain"), py::arg("smpl"));
+    m.def("llama_sampler_chain_get", (struct llama_sampler * (*)(const struct llama_sampler *, int32_t)) &llama_sampler_chain_get, "", py::arg("chain"), py::arg("i"));
+    m.def("llama_sampler_chain_n", (int (*)(const struct llama_sampler *)) &llama_sampler_chain_n, "", py::arg("chain"));
+    m.def("llama_sampler_init_greedy", (struct llama_sampler * (*)(void)) &llama_sampler_init_greedy);
+    m.def("llama_sampler_init_dist", (struct llama_sampler * (*)(uint32_t)) &llama_sampler_init_dist, "", py::arg("seed"));
 
-    m.def("llama_sample_repetition_penalties", (void (*)(const struct llama_context *, llama_token_data_array *, const llama_token *, size_t, float, float, float)) &llama_sample_repetition_penalties, "", py::arg("ctx"), py::arg("candidates"), py::arg("last_tokens"), py::arg("penalty_last_n"), py::arg("penalty_repeat"), py::arg("penalty_freq"), py::arg("penalty_present"));
-    m.def("llama_sample_apply_guidance", (void (*)(const struct llama_context *, float *, float *, float)) &llama_sample_apply_guidance, "", py::arg("ctx"), py::arg("logits"), py::arg("logits_guidance"), py::arg("scale"));
-    m.def("llama_sample_softmax", (void (*)(const struct llama_context *, llama_token_data_array *)) &llama_sample_softmax, "", py::arg("ctx"), py::arg("candidates"));
-    m.def("llama_sample_top_k", (void (*)(const struct llama_context *, llama_token_data_array *, int32_t, size_t)) &llama_sample_top_k, "", py::arg("ctx"), py::arg("candidates"), py::arg("k"), py::arg("min_keep"));
-    m.def("llama_sample_top_p", (void (*)(const struct llama_context *, llama_token_data_array *, int32_t, size_t)) &llama_sample_top_p, "", py::arg("ctx"), py::arg("candidates"), py::arg("k"), py::arg("min_keep"));
-    m.def("llama_sample_min_p", (void (*)(const struct llama_context *, llama_token_data_array *, int32_t, size_t)) &llama_sample_min_p, "", py::arg("ctx"), py::arg("candidates"), py::arg("k"), py::arg("min_keep"));
-    m.def("llama_sample_tail_free", (void (*)(const struct llama_context *, llama_token_data_array *, float, size_t)) &llama_sample_tail_free, "", py::arg("ctx"), py::arg("candidates"), py::arg("z"), py::arg("min_keep"));
-    m.def("llama_sample_typical", (void (*)(const struct llama_context *, llama_token_data_array *, float, size_t)) &llama_sample_typical, "", py::arg("ctx"), py::arg("candidates"), py::arg("p"), py::arg("min_keep"));
-    m.def("llama_sample_entropy", (void (*)(const struct llama_context *, llama_token_data_array *, float, float, float)) &llama_sample_entropy, "", py::arg("ctx"), py::arg("candidates_p"), py::arg("min_temp"), py::arg("max_temp"), py::arg("exponent_val"));
-    m.def("llama_sample_temp", (void (*)(const struct llama_context *, llama_token_data_array *, float)) &llama_sample_temp, "", py::arg("ctx"), py::arg("candidates"), py::arg("temp"));
-    m.def("llama_sample_token_mirostat", (llama_token (*)(const struct llama_context *, llama_token_data_array *, float, float, int32_t, float*)) &llama_sample_token_mirostat, "", py::arg("ctx"), py::arg("candidates"), py::arg("tau"), py::arg("eta"), py::arg("m"), py::arg("mu"));
-    m.def("llama_sample_token_mirostat_v2", (llama_token (*)(const struct llama_context *, llama_token_data_array *, float, float, float*)) &llama_sample_token_mirostat_v2, "", py::arg("ctx"), py::arg("candidates"), py::arg("tau"), py::arg("eta"), py::arg("mu"));
-    m.def("llama_sample_token_greedy", (llama_token (*)(const struct llama_context *, llama_token_data_array *)) &llama_sample_token_greedy, "", py::arg("ctx"), py::arg("candidates"));
-    m.def("llama_sample_token", (llama_token (*)(const struct llama_context *, llama_token_data_array *)) &llama_sample_token, "", py::arg("ctx"), py::arg("candidates"));
+    m.def("llama_sampler_init_softmax", (struct llama_sampler * (*)(void)) &llama_sampler_init_softmax);
+    m.def("llama_sampler_init_top_k", (struct llama_sampler * (*)(uint32_t)) &llama_sampler_init_top_k, "", py::arg("k"));
+    m.def("llama_sampler_init_top_p", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_top_p, "", py::arg("p"), py::arg("min_keep"));
+    m.def("llama_sampler_init_min_p", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_min_p, "", py::arg("p"), py::arg("min_keep"));
+    m.def("llama_sampler_init_tail_free", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_tail_free, "", py::arg("z"), py::arg("min_keep"));
+
+    m.def("llama_sampler_init_typical", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_typical, "", py::arg("p"), py::arg("min_keep"));
+    m.def("llama_sampler_init_temp", (struct llama_sampler * (*)(float)) &llama_sampler_init_temp, "", py::arg("t"));
+
+    m.def("llama_sampler_init_temp_ext", (struct llama_sampler * (*)(float, float, float)) &llama_sampler_init_temp_ext, "", py::arg("t"), py::arg("delta"), py::arg("exponent"));
+
+    m.def("llama_sampler_init_mirostat", (struct llama_sampler * (*)(int32_t, uint32_t, float, float, int32_t)) &llama_sampler_init_mirostat, "", py::arg("n_vocab"), py::arg("seed"), py::arg("tau"), py::arg("eta"), py::arg("m"));
+
+    m.def("llama_sampler_init_mirostat_v2", (struct llama_sampler * (*)(uint32_t, float, float)) &llama_sampler_init_mirostat_v2, "", py::arg("seed"), py::arg("tau"), py::arg("eta"));
+
+    m.def("llama_sampler_init_grammar", (struct llama_sampler * (*)(const struct llama_model *, const char *, const char *)) &llama_sampler_init_grammar, "", py::arg("model"), py::arg("grammar_str"), py::arg("grammar_root"));
+
+    m.def("llama_sampler_init_penalties", (struct llama_sampler * (*)(int32_t, llama_token, llama_token, int32_t, float, float, float, bool, bool)) &llama_sampler_init_penalties, "", py::arg("n_vocab"), py::arg("special_eos_id"), py::arg("linefeed_id"), py::arg("penalty_last_n"), py::arg("penalty_repeat"), py::arg("epenalty_freq"), py::arg("penalty_present"), py::arg("penalize_nl"), py::arg("ignore_eos"));
+
+    m.def("llama_sampler_init_logit_bias", (struct llama_sampler * (*)(int32_t, int32_t, const llama_logit_bias *)) &llama_sampler_init_logit_bias, "", py::arg("n_vocab"), py::arg("n_logit_bias"), py::arg("logit_bias"));
+
+    m.def("llama_sampler_sample", (llama_token (*)(struct llama_sampler *, struct llama_context *, int32_t)) &llama_sampler_sample, "", py::arg("smpl"), py::arg("ctx"), py::arg("idx"));
 
     m.def("llama_split_path", (int (*)(char *, int, const char *, int, int)) &llama_split_path, "Build a split GGUF final path for this chunk.", py::arg("split_path"), py::arg("maxlen"), py::arg("path_prefix"), py::arg("split_no"), py::arg("split_count"));
     m.def("llama_split_prefix", (int (*)(char *, int, const char *, int, int)) &llama_split_prefix, "Extract the path prefix from the split_path if and only if the split_no and split_count match.", py::arg("split_prefix"), py::arg("maxlen"), py::arg("split_path"), py::arg("split_no"), py::arg("split_count"));
-
-    m.def("llama_print_system_info", (const char * (*)()) &llama_print_system_info, "C++: llama_print_system_info() --> const char *", py::return_value_policy::automatic);
-
-    // Performance information
-    m.def("llama_get_timings", (struct llama_timings (*)(struct llama_context *)) &llama_get_timings, "", py::arg("ctx"));
-
-    m.def("llama_print_timings", (void (*)(struct llama_context *)) &llama_print_timings, "", py::arg("ctx"));
-    m.def("llama_reset_timings", (void (*)(struct llama_context *)) &llama_reset_timings, "", py::arg("ctx"));
 
     // Print system information
     m.def("llama_print_system_info", (const char * (*)(void)) &llama_print_system_info, "");
@@ -695,15 +684,12 @@ PYBIND11_MODULE(pbllama, m) {
     // If this is not called, or NULL is supplied, everything is output on stderr.
     // LLAMA_API void llama_log_set(ggml_log_callback log_callback, void * user_data);
 
-    // LLAMA_API void llama_dump_timing_info_yaml(FILE * stream, const struct llama_context * ctx);
-
     // -----------------------------------------------------------------------
     // common.h
 
     py::class_<gpt_params, std::shared_ptr<gpt_params>> (m, "gpt_params", "")
         .def( py::init( [](){ return new gpt_params(); } ) )
         .def( py::init( [](gpt_params const &o){ return new gpt_params(o); } ) )
-        .def_readwrite("seed", &gpt_params::seed)
         .def_readwrite("n_predict", &gpt_params::n_predict)
         .def_readwrite("n_ctx", &gpt_params::n_ctx)
         .def_readwrite("n_batch", &gpt_params::n_batch)
@@ -782,7 +768,7 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("cont_batching", &gpt_params::cont_batching)
         .def_readwrite("flash_attn", &gpt_params::flash_attn)
         .def_readwrite("input_prefix_bos", &gpt_params::input_prefix_bos)
-        .def_readwrite("ignore_eos", &gpt_params::ignore_eos)
+        // .def_readwrite("ignore_eos", &gpt_params::ignore_eos)
         .def_readwrite("logits_all", &gpt_params::logits_all)
         .def_readwrite("use_mmap", &gpt_params::use_mmap)
         .def_readwrite("use_mlock", &gpt_params::use_mlock)
@@ -855,8 +841,8 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("ctx"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
     m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
 
-    m.def("gpt_params_parse_from_env", (void (*)(struct gpt_params &)) &gpt_params_parse_from_env, "", py::arg("params"));
-    m.def("gpt_params_handle_model_default", (void (*)(struct gpt_params &)) &gpt_params_handle_model_default, "C++: gpt_params_handle_model_default(struct gpt_params &) --> void", py::arg("params"));
+    // m.def("gpt_params_parse_from_env", (void (*)(struct gpt_params &)) &gpt_params_parse_from_env, "", py::arg("params"));
+    // m.def("gpt_params_handle_model_default", (void (*)(struct gpt_params &)) &gpt_params_handle_model_default, "C++: gpt_params_handle_model_default(struct gpt_params &) --> void", py::arg("params"));
     m.def("gpt_params_get_system_info", (std::string (*)(const struct gpt_params &)) &gpt_params_get_system_info, "C++: gpt_params_get_system_info(const struct gpt_params &) --> std::string", py::arg("params"));
 
     m.def("string_split", (class std::vector<std::string> (*)(std::string, char)) &string_split, "C++: string_split(std::string, char) --> class std::vector<std::string>", py::arg("input"), py::arg("separator"));
