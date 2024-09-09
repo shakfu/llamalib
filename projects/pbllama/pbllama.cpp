@@ -12,7 +12,6 @@ namespace py = pybind11;
 
 struct llama_model {};
 struct llama_context {};
-// struct llama_sampler {};
 struct llama_lora_adapter {};
 
 
@@ -68,9 +67,6 @@ PYBIND11_MODULE(pbllama, m) {
         .def(py::init<>());
 
     py::class_<llama_context> (m, "llama_context", "")
-        .def(py::init<>());
-
-    py::class_<llama_sampler> (m, "llama_sampler", "")
         .def(py::init<>());
 
     py::class_<llama_lora_adapter> (m, "llama_lora_adapter", "")
@@ -230,13 +226,6 @@ PYBIND11_MODULE(pbllama, m) {
         // int8_t       *  logits; // TODO: rename this to "output"
 
 
-// ptr_wrapper<float> get_ptr(void) { return array; }
-// void use_ptr(ptr_wrapper<float> ptr) {
-//     for (int i = 0; i < 3; ++i)
-//         std::cout << ptr[i] << " ";
-//     std::cout << "\n";
-// }
-
     py::class_<llama_batch, std::shared_ptr<llama_batch>> (m, "llama_batch", "")
         .def( py::init( [](){ return new llama_batch(); } ) )
         .def_readwrite("n_tokens", &llama_batch::n_tokens)
@@ -253,26 +242,6 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("all_pos_0", &llama_batch::all_pos_0)
         .def_readwrite("all_pos_1", &llama_batch::all_pos_1)
         .def_readwrite("all_seq_id", &llama_batch::all_seq_id);
-
-    // typedef struct llama_batch {
-    //     int32_t n_tokens;
-
-    //     llama_token  *  token;
-    //     float        *  embd;
-    //     llama_pos    *  pos;
-    //     int32_t      *  n_seq_id;
-    //     llama_seq_id ** seq_id;
-    //     int8_t       *  logits; // TODO: rename this to "output"
-
-    //     // NOTE: helpers for smooth API transition - can be deprecated in the future
-    //     //       for future-proof code, use the above fields instead and ignore everything below
-    //     //
-    //     // pos[i] = all_pos_0 + i*all_pos_1
-    //     //
-    //     llama_pos    all_pos_0;  // used if pos == NULL
-    //     llama_pos    all_pos_1;  // used if pos == NULL
-    //     llama_seq_id all_seq_id; // used if seq_id == NULL
-    // } llama_batch;
 
     py::enum_<llama_model_kv_override_type>(m, "llama_model_kv_override_type", py::arithmetic(), "")
         .value("LLAMA_KV_OVERRIDE_TYPE_INT", LLAMA_KV_OVERRIDE_TYPE_INT)
