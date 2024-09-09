@@ -1258,6 +1258,8 @@ static CYTHON_INLINE float __PYX_NAN() {
 #include "ggml.h"
 #include "ggml-backend.h"
 #include "llama.h"
+#include "sampling.h"
+#include "common.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */

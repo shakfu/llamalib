@@ -658,6 +658,41 @@ NB_MODULE(nbllama, m) {
         .def_rw("lora_outfile", &gpt_params::lora_outfile);
 
 
+    nb::enum_<enum llama_example>(m, "llama_example")
+        .value("LLAMA_EXAMPLE_COMMON", LLAMA_EXAMPLE_COMMON)
+        .value("LLAMA_EXAMPLE_SPECULATIVE", LLAMA_EXAMPLE_SPECULATIVE)
+        .value("LLAMA_EXAMPLE_MAIN", LLAMA_EXAMPLE_MAIN)
+        .value("LLAMA_EXAMPLE_INFILL", LLAMA_EXAMPLE_INFILL)
+        .value("LLAMA_EXAMPLE_EMBEDDING", LLAMA_EXAMPLE_EMBEDDING)
+        .value("LLAMA_EXAMPLE_PERPLEXITY", LLAMA_EXAMPLE_PERPLEXITY)
+        .value("LLAMA_EXAMPLE_RETRIEVAL", LLAMA_EXAMPLE_RETRIEVAL)
+        .value("LLAMA_EXAMPLE_PASSKEY", LLAMA_EXAMPLE_PASSKEY)
+        .value("LLAMA_EXAMPLE_IMATRIX", LLAMA_EXAMPLE_IMATRIX)
+        .value("LLAMA_EXAMPLE_BENCH", LLAMA_EXAMPLE_BENCH)
+        .value("LLAMA_EXAMPLE_SERVER", LLAMA_EXAMPLE_SERVER)
+        .value("LLAMA_EXAMPLE_CVECTOR_GENERATOR", LLAMA_EXAMPLE_CVECTOR_GENERATOR)
+        .value("LLAMA_EXAMPLE_EXPORT_LORA", LLAMA_EXAMPLE_EXPORT_LORA)
+        .value("LLAMA_EXAMPLE_LLAVA", LLAMA_EXAMPLE_LLAVA)
+        .value("LLAMA_EXAMPLE_COUNT", LLAMA_EXAMPLE_COUNT)
+        .export_values();
+
+
+    nb::class_<llama_arg> (m, "llama_arg", "")
+        // .def( nb::init( [](){ return new llama_arg(); } ) )
+        // .def_rw("examples", &llama_arg::examples)
+        .def_rw("args", &llama_arg::args)
+        .def_rw("value_hint", &llama_arg::value_hint)
+        .def_rw("value_hint_2", &llama_arg::value_hint_2)
+        .def_rw("env", &llama_arg::env)
+        .def_rw("help", &llama_arg::help);
+        // .def_rw("handler_void", &llama_arg::handler_void)
+        // .def_rw("handler_string", &llama_arg::handler_string)
+        // .def_rw("handler_str_str", &llama_arg::handler_str_str)
+        // .def_rw("handler_int", &llama_arg::handler_int);
+
+    m.def("gpt_params_parser_init", (std::vector<llama_arg> (*)(gpt_params &, llama_example)) &gpt_params_parser_init, "", nb::arg("params"), nb::arg("ex"));
+
+
     // overloaded
 
     m.def("llama_token_to_piece", (std::string (*)(const struct llama_context *, llama_token, bool)) &llama_token_to_piece, "", nb::arg("ctx"), nb::arg("token"), nb::arg("special") = true);
