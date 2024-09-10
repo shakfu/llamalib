@@ -1,8 +1,11 @@
 from libc.stdint cimport int32_t, int8_t, int64_t, uint32_t, uint64_t, uint8_t
 from libc.stdio cimport FILE
-from libcpp.string cimport string
-from libcpp.vector cimport vector
+from libcpp.string cimport string as std_string
+from libcpp.vector cimport vector as std_vector
+from libcpp.set cimport set as std_set
 
+
+#------------------------------------------------------------------------------
 
 cdef extern from "ggml.h":
 
@@ -20,8 +23,8 @@ cdef extern from "ggml.h":
         GGML_TYPE_F16     = 1
         GGML_TYPE_Q4_0    = 2
         GGML_TYPE_Q4_1    = 3
-        # // GGML_TYPE_Q4_2 = 4 support has been removed
-        # // GGML_TYPE_Q4_3 = 5 support has been removed
+        # GGML_TYPE_Q4_2 = 4 support has been removed
+        # GGML_TYPE_Q4_3 = 5 support has been removed
         GGML_TYPE_Q5_0    = 6
         GGML_TYPE_Q5_1    = 7
         GGML_TYPE_Q8_0    = 8
@@ -198,11 +201,13 @@ cdef extern from "ggml.h":
 
         # char padding[4]
 
+#------------------------------------------------------------------------------
 
 cdef extern from "ggml-backend.h":
     ctypedef bint (*ggml_backend_sched_eval_callback)(ggml_tensor * t, bint ask, void * user_data)
 
 
+#------------------------------------------------------------------------------
 
 cdef extern from "llama.h":
 
@@ -1217,6 +1222,8 @@ cdef extern from "llama.h":
     cdef void llama_perf_dump_yaml(FILE * stream, const llama_context * ctx)
 
 
+#------------------------------------------------------------------------------
+
 cdef extern from "sampling.h":
 
     ctypedef enum gpt_sampler_type:
@@ -1254,15 +1261,16 @@ cdef extern from "sampling.h":
         bint    penalize_nl             # consider newlines as a repeatable token
         bint    ignore_eos
 
-        vector[gpt_sampler_type] samplers
+        std_vector[gpt_sampler_type] samplers
 
-        string grammar # optional BNF-like grammar to constrain sampling
+        std_string grammar # optional BNF-like grammar to constrain sampling
 
-        vector[llama_logit_bias] logit_bias # logit biases to apply
+        std_vector[llama_logit_bias] logit_bias # logit biases to apply
 
         # print the parameters into a string
-        # string print() const
+        # std_string print() const
 
+#------------------------------------------------------------------------------
 
 cdef extern from "common.h":
 
@@ -1339,27 +1347,27 @@ cdef extern from "common.h":
 
         gpt_sampler_params sparams
 
-        string model                # model path
-        string model_draft          # draft model for speculative decoding
-        string model_alias          # model alias
-        string model_url            # model url to download
-        string hf_token             # HF token
-        string hf_repo              # HF repo
-        string hf_file              # HF file
-        string prompt               #
-        string prompt_file          # store the external prompt file name
-        string path_prompt_cache    # path to file for saving/loading prompt eval state
-        string input_prefix         # string to prefix user inputs with
-        string input_suffix         # string to suffix user inputs with
-        string logdir               # directory in which to save YAML log files
-        string lookup_cache_static  # path of static ngram cache file for lookup decoding
-        string lookup_cache_dynamic # path of dynamic ngram cache file for lookup decoding
-        string logits_file          # file for saving *all* logits
-        string rpc_servers          # comma separated list of RPC servers
+        std_string model                # model path
+        std_string model_draft          # draft model for speculative decoding
+        std_string model_alias          # model alias
+        std_string model_url            # model url to download
+        std_string hf_token             # HF token
+        std_string hf_repo              # HF repo
+        std_string hf_file              # HF file
+        std_string prompt               #
+        std_string prompt_file          # store the external prompt file name
+        std_string path_prompt_cache    # path to file for saving/loading prompt eval state
+        std_string input_prefix         # string to prefix user inputs with
+        std_string input_suffix         # string to suffix user inputs with
+        std_string logdir               # directory in which to save YAML log files
+        std_string lookup_cache_static  # path of static ngram cache file for lookup decoding
+        std_string lookup_cache_dynamic # path of dynamic ngram cache file for lookup decoding
+        std_string logits_file          # file for saving *all* logits
+        std_string rpc_servers          # comma separated list of RPC servers
 
-        vector[string] in_files     # all input files
-        vector[string] antiprompt   # strings upon which more user input is prompted (a.k.a. reverse prompts)
-        vector[llama_model_kv_override] kv_overrides
+        std_vector[std_string] in_files     # all input files
+        std_vector[std_string] antiprompt   # strings upon which more user input is prompted (a.k.a. reverse prompts)
+        std_vector[llama_model_kv_override] kv_overrides
 
         bint lora_init_without_apply # only load lora to memory, but do not apply it to ctx (user can manually apply lora later using llama_lora_adapter_apply)
         # vector[llama_lora_adapter_info] lora_adapters # lora adapter path with user defined scale
@@ -1412,18 +1420,18 @@ cdef extern from "common.h":
         bint warmup                 # warmup run
         bint check_tensors          # validate tensor data
 
-        string cache_type_k    # KV cache data type for the K
-        string cache_type_v    # KV cache data type for the V
+        std_string cache_type_k    # KV cache data type for the K
+        std_string cache_type_v    # KV cache data type for the V
 
         # multimodal models (see examples/llava)
-        string mmproj          # path to multimodal projector
-        vector[string] image # path to image file(s)
+        std_string mmproj          # path to multimodal projector
+        std_vector[std_string] image # path to image file(s)
 
         # embedding
         bint embedding              # get only sentence embedding
         int32_t embd_normalize      # normalisation for embendings (-1=none, 0=max absolute int16, 1=taxicab, 2=euclidean, >2=p-norm)
-        string embd_out        # empty = default, "array" = [[],[]...], "json" = openai style, "json+" = same "json" + cosine similarity matrix
-        string embd_sep        # separator of embendings
+        std_string embd_out        # empty = default, "array" = [[],[]...], "json" = openai style, "json+" = same "json" + cosine similarity matrix
+        std_string embd_sep        # separator of embendings
 
         # server params
         int32_t port                # server listens on this network port
@@ -1431,46 +1439,46 @@ cdef extern from "common.h":
         int32_t timeout_write       # http write timeout in seconds
         int     n_threads_http      # number of threads to process HTTP requests (TODO: support threadpool)
 
-        string hostname
-        string public_path
-        string chat_template
-        string system_prompt
+        std_string hostname
+        std_string public_path
+        std_string chat_template
+        std_string system_prompt
         bint enable_chat_template
 
-        vector[string] api_keys
+        std_vector[std_string] api_keys
 
-        string ssl_file_key 
-        string ssl_file_cert
+        std_string ssl_file_key 
+        std_string ssl_file_cert
 
         bint endpoint_slots
         bint endpoint_metrics
 
         bint log_json
 
-        string slot_save_path
+        std_string slot_save_path
 
         float slot_prompt_similarity
 
         # batched-bench params
         bint is_pp_sharede
 
-        vector[int32_t] n_pp
-        vector[int32_t] n_tg
-        vector[int32_t] n_pl
+        std_vector[int32_t] n_pp
+        std_vector[int32_t] n_tg
+        std_vector[int32_t] n_pl
 
         # retrieval params
-        vector[string] context_files # context files to embed
+        std_vector[std_string] context_files # context files to embed
 
         int32_t chunk_size      # chunk size for context embedding
 
-        string chunk_separator # chunk separator for context embedding
+        std_string chunk_separator # chunk separator for context embedding
 
         # passkey params
         int32_t n_junk      # number of times to repeat the junk text
         int32_t i_pos       # position of the passkey in the junk text
 
         # imatrix params
-        string out_file # save the resulting imatrix to this file
+        std_string out_file # save the resulting imatrix to this file
 
         int32_t n_out_freq       # output the imatrix every n_out_freq iterations
         int32_t n_save_freq      # save the imatrix every n_save_freq iterations
@@ -1483,14 +1491,26 @@ cdef extern from "common.h":
         int n_pca_batch
         int n_pca_iterations
         # dimre_method cvector_dimre_method
-        string cvector_outfile
-        string cvector_positive_file
-        string cvector_negative_file
+        std_string cvector_outfile
+        std_string cvector_positive_file
+        std_string cvector_negative_file
 
         bint spm_infill
 
-        string lora_outfile
+        std_string lora_outfile
 
         # batched-bench params
         bint batched_bench_output_jsonl
+
+    ctypedef struct llama_arg:
+        std_set[llama_example] examples
+        std_vector[const char *] args
+        const char * value_hint   # help text or example for arg value
+        const char * value_hint_2 # for second arg value
+        const char * env         
+
+    cdef std_vector[llama_arg] gpt_params_parser_init(gpt_params & params, llama_example ex)
+
+
+
 

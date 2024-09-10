@@ -1255,6 +1255,20 @@ static CYTHON_INLINE float __PYX_NAN() {
 #include <string>
 #include <stdint.h>
 #include <stdio.h>
+#include <utility>
+
+    #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1600)
+    // move should be defined for these versions of MSVC, but __cplusplus isn't set usefully
+    #include <type_traits>
+
+    namespace cython_std {
+    template <typename T> typename std::remove_reference<T>::type&& move(T& t) noexcept { return std::move(t); }
+    template <typename T> typename std::remove_reference<T>::type&& move(T&& t) noexcept { return std::move(t); }
+    }
+
+    #endif
+    
+#include <set>
 #include "ggml.h"
 #include "ggml-backend.h"
 #include "llama.h"
@@ -2489,6 +2503,10 @@ static struct __pyx_obj_7cyllama_GGMLTensor *__pyx_f_7cyllama_10GGMLTensor_creat
 
 /* Module declarations from "libc.stdio" */
 
+/* Module declarations from "libcpp.utility" */
+
+/* Module declarations from "libcpp.set" */
+
 /* Module declarations from "llama_cpp" */
 
 /* Module declarations from "cyllama" */
@@ -2853,6 +2871,10 @@ typedef struct {
   #endif
   #ifdef __Pyx_Coroutine_USED
   PyTypeObject *__pyx_CoroutineType;
+  #endif
+  #if CYTHON_USE_MODULE_STATE
+  #endif
+  #if CYTHON_USE_MODULE_STATE
   #endif
   #if CYTHON_USE_MODULE_STATE
   #endif
@@ -3802,6 +3824,10 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #endif
 #ifdef __Pyx_Coroutine_USED
 #define __pyx_CoroutineType __pyx_mstate_global->__pyx_CoroutineType
+#endif
+#if CYTHON_USE_MODULE_STATE
+#endif
+#if CYTHON_USE_MODULE_STATE
 #endif
 #if CYTHON_USE_MODULE_STATE
 #endif
