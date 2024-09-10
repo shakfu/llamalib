@@ -82,18 +82,20 @@ for i, token in enumerate(tokens_list):
     pb.llama_batch_add(batch, token, i, [], False)
 
 
-# # llama_decode will output logits only for the last token of the prompt
+# llama_decode will output logits only for the last token of the prompt
+logits = batch.get_logits()
+logits[batch.n_tokens - 1] = True
 # batch.logits[batch.n_tokens - 1] = True
 
-# if pb.llama_decode(ctx, batch) != 0:
-#     raise SystemExit("llama_decode() failed.")
+if pb.llama_decode(ctx, batch) != 0:
+    raise SystemExit("llama_decode() failed.")
 
-# # main loop
+# main loop
 
-# n_cur: int    = batch.n_tokens
-# n_decode: int = 0
+n_cur: int    = batch.n_tokens
+n_decode: int = 0
 
-# t_main_start: int = pb.ggml_time_us()
+t_main_start: int = pb.ggml_time_us()
 
 # while (n_cur <= n_predict):
 #     # sample the next token

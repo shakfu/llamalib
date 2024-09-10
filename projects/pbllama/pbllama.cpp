@@ -14,26 +14,16 @@ struct llama_model {};
 struct llama_context {};
 struct llama_lora_adapter {};
 
-
-template <class T> class ptr_wrapper
+template <typename T>
+py::array_t<T> to_array(T * carr, size_t carr_size)
 {
-    public:
-        ptr_wrapper() : ptr(nullptr) {}
-        ptr_wrapper(T* ptr) : ptr(ptr) {}
-        ptr_wrapper(const ptr_wrapper& other) : ptr(other.ptr) {}
-        T& operator* () const { return *ptr; }
-        T* operator->() const { return  ptr; }
-        T* get() const { return ptr; }
-        void destroy() { delete ptr; }
-        T& operator[](std::size_t idx) const { return ptr[idx]; }
-    private:
-        T* ptr;
-};
-
-py::array wrap_array_ptr(float *v) {
-  auto capsule = py::capsule(
-      &v, [](void *v) { delete reinterpret_cast<std::vector<float> *>(v); });
-  return py::array(static_cast<pybind11::ssize_t>(sizeof(v)), v, capsule);
+    py::array_t<T> arr({static_cast<ssize_t>(carr_size)});
+    auto view = arr.mutable_unchecked();
+    for(size_t i = 0; i < arr.shape(0); ++i) {
+        // printf("view(%zu) = %f\n", i, carr[i]);
+        view(i) = carr[i];
+    }
+    return arr;
 }
 
 
@@ -226,6 +216,7 @@ PYBIND11_MODULE(pbllama, m) {
         // int8_t       *  logits; // TODO: rename this to "output"
 
 
+
     py::class_<llama_batch, std::shared_ptr<llama_batch>> (m, "llama_batch", "")
         .def( py::init( [](){ return new llama_batch(); } ) )
         .def_readwrite("n_tokens", &llama_batch::n_tokens)
@@ -234,10 +225,10 @@ PYBIND11_MODULE(pbllama, m) {
         // .def_readwrite("pos", &llama_batch::pos)
         // .def_readwrite("n_seq_id", &llama_batch::n_seq_id)
         // .def_readwrite("seq_id", &llama_batch::seq_id)
+        // .def_readwrite("logits", &llama_batch::logits)
         // FIXME: this is WRONG!!
-        .def_property_readonly("logits", [](llama_batch& self) -> std::vector<int8_t> {
-            std::vector<int8_t> result(self.logits, self.logits + self.n_tokens);
-            return result;
+        .def("get_logits", [](llama_batch& self) -> py::array_t<int8_t> {
+            return to_array<int8_t>(self.logits, self.n_tokens);
         })
         .def_readwrite("all_pos_0", &llama_batch::all_pos_0)
         .def_readwrite("all_pos_1", &llama_batch::all_pos_1)
@@ -628,17 +619,11 @@ PYBIND11_MODULE(pbllama, m) {
 
     m.def("llama_sampler_init_typical", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_typical, "", py::arg("p"), py::arg("min_keep"));
     m.def("llama_sampler_init_temp", (struct llama_sampler * (*)(float)) &llama_sampler_init_temp, "", py::arg("t"));
-
     m.def("llama_sampler_init_temp_ext", (struct llama_sampler * (*)(float, float, float)) &llama_sampler_init_temp_ext, "", py::arg("t"), py::arg("delta"), py::arg("exponent"));
-
     m.def("llama_sampler_init_mirostat", (struct llama_sampler * (*)(int32_t, uint32_t, float, float, int32_t)) &llama_sampler_init_mirostat, "", py::arg("n_vocab"), py::arg("seed"), py::arg("tau"), py::arg("eta"), py::arg("m"));
-
     m.def("llama_sampler_init_mirostat_v2", (struct llama_sampler * (*)(uint32_t, float, float)) &llama_sampler_init_mirostat_v2, "", py::arg("seed"), py::arg("tau"), py::arg("eta"));
-
     m.def("llama_sampler_init_grammar", (struct llama_sampler * (*)(const struct llama_model *, const char *, const char *)) &llama_sampler_init_grammar, "", py::arg("model"), py::arg("grammar_str"), py::arg("grammar_root"));
-
     m.def("llama_sampler_init_penalties", (struct llama_sampler * (*)(int32_t, llama_token, llama_token, int32_t, float, float, float, bool, bool)) &llama_sampler_init_penalties, "", py::arg("n_vocab"), py::arg("special_eos_id"), py::arg("linefeed_id"), py::arg("penalty_last_n"), py::arg("penalty_repeat"), py::arg("epenalty_freq"), py::arg("penalty_present"), py::arg("penalize_nl"), py::arg("ignore_eos"));
-
     m.def("llama_sampler_init_logit_bias", (struct llama_sampler * (*)(int32_t, int32_t, const llama_logit_bias *)) &llama_sampler_init_logit_bias, "", py::arg("n_vocab"), py::arg("n_logit_bias"), py::arg("logit_bias"));
 
     m.def("llama_sampler_sample", (llama_token (*)(struct llama_sampler *, struct llama_context *, int32_t)) &llama_sampler_sample, "", py::arg("smpl"), py::arg("ctx"), py::arg("idx"));

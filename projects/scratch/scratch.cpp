@@ -5,6 +5,18 @@
 namespace py = pybind11;
 
 
+typedef struct _Foo {
+    std::array<int, 10> array;
+} Foo;
+
+typedef struct _config {
+    std::vector<int> nums;
+    int n_probs;
+    float * probs;
+} config;
+
+
+
 float square(float x) {
     return x * x;
 }
@@ -22,18 +34,6 @@ private:
     size_t m_rows, m_cols;
     float *m_data;
 };
-
-typedef struct _Foo {
-    std::array<int, 10> array;
-} Foo;
-
-
-
-typedef struct _config {
-    std::vector<int> nums;
-    int n_probs;
-    float * probs;
-} config;
 
 
 config config_init(int n_probs) {
@@ -222,6 +222,26 @@ private:
 };
 
 
+template <class T> class ptr_wrapper
+{
+    public:
+        ptr_wrapper() : ptr(nullptr) {}
+        ptr_wrapper(T* ptr) : ptr(ptr) {}
+        ptr_wrapper(const ptr_wrapper& other) : ptr(other.ptr) {}
+        T& operator* () const { return *ptr; }
+        T* operator->() const { return  ptr; }
+        T* get() const { return ptr; }
+        void destroy() { delete ptr; }
+        T& operator[](std::size_t idx) const { return ptr[idx]; }
+    private:
+        T* ptr;
+};
+
+py::array wrap_array_ptr(float *v) {
+  auto capsule = py::capsule(
+      &v, [](void *v) { delete reinterpret_cast<std::vector<float> *>(v); });
+  return py::array(static_cast<pybind11::ssize_t>(sizeof(v)), v, capsule);
+}
 
 
 
