@@ -34,6 +34,7 @@ if not model:
 # initialize the context
 
 ctx_params = pb.llama_context_params_from_gpt_params(params)
+ctx_params.n_threads  = 4
 
 ctx = pb.llama_new_context_with_model(model, ctx_params)
 
@@ -92,10 +93,10 @@ if pb.llama_decode(ctx, batch) != 0:
 
 # main loop
 
-n_cur: int    = batch.n_tokens
-n_decode: int = 0
+# n_cur: int    = batch.n_tokens
+# n_decode: int = 0
 
-t_main_start: int = pb.ggml_time_us()
+# t_main_start: int = pb.ggml_time_us()
 
 # while (n_cur <= n_predict):
 #     # sample the next token

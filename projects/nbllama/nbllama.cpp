@@ -603,7 +603,7 @@ NB_MODULE(nbllama, m) {
         .def_rw("use_mlock", &gpt_params::use_mlock)
         .def_rw("verbose_prompt", &gpt_params::verbose_prompt)
         .def_rw("display_prompt", &gpt_params::display_prompt)
-        .def_rw("infill", &gpt_params::infill)
+        // .def_rw("infill", &gpt_params::infill)
         .def_rw("dump_kv_cache", &gpt_params::dump_kv_cache)
         .def_rw("no_kv_offload", &gpt_params::no_kv_offload)
         .def_rw("warmup", &gpt_params::warmup)
@@ -675,22 +675,6 @@ NB_MODULE(nbllama, m) {
         .value("LLAMA_EXAMPLE_LLAVA", LLAMA_EXAMPLE_LLAVA)
         .value("LLAMA_EXAMPLE_COUNT", LLAMA_EXAMPLE_COUNT)
         .export_values();
-
-
-    nb::class_<llama_arg> (m, "llama_arg", "")
-        // .def( nb::init( [](){ return new llama_arg(); } ) )
-        // .def_rw("examples", &llama_arg::examples)
-        .def_rw("args", &llama_arg::args)
-        .def_rw("value_hint", &llama_arg::value_hint)
-        .def_rw("value_hint_2", &llama_arg::value_hint_2)
-        .def_rw("env", &llama_arg::env)
-        .def_rw("help", &llama_arg::help);
-        // .def_rw("handler_void", &llama_arg::handler_void)
-        // .def_rw("handler_string", &llama_arg::handler_string)
-        // .def_rw("handler_str_str", &llama_arg::handler_str_str)
-        // .def_rw("handler_int", &llama_arg::handler_int);
-
-    m.def("gpt_params_parser_init", (std::vector<llama_arg> (*)(gpt_params &, llama_example)) &gpt_params_parser_init, "", nb::arg("params"), nb::arg("ex"));
 
 
     // overloaded

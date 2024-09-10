@@ -737,7 +737,7 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("use_mlock", &gpt_params::use_mlock)
         .def_readwrite("verbose_prompt", &gpt_params::verbose_prompt)
         .def_readwrite("display_prompt", &gpt_params::display_prompt)
-        .def_readwrite("infill", &gpt_params::infill)
+        // .def_readwrite("infill", &gpt_params::infill)
         .def_readwrite("dump_kv_cache", &gpt_params::dump_kv_cache)
         .def_readwrite("no_kv_offload", &gpt_params::no_kv_offload)
         .def_readwrite("warmup", &gpt_params::warmup)
@@ -808,24 +808,11 @@ PYBIND11_MODULE(pbllama, m) {
         .value("LLAMA_EXAMPLE_CVECTOR_GENERATOR", LLAMA_EXAMPLE_CVECTOR_GENERATOR)
         .value("LLAMA_EXAMPLE_EXPORT_LORA", LLAMA_EXAMPLE_EXPORT_LORA)
         .value("LLAMA_EXAMPLE_LLAVA", LLAMA_EXAMPLE_LLAVA)
+        .value("LLAMA_EXAMPLE_LOOKUP", LLAMA_EXAMPLE_LOOKUP)
+        .value("LLAMA_EXAMPLE_PARALLEL", LLAMA_EXAMPLE_PARALLEL)
         .value("LLAMA_EXAMPLE_COUNT", LLAMA_EXAMPLE_COUNT)
         .export_values();
 
-
-    py::class_<llama_arg, std::shared_ptr<llama_arg>> (m, "llama_arg", "")
-        // .def( py::init( [](){ return new llama_arg(); } ) )
-        // .def_readwrite("examples", &llama_arg::examples)
-        .def_readwrite("args", &llama_arg::args)
-        .def_readwrite("value_hint", &llama_arg::value_hint)
-        .def_readwrite("value_hint_2", &llama_arg::value_hint_2)
-        .def_readwrite("env", &llama_arg::env)
-        .def_readwrite("help", &llama_arg::help);
-        // .def_readwrite("handler_void", &llama_arg::handler_void)
-        // .def_readwrite("handler_string", &llama_arg::handler_string)
-        // .def_readwrite("handler_str_str", &llama_arg::handler_str_str)
-        // .def_readwrite("handler_int", &llama_arg::handler_int);
-
-    m.def("gpt_params_parser_init", (std::vector<llama_arg> (*)(gpt_params &, llama_example)) &gpt_params_parser_init, "", py::arg("params"), py::arg("ex"));
 
     m.def("llama_token_to_piece", (std::string (*)(const struct llama_context *, llama_token, bool)) &llama_token_to_piece, "", py::arg("ctx"), py::arg("token"), py::arg("special") = true);
 
