@@ -2,6 +2,7 @@
 export PATH := $(PWD)/bin:$(PATH)
 
 MODEL := models/gemma-2-9b-it-IQ4_XS.gguf
+# MODEL := models/mistral-7b-instruct-v0.1.Q4_K_M.gguf
 
 WITH_DYLIB=0
 

@@ -4,6 +4,7 @@ ROOT = Path.cwd().parent
 sys.path.insert(0, str(ROOT / 'build'))
 
 MODEL = ROOT / 'models' / 'gemma-2-9b-it-IQ4_XS.gguf'
+# MODEL = ROOT / 'models' / 'mistral-7b-instruct-v0.1.Q4_K_M.gguf'
 
 import pbllama as pb
 
@@ -66,7 +67,7 @@ n_ctx: int = pb.llama_n_ctx(ctx)
 
 n_kv_req: int = len(tokens_list) + (n_predict - len(tokens_list))
 
-print("n_predict = %d, n_ctx = %d, n_kv_req = %d", n_predict, n_ctx, n_kv_req)
+print("n_predict = %d, n_ctx = %d, n_kv_req = %d" % (n_predict, n_ctx, n_kv_req))
 
 if (n_kv_req > n_ctx):
     raise SystemExit(
