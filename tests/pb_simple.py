@@ -7,11 +7,15 @@ MODEL = ROOT / 'models' / 'gemma-2-9b-it-IQ4_XS.gguf'
 
 import pbllama as pb
 
-
-
 params = pb.gpt_params()
+params.model = str(MODEL)
 params.prompt = "Hello my name is"
 params.n_predict = 32
+
+
+args = []
+if not pb.gpt_params_parse(args, params, pb.LLAMA_EXAMPLE_COMMON):
+    raise SystemExit("gpt_params_parse failed")
 
 # total length of the sequence including the prompt
 n_predict: int = params.n_predict
@@ -36,11 +40,23 @@ if not model:
 # initialize the context
 
 ctx_params = pb.llama_context_params_from_gpt_params(params)
+ctx_params.n_threads  = 4
 
 ctx = pb.llama_new_context_with_model(model, ctx_params)
 
 if not ctx:
     raise SystemExit("Failed to create the llama context")
+
+
+sparams = pb.llama_sampler_chain_default_params()
+
+sparams.no_perf = False
+
+smpl = pb.llama_sampler_chain_init(sparams)
+
+pb.llama_sampler_chain_add(smpl, pb.llama_sampler_init_greedy())
+
+
 
 # tokenize the prompt
 
@@ -74,7 +90,13 @@ for i, token in enumerate(tokens_list):
 
 
 # llama_decode will output logits only for the last token of the prompt
-batch.logits[batch.n_tokens - 1] = True
+# logits = batch.get_logits()
+# logits[batch.n_tokens - 1] = True
+# batch.logits[batch.n_tokens - 1] = True
+batch.set_last_logits_to_true()
+
+# logits = batch.get_logits()
+# from IPython import embed; embed()
 
 if pb.llama_decode(ctx, batch) != 0:
     raise SystemExit("llama_decode() failed.")
@@ -86,62 +108,54 @@ n_decode: int = 0
 
 t_main_start: int = pb.ggml_time_us()
 
-# ----------------------------------------------------------------------------
+while (n_cur <= n_predict):
+    # sample the next token
+    if True:
+        new_token_id: llama_token = pb.llama_sampler_sample(smpl, ctx, batch.n_tokens - 1) # CRASH HERE
+        
 
-n_vocab: int = pb.llama_n_vocab(model)
+        pb.llama_sampler_accept(smpl, new_token_id);
 
-# logits = pb.llama_get_logits(ctx)
+        # is it an end of generation?
+        if (pb.llama_token_is_eog(model, new_token_id) or n_cur == n_predict):
+            print()
+            break
 
-# logits = pb.llama_get_logits_ith(ctx, batch.n_tokens - 1)
+        print(pb.llama_token_to_piece(ctx, new_token_id))
 
-# while (n_cur <= n_predict):
-#     # sample the next token
-#     n_vocab: int = pb.llama_n_vocab(model)
-#     # logits: list[float] = pb.llama_get_logits_ith(ctx, batch.n_tokens - 1)
-#     logits = pb.llama_get_logits_ith(ctx, batch.n_tokens - 1)
+        # prepare the next batch
+        pb.llama_batch_clear(batch);
 
-#     candidates: list[llama_token_data] = []
-#     # candidates.reserve(n_vocab)
+        # push this new token for next evaluation
+        # pb.llama_batch_add(batch, new_token_id, n_cur, { 0 }, true);
+        pb.llama_batch_add(batch, new_token_id, n_cur, 0, True)
 
-#     for i in range(n_vocab):
-#         c = pb.llama_token_data(i, logits[i], 0.0)
-#         candidates.append(c)
+        n_decode += 1
 
-#     # candidates_p: llama_token_data_array = pb.llama_token_data_array(candidates.data(), len(candidates), False)
 
-#     # # sample the most likely token
-#     # new_token_id: llama_token = pb.llama_sample_token_greedy(ctx, &candidates_p)
+    n_cur += 1
 
-#     # if (pb.llama_token_is_eog(model, new_token_id) || n_cur == n_predict):
-#     #     break
+    # evaluate the current batch with the transformer model
+    if pb.llama_decode(ctx, batch):
+        raise SystemExit("llama_decode() failed.")
 
-#     # print(pb.llama_token_to_piece(ctx, new_token_id))
+print()
 
-#     # # prepare the next batch
-#     # pb.llama_batch_clear(batch)
+t_main_end: int = pb.ggml_time_us()
 
-#     # # push this new token for next evaluation
-#     # pb.llama_batch_add(batch, new_token_id, n_cur, [], False)
+print("decoded %d tokens in %.2f s, speed: %.2f t/s",
+        n_decode, (t_main_end - t_main_start) / 1000000.0, n_decode / ((t_main_end - t_main_start) / 1000000.0))
+print()
 
-#     n_decode += 1
 
-#     n_cur += 1
+pb.llama_perf_print(smpl, pb.LLAMA_PERF_TYPE_SAMPLER_CHAIN)
+pb.llama_perf_print(ctx, pb.LLAMA_PERF_TYPE_CONTEXT)
 
-#     # evaluate the current batch with the transformer model
+print()
 
-#     if (pb.llama_decode(ctx, batch)):
-#         raise SystemExit("failed to eval, return code.")
+pb.llama_batch_free(batch)
+pb.llama_sampler_free(smpl)
+pb.llama_free(ctx)
+pb.llama_free_model(model)
 
-# t_main_end: int = pb.ggml_time_us()
-
-# print("decoded %d tokens in %.2f s, speed: %.2f t/s",
-#         n_decode, (t_main_end - t_main_start) / 1000000.0, n_decode / ((t_main_end - t_main_start) / 1000000.0))
-
-# pb.llama_print_timings(ctx)
-
-# pb.llama_batch_free(batch)
-
-# pb.llama_free(ctx)
-# pb.llama_free_model(model)
-
-# pb.llama_backend_free()
+pb.llama_backend_free()

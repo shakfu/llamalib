@@ -2,10 +2,12 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
+#include "arg.h"
+#include "common.h"
+#include "llama.h"
 
-#include <arg.h>
-#include <common.h>
-#include <llama.h>
+#include <cmath>
+#include <cstdio>
 
 namespace py = pybind11;
 
@@ -27,6 +29,168 @@ py::array_t<T> to_array(T * carr, size_t carr_size)
 }
 
 
+std::string simple_prompt(const std::string model, const int n_predict, const std::string prompt, int verbosity) {
+    gpt_params params;
+
+    params.prompt = prompt;
+    params.model = model;
+    params.n_predict = n_predict;
+    params.verbosity = verbosity;
+
+    if (!gpt_params_parse(0, nullptr, params, LLAMA_EXAMPLE_COMMON, nullptr)) {
+        return std::string();
+    }
+
+    // if (!gpt_params_parse(argc, argv, params, LLAMA_EXAMPLE_COMMON, print_usage)) {
+    //     return 1;
+    // }
+
+    // total length of the sequence including the prompt
+    // const int n_predict = params.n_predict;
+
+    // init LLM
+
+    llama_backend_init();
+    llama_numa_init(params.numa);
+
+    // initialize the model
+
+    llama_model_params model_params = llama_model_params_from_gpt_params(params);
+
+    llama_model * model_ptr = llama_load_model_from_file(params.model.c_str(), model_params);
+
+    if (model_ptr == NULL) {
+        fprintf(stderr , "%s: error: unable to load model\n" , __func__);
+        return std::string();
+    }
+
+    // initialize the context
+
+    llama_context_params ctx_params = llama_context_params_from_gpt_params(params);
+
+    llama_context * ctx = llama_new_context_with_model(model_ptr, ctx_params);
+
+    if (ctx == NULL) {
+        fprintf(stderr , "%s: error: failed to create the llama_context\n" , __func__);
+        return std::string();
+    }
+
+    auto sparams = llama_sampler_chain_default_params();
+
+    sparams.no_perf = false;
+
+    llama_sampler * smpl = llama_sampler_chain_init(sparams);
+
+    llama_sampler_chain_add(smpl, llama_sampler_init_greedy());
+
+    // tokenize the prompt
+
+    std::vector<llama_token> tokens_list;
+    tokens_list = ::llama_tokenize(ctx, params.prompt, true);
+
+    const int n_ctx    = llama_n_ctx(ctx);
+    const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size());
+
+    // LOG_TEE("\n%s: n_predict = %d, n_ctx = %d, n_kv_req = %d\n", __func__, n_predict, n_ctx, n_kv_req);
+
+    // make sure the KV cache is big enough to hold all the prompt and generated tokens
+    if (n_kv_req > n_ctx) {
+        LOG_TEE("%s: error: n_kv_req > n_ctx, the required KV cache size is not big enough\n", __func__);
+        LOG_TEE("%s:        either reduce n_predict or increase n_ctx\n", __func__);
+        return std::string();
+    }
+
+    // print the prompt token-by-token
+
+    // fprintf(stderr, "\n");
+
+    // for (auto id : tokens_list) {
+    //     fprintf(stderr, "%s", llama_token_to_piece(ctx, id).c_str());
+    // }
+
+    // fflush(stderr);
+
+    // create a llama_batch with size 512
+    // we use this object to submit token data for decoding
+
+    llama_batch batch = llama_batch_init(512, 0, 1);
+
+    // evaluate the initial prompt
+    for (size_t i = 0; i < tokens_list.size(); i++) {
+        llama_batch_add(batch, tokens_list[i], i, { 0 }, false);
+    }
+
+    // llama_decode will output logits only for the last token of the prompt
+    batch.logits[batch.n_tokens - 1] = true;
+
+    if (llama_decode(ctx, batch) != 0) {
+        LOG_TEE("%s: llama_decode() failed\n", __func__);
+        return std::string();
+    }
+
+    // main loop
+
+    int n_cur    = batch.n_tokens;
+    int n_decode = 0;
+
+    std::string results;
+
+    const auto t_main_start = ggml_time_us();
+
+    while (n_cur <= n_predict) {
+        // sample the next token
+        {
+            const llama_token new_token_id = llama_sampler_sample(smpl, ctx, batch.n_tokens - 1);
+
+            // is it an end of generation?
+            if (llama_token_is_eog(model_ptr, new_token_id) || n_cur == n_predict) {
+                break;
+            }
+
+            results += llama_token_to_piece(ctx, new_token_id);
+
+            // prepare the next batch
+            llama_batch_clear(batch);
+
+            // push this new token for next evaluation
+            llama_batch_add(batch, new_token_id, n_cur, { 0 }, true);
+
+            n_decode += 1;
+        }
+
+        n_cur += 1;
+
+        // evaluate the current batch with the transformer model
+        if (llama_decode(ctx, batch)) {
+            fprintf(stderr, "%s : failed to eval, return code %d\n", __func__, 1);
+            return std::string();
+        }
+    }
+
+    const auto t_main_end = ggml_time_us();
+
+    LOG_TEE("%s: decoded %d tokens in %.2f s, speed: %.2f t/s\n",
+            __func__, n_decode, (t_main_end - t_main_start) / 1000000.0f, n_decode / ((t_main_end - t_main_start) / 1000000.0f));
+
+    LOG_TEE("\n");
+
+    llama_perf_print(smpl, LLAMA_PERF_TYPE_SAMPLER_CHAIN);
+    llama_perf_print(ctx,  LLAMA_PERF_TYPE_CONTEXT);
+
+    llama_batch_free(batch);
+    llama_sampler_free(smpl);
+    llama_free(ctx);
+    llama_free_model(model_ptr);
+
+    llama_backend_free();
+
+    return results;
+}
+
+
+
+
+
 PYBIND11_MODULE(pbllama, m) {
     m.doc() = "pbllama: pybind11 llama.cpp wrapper"; // optional module docstring
     m.attr("__version__") = "0.0.1";
@@ -35,6 +199,10 @@ PYBIND11_MODULE(pbllama, m) {
     // -----------------------------------------------------------------------
     // attributes
     m.attr("LLAMA_DEFAULT_SEED") = 0xFFFFFFFF;
+
+    // -----------------------------------------------------------------------
+    // high-level api
+    m.def("simple_prompt", &simple_prompt, "", py::arg("model"), py::arg("n_predict"), py::arg("prompt"), py::arg("verbosity"));
 
     // -----------------------------------------------------------------------
     // ggml.h
@@ -68,6 +236,8 @@ PYBIND11_MODULE(pbllama, m) {
         .value("LLAMA_EXAMPLE_CVECTOR_GENERATOR", LLAMA_EXAMPLE_CVECTOR_GENERATOR)
         .value("LLAMA_EXAMPLE_EXPORT_LORA", LLAMA_EXAMPLE_EXPORT_LORA)
         .value("LLAMA_EXAMPLE_LLAVA", LLAMA_EXAMPLE_LLAVA)
+        .value("LLAMA_EXAMPLE_LOOKUP", LLAMA_EXAMPLE_LOOKUP)
+        .value("LLAMA_EXAMPLE_PARALLEL", LLAMA_EXAMPLE_PARALLEL)
         .value("LLAMA_EXAMPLE_COUNT", LLAMA_EXAMPLE_COUNT)
         .export_values();
 
@@ -94,7 +264,8 @@ PYBIND11_MODULE(pbllama, m) {
         // void(*print_usage)(int, char **) = nullptr;
 
 
-    m.def("gpt_params_parse", [](std::vector<std::string> args, gpt_params & params, enum llama_example example, void(*print_usage)(int, char **)) -> bool {
+    m.def("gpt_params_parse", [](std::vector<std::string> args, gpt_params & params, enum llama_example example) -> bool {
+        void(*print_usage)(int, char **) = NULL;
         std::vector<char*> cstrings;
         cstrings.reserve(args.size());
 
@@ -106,7 +277,7 @@ PYBIND11_MODULE(pbllama, m) {
         } else {
             return gpt_params_parse(cstrings.size(), &cstrings[0], params, example, print_usage);
         }
-    }, "",  py::arg("args"), py::arg("params"), py::arg("example"), py::arg("print_usage"));
+    }, "",  py::arg("args"), py::arg("params"), py::arg("example"));
 
     m.def("gpt_params_parser_init", (std::vector<llama_arg> (*)(gpt_params &, llama_example)) &gpt_params_parser_init, "", py::arg("params"), py::arg("ex"));
 
@@ -288,6 +459,9 @@ PYBIND11_MODULE(pbllama, m) {
         // .def_readwrite("seq_id", &llama_batch::seq_id)
         // .def_readwrite("logits", &llama_batch::logits)
         // FIXME: this is WRONG!!
+        .def("set_last_logits_to_true", [](llama_batch& self) {
+            self.logits[self.n_tokens - 1] = true;
+        })
         .def("get_logits", [](llama_batch& self) -> py::array_t<int8_t> {
             return to_array<int8_t>(self.logits, self.n_tokens);
         })
@@ -853,26 +1027,6 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("lora_outfile", &gpt_params::lora_outfile)
         .def("assign", (struct gpt_params & (gpt_params::*)(const struct gpt_params &)) &gpt_params::operator=, "C++: gpt_params::operator=(const struct gpt_params &) --> struct gpt_params &", py::return_value_policy::automatic, py::arg(""));
 
-
-    py::enum_<enum llama_example>(m, "llama_example", py::arithmetic(), "")
-        .value("LLAMA_EXAMPLE_COMMON", LLAMA_EXAMPLE_COMMON)
-        .value("LLAMA_EXAMPLE_SPECULATIVE", LLAMA_EXAMPLE_SPECULATIVE)
-        .value("LLAMA_EXAMPLE_MAIN", LLAMA_EXAMPLE_MAIN)
-        .value("LLAMA_EXAMPLE_INFILL", LLAMA_EXAMPLE_INFILL)
-        .value("LLAMA_EXAMPLE_EMBEDDING", LLAMA_EXAMPLE_EMBEDDING)
-        .value("LLAMA_EXAMPLE_PERPLEXITY", LLAMA_EXAMPLE_PERPLEXITY)
-        .value("LLAMA_EXAMPLE_RETRIEVAL", LLAMA_EXAMPLE_RETRIEVAL)
-        .value("LLAMA_EXAMPLE_PASSKEY", LLAMA_EXAMPLE_PASSKEY)
-        .value("LLAMA_EXAMPLE_IMATRIX", LLAMA_EXAMPLE_IMATRIX)
-        .value("LLAMA_EXAMPLE_BENCH", LLAMA_EXAMPLE_BENCH)
-        .value("LLAMA_EXAMPLE_SERVER", LLAMA_EXAMPLE_SERVER)
-        .value("LLAMA_EXAMPLE_CVECTOR_GENERATOR", LLAMA_EXAMPLE_CVECTOR_GENERATOR)
-        .value("LLAMA_EXAMPLE_EXPORT_LORA", LLAMA_EXAMPLE_EXPORT_LORA)
-        .value("LLAMA_EXAMPLE_LLAVA", LLAMA_EXAMPLE_LLAVA)
-        .value("LLAMA_EXAMPLE_LOOKUP", LLAMA_EXAMPLE_LOOKUP)
-        .value("LLAMA_EXAMPLE_PARALLEL", LLAMA_EXAMPLE_PARALLEL)
-        .value("LLAMA_EXAMPLE_COUNT", LLAMA_EXAMPLE_COUNT)
-        .export_values();
 
 
     m.def("llama_token_to_piece", (std::string (*)(const struct llama_context *, llama_token, bool)) &llama_token_to_piece, "", py::arg("ctx"), py::arg("token"), py::arg("special") = true);

@@ -1,5 +1,6 @@
 # set path so `llama-cli` etc.. be in path
 export PATH := $(PWD)/bin:$(PATH)
+
 MODEL := models/gemma-2-9b-it-IQ4_XS.gguf
 
 WITH_DYLIB=0
@@ -68,12 +69,22 @@ test_retrieve:
 		--chunk-size 100 \
 		--chunk-separator .
 
+$(MODEL):
+	@mkdir -p models && cd models && \
+		wget https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/blob/main/gemma-2-9b-it-IQ4_XS.gguf
+
+test_model: $(MODEL)
+	@./bin/llama-simple -m $(MODEL) -p "Number of planets in our solar system" -n 512
+
 
 test_cy:
 	@cd tests && python3 cy_simple.py
 
 test_pb:
 	@cd tests && python3 pb_simple.py
+
+test_pb_highlevel:
+	@cd tests && python3 pb_highlevel.py
 
 test_nb:
 	@cd tests && python3 nb_simple.py

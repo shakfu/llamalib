@@ -12,26 +12,51 @@ Nonetheless, there may be some performance benefits from the use of compiled wra
 
 Development on macOS to keep things simpler.
 
-Still early days. The initial milestone will be enabling for each wrapper variant a version of the `simple.cpp` test to be run.
+Still early days. The initial milestone is to enabling each wrapper variant a version of the `simple.cpp` test to be run.
 
-- cython: `llama.pxd` is done. Work paused pending tests the pybind11 wrapper.
-
-- pybind11: first wrapper interation done. A test to replicate `simple.cpp` using the wrapper is revealing some remaining parts to be wrapped. Crashing bugs still in test. (WIP)
+- pybind11: first wrapper interation done. A test to replicate `simple.cpp` using the wrapper is revealing some remaining parts to be wrapped. Crashing bugs still in test. high-level simple prompt wrapper working (WIP)
 
 - nanobind: follows pybind11 implementation as they are quite similar. First wrapper implemented with some gaps. Tests will follow pybind11 testing
+
+- cython: `llama.pxd` is done. Work paused pending tests the pybind11 wrapper.
 
 
 ## Usage
 
 ```sh
+
+git clone https://github.com/shakfu/llamalib.git
+cd llamalib
 make
 ```
 
 This will:
 
-1. This will download and build `llama.cpp`
-2. Install it into `bin`, `include`, and `lib`
-3. Build cyllama (cython wrapper)
-4. Build pbllama (pybind11 wrapper)
-5. Build nbllama (nanobind wrapper)
+1. Download and build `llama.cpp`
+2. Install it into `bin`, `include`, and `lib` in the project folder
+3. Build `cyllama` (`cython` wrapper)
+4. Build `pbllama` (`pybind11` wrapper)
+5. Build `nbllama` (`nanobind` wrapper)
+
+
+## Testing
+
+First step will get a [test model](rom https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/blob/main/gemma-2-9b-it-IQ4_XS.gguf ) from huggingface, in this case `gemma-2-9b-it-IQ4_XS.gguf` and run the `bin/llama-simple` api with the model and a basic prompt to ensure it works.
+
+```sh
+make test_model
+```
+
+If this works ok and you see an answer, then 
+
+
+```sh
+make test_pb_highlevel
+```
+
+which is equivalent to: `cd tests && python3 pb_highlevel.py`
+
+
+
+
 
