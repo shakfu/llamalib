@@ -38,7 +38,7 @@ bind:
 	@make -f scripts/bind/bind.mk bind
 
 
-.PHONY: test test_simple test_cy test_pb test_nb prep_tests bench_cy bench_nb bench_pb bump
+.PHONY: test test_simple test_simple2 test_cy test_pb test_nb prep_tests bench_cy bench_nb bench_pb bump
 
 test:
 	@pytest
@@ -51,6 +51,23 @@ test_simple:
 		lib/libllama.a lib/libggml.a lib/libcommon.a \
 		tests/simple.cpp
 	@./build/simple -m $(MODEL) -p "Number of planets in our solar system" -n 512
+
+test_simple2:
+	@g++ -std=c++14 -o build/simple2 \
+		-I./include -L./lib  \
+		-framework Foundation -framework Accelerate \
+		-framework Metal -framework MetalKit \
+		lib/libllama.a lib/libggml.a lib/libcommon.a \
+		tests/simple2.cpp
+	@./build/simple2
+
+test_retrieve:
+	@./bin/llama-retrieval --model $(MODEL) \
+		--top-k 3 --context-file README.md \
+		--context-file LICENSE \
+		--chunk-size 100 \
+		--chunk-separator .
+
 
 test_cy:
 	@cd tests && python3 cy_simple.py

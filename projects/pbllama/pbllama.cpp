@@ -3,7 +3,7 @@
 #include <pybind11/numpy.h>
 
 
-
+#include <arg.h>
 #include <common.h>
 #include <llama.h>
 
@@ -49,6 +49,67 @@ PYBIND11_MODULE(pbllama, m) {
         .export_values();
 
     m.def("ggml_time_us", (int64_t (*)(void)) &ggml_time_us);
+
+    // -----------------------------------------------------------------------
+    // arg.h
+
+    py::enum_<enum llama_example>(m, "llama_example", py::arithmetic(), "")
+        .value("LLAMA_EXAMPLE_COMMON", LLAMA_EXAMPLE_COMMON)
+        .value("LLAMA_EXAMPLE_SPECULATIVE", LLAMA_EXAMPLE_SPECULATIVE)
+        .value("LLAMA_EXAMPLE_MAIN", LLAMA_EXAMPLE_MAIN)
+        .value("LLAMA_EXAMPLE_INFILL", LLAMA_EXAMPLE_INFILL)
+        .value("LLAMA_EXAMPLE_EMBEDDING", LLAMA_EXAMPLE_EMBEDDING)
+        .value("LLAMA_EXAMPLE_PERPLEXITY", LLAMA_EXAMPLE_PERPLEXITY)
+        .value("LLAMA_EXAMPLE_RETRIEVAL", LLAMA_EXAMPLE_RETRIEVAL)
+        .value("LLAMA_EXAMPLE_PASSKEY", LLAMA_EXAMPLE_PASSKEY)
+        .value("LLAMA_EXAMPLE_IMATRIX", LLAMA_EXAMPLE_IMATRIX)
+        .value("LLAMA_EXAMPLE_BENCH", LLAMA_EXAMPLE_BENCH)
+        .value("LLAMA_EXAMPLE_SERVER", LLAMA_EXAMPLE_SERVER)
+        .value("LLAMA_EXAMPLE_CVECTOR_GENERATOR", LLAMA_EXAMPLE_CVECTOR_GENERATOR)
+        .value("LLAMA_EXAMPLE_EXPORT_LORA", LLAMA_EXAMPLE_EXPORT_LORA)
+        .value("LLAMA_EXAMPLE_LLAVA", LLAMA_EXAMPLE_LLAVA)
+        .value("LLAMA_EXAMPLE_COUNT", LLAMA_EXAMPLE_COUNT)
+        .export_values();
+
+
+    py::class_<llama_arg, std::shared_ptr<llama_arg>> (m, "llama_arg", "")
+        // .def( py::init( [](){ return new llama_arg(); } ) )
+        .def_readwrite("examples", &llama_arg::examples)
+        .def_readwrite("args", &llama_arg::args)
+        .def_readwrite("value_hint", &llama_arg::value_hint)
+        .def_readwrite("value_hint_2", &llama_arg::value_hint_2)
+        .def_readwrite("env", &llama_arg::env)
+        .def_readwrite("help", &llama_arg::help)
+        .def_readwrite("is_sparam", &llama_arg::is_sparam);
+        // .def_readwrite("handler_void", &llama_arg::handler_void)
+        // .def_readwrite("handler_string", &llama_arg::handler_string)
+        // .def_readwrite("handler_str_str", &llama_arg::handler_str_str)
+        // .def_readwrite("handler_int", &llama_arg::handler_int);
+
+    py::class_<gpt_params_context, std::shared_ptr<gpt_params_context>> (m, "gpt_params_context", "")
+        .def( py::init( [](gpt_params & ps){ return new gpt_params_context(ps); } ) )
+        .def_readwrite("ex", &gpt_params_context::ex)
+        // .def_readwrite("params", &gpt_params_context::params)
+        .def_readwrite("options", &gpt_params_context::options);
+        // void(*print_usage)(int, char **) = nullptr;
+
+
+    m.def("gpt_params_parse", [](std::vector<std::string> args, gpt_params & params, enum llama_example example, void(*print_usage)(int, char **)) -> bool {
+        std::vector<char*> cstrings;
+        cstrings.reserve(args.size());
+
+        for(size_t i = 0; i < args.size(); ++i)
+            cstrings.push_back(const_cast<char*>(args[i].c_str()));
+
+        if (cstrings.empty()) {
+            return gpt_params_parse(0, nullptr, params, example, print_usage);
+        } else {
+            return gpt_params_parse(cstrings.size(), &cstrings[0], params, example, print_usage);
+        }
+    }, "",  py::arg("args"), py::arg("params"), py::arg("example"), py::arg("print_usage"));
+
+    m.def("gpt_params_parser_init", (std::vector<llama_arg> (*)(gpt_params &, llama_example)) &gpt_params_parser_init, "", py::arg("params"), py::arg("ex"));
+
 
     // -----------------------------------------------------------------------
     // llama.h

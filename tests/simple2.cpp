@@ -16,13 +16,17 @@ static void print_usage(int, char ** argv) {
 int main(int argc, char ** argv) {
     gpt_params params;
 
-    // params.model = "models/gemma-2-9b-it-IQ4_XS.gguf";
-    // params.prompt = "Hello my name is";
-    // params.n_predict = 32;
+    params.model = "models/gemma-2-9b-it-IQ4_XS.gguf";
+    params.prompt = "Number of habitable planets in our solar system";
+    params.n_predict = 512;
 
-    if (!gpt_params_parse(argc, argv, params, LLAMA_EXAMPLE_COMMON, print_usage)) {
+    if (!gpt_params_parse(0, NULL, params, LLAMA_EXAMPLE_COMMON, print_usage)) {
         return 1;
     }
+
+    // if (!gpt_params_parse(argc, argv, params, LLAMA_EXAMPLE_COMMON, print_usage)) {
+    //     return 1;
+    // }
 
     // total length of the sequence including the prompt
     const int n_predict = params.n_predict;
@@ -114,6 +118,9 @@ int main(int argc, char ** argv) {
 
     const auto t_main_start = ggml_time_us();
 
+    // std::vector<std::string> results;
+    std::string results;
+
     while (n_cur <= n_predict) {
         // sample the next token
         {
@@ -126,7 +133,9 @@ int main(int argc, char ** argv) {
                 break;
             }
 
-            LOG_TEE("%s", llama_token_to_piece(ctx, new_token_id).c_str());
+            results += llama_token_to_piece(ctx, new_token_id);
+            // results.push_back(llama_token_to_piece(ctx, new_token_id));
+            // LOG_TEE("%s", llama_token_to_piece(ctx, new_token_id).c_str());
             fflush(stdout);
 
             // prepare the next batch
@@ -166,6 +175,9 @@ int main(int argc, char ** argv) {
     llama_free_model(model);
 
     llama_backend_free();
+
+    std::cout << "results: " << results.size() << std::endl;
+    std::cout << results << std::endl;
 
     return 0;
 }
