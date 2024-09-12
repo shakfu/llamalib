@@ -16,9 +16,8 @@ static void print_usage(int, char ** argv) {
 int main(int argc, char ** argv) {
     gpt_params params;
 
-    // params.model = "models/gemma-2-9b-it-IQ4_XS.gguf";
-    // params.prompt = "Hello my name is";
-    // params.n_predict = 32;
+    params.prompt = "Hello my name is";
+    params.n_predict = 32;
 
     if (!gpt_params_parse(argc, argv, params, LLAMA_EXAMPLE_COMMON, print_usage)) {
         return 1;

@@ -53,15 +53,6 @@ test_simple:
 		tests/simple.cpp
 	@./build/simple -m $(MODEL) -p "Number of planets in our solar system" -n 512
 
-test_simple2:
-	@g++ -std=c++14 -o build/simple2 \
-		-I./include -L./lib  \
-		-framework Foundation -framework Accelerate \
-		-framework Metal -framework MetalKit \
-		lib/libllama.a lib/libggml.a lib/libcommon.a \
-		tests/simple2.cpp
-	@./build/simple2
-
 test_retrieve:
 	@./bin/llama-retrieval --model $(MODEL) \
 		--top-k 3 --context-file README.md \
@@ -71,13 +62,12 @@ test_retrieve:
 
 $(MODEL):
 	@mkdir -p models && cd models && \
-		wget https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/blob/main/gemma-2-9b-it-IQ4_XS.gguf
+		wget https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/resolve/main/gemma-2-9b-it-IQ4_XS.gguf
 
 test_model: $(MODEL)
 	@./bin/llama-simple -m $(MODEL) -p "Number of planets in our solar system" -n 512
 
-
-test_cy:
+test_cy: 
 	@cd tests && python3 cy_simple.py
 
 test_pb:

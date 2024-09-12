@@ -96,7 +96,6 @@ for i, token in enumerate(tokens_list):
 batch.set_last_logits_to_true()
 
 # logits = batch.get_logits()
-# from IPython import embed; embed()
 
 if pb.llama_decode(ctx, batch) != 0:
     raise SystemExit("llama_decode() failed.")
@@ -108,11 +107,12 @@ n_decode: int = 0
 
 t_main_start: int = pb.ggml_time_us()
 
+result: str = ""
+
 while (n_cur <= n_predict):
     # sample the next token
     if True:
-        new_token_id: llama_token = pb.llama_sampler_sample(smpl, ctx, batch.n_tokens - 1) # CRASH HERE
-        
+        new_token_id = pb.llama_sampler_sample(smpl, ctx, batch.n_tokens - 1)
 
         pb.llama_sampler_accept(smpl, new_token_id);
 
@@ -121,14 +121,14 @@ while (n_cur <= n_predict):
             print()
             break
 
-        print(pb.llama_token_to_piece(ctx, new_token_id))
+        result += pb.llama_token_to_piece(ctx, new_token_id)
 
         # prepare the next batch
         pb.llama_batch_clear(batch);
 
         # push this new token for next evaluation
         # pb.llama_batch_add(batch, new_token_id, n_cur, { 0 }, true);
-        pb.llama_batch_add(batch, new_token_id, n_cur, 0, True)
+        pb.llama_batch_add(batch, new_token_id, n_cur, [0], True) # <- CRASH HERE
 
         n_decode += 1
 
@@ -138,6 +138,8 @@ while (n_cur <= n_predict):
     # evaluate the current batch with the transformer model
     if pb.llama_decode(ctx, batch):
         raise SystemExit("llama_decode() failed.")
+
+print(result)
 
 print()
 

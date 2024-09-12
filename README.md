@@ -26,15 +26,20 @@ It goes without saying that any help / collaboration / contributions would be we
 
 ## Setup
 
-`llamalib` requires a recent version of `python3` (testing on python 3.12) and the following python wrapping libraries:
+`llamalib` requires:
 
-- [cython](https://cython.org)
-- [pybind11](https://github.com/pybind/pybind11)
-- [nanobind](https://github.com/wjakob/nanobind)
+1. A recent version of `python3` (testing on python 3.12)
 
-If you don't already have them, they can all be installed via `pip install -r requirements.txt` (feel free to use `virtualenv` if you like)
+2. `cmake`, which can be installed on MacOS using [homebrew]() with `brew install cmake`
 
-To download, and build the system, just type the following:
+3. The following python wrapping libraries, if you don't already have them. All python dependencies can be installed via `pip install -r requirements.txt` (feel free to use `virtualenv` if you like):
+
+	- [cython](https://cython.org)
+	- [pybind11](https://github.com/pybind/pybind11)
+	- [nanobind](https://github.com/wjakob/nanobind)
+
+
+With the above dependencies installed, download and build the `llamalib` system, just type the following:
 
 ```sh
 git clone https://github.com/shakfu/llamalib.git
@@ -59,7 +64,7 @@ As a first step type:
 make test_model
 ```
 
-This downloads a [test model](rom https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/blob/main/gemma-2-9b-it-IQ4_XS.gguf ) from huggingface, in this case `gemma-2-9b-it-IQ4_XS.gguf` and runs the `bin/llama-simple` cli with the model and a basic prompt to ensure it works.
+This downloads a [test model](https://huggingface.co/bartowski/gemma-2-9b-it-GGUF) from huggingface and places in `llamalib/models`, in this case `gemma-2-9b-it-IQ4_XS.gguf` and runs the `bin/llama-simple` cli with the model and a basic prompt to ensure it works.
 
 If this works ok and you see a reasonable answer, then test high-level pybind11 wrapper:
 
@@ -70,5 +75,11 @@ make test_pb_highlevel
 
 which is equivalent to: `cd tests && python3 pb_highlevel.py`
 
+
+To run the low-level pybind11 wrapper:
+
+```sh
+make test_pb
+```
 
 

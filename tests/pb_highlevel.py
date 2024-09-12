@@ -7,9 +7,9 @@ MODEL = ROOT / 'models' / 'gemma-2-9b-it-IQ4_XS.gguf'
 
 import pbllama as pb
 
-def ask(prompt, n_predict=512, model=str(MODEL), verbosity=0):
+def ask(prompt, n_predict=512, model=str(MODEL), disable_log=True):
     "ask/prompt a llama model"
-    print(pb.simple_prompt(model=model, n_predict=n_predict, prompt=prompt, verbosity=verbosity))
+    print(pb.simple_prompt(model=model, n_predict=n_predict, prompt=prompt, disable_log=disable_log))
 
 
 if __name__ == '__main__':

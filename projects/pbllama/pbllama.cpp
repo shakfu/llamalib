@@ -2,6 +2,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
+#include "log.h"
 #include "arg.h"
 #include "common.h"
 #include "llama.h"
@@ -29,13 +30,16 @@ py::array_t<T> to_array(T * carr, size_t carr_size)
 }
 
 
-std::string simple_prompt(const std::string model, const int n_predict, const std::string prompt, int verbosity) {
+std::string simple_prompt(const std::string model, const int n_predict, const std::string prompt, bool disable_log = true) {
     gpt_params params;
 
     params.prompt = prompt;
     params.model = model;
     params.n_predict = n_predict;
-    params.verbosity = verbosity;
+
+    if (disable_log) {
+        log_disable();
+    }
 
     if (!gpt_params_parse(0, nullptr, params, LLAMA_EXAMPLE_COMMON, nullptr)) {
         return std::string();
@@ -202,7 +206,7 @@ PYBIND11_MODULE(pbllama, m) {
 
     // -----------------------------------------------------------------------
     // high-level api
-    m.def("simple_prompt", &simple_prompt, "", py::arg("model"), py::arg("n_predict"), py::arg("prompt"), py::arg("verbosity"));
+    m.def("simple_prompt", &simple_prompt, "", py::arg("model"), py::arg("n_predict"), py::arg("prompt"), py::arg("disable_log"));
 
     // -----------------------------------------------------------------------
     // ggml.h
@@ -839,11 +843,11 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_sampler_reset", (void (*)(struct llama_sampler *)) &llama_sampler_apply, "", py::arg("smpl"));
     m.def("llama_sampler_clone", (struct llama_sampler * (*)(const struct llama_sampler *)) &llama_sampler_clone, "", py::arg("smpl"));
     m.def("llama_sampler_free", (void (*)(const struct llama_sampler *)) &llama_sampler_free, "", py::arg("smpl"));
-    m.def("llama_sampler_chain_init", (struct llama_sampler *  (*)(struct llama_sampler_chain_params)) &llama_sampler_chain_init, "", py::arg("params"));
+    m.def("llama_sampler_chain_init", (struct llama_sampler *  (*)(struct llama_sampler_chain_params)) &llama_sampler_chain_init, "", py::arg("params"), py::return_value_policy::reference);
     m.def("llama_sampler_chain_add", (void (*)(struct llama_sampler *, struct llama_sampler *)) &llama_sampler_chain_add, "", py::arg("chain"), py::arg("smpl"));
     m.def("llama_sampler_chain_get", (struct llama_sampler * (*)(const struct llama_sampler *, int32_t)) &llama_sampler_chain_get, "", py::arg("chain"), py::arg("i"));
     m.def("llama_sampler_chain_n", (int (*)(const struct llama_sampler *)) &llama_sampler_chain_n, "", py::arg("chain"));
-    m.def("llama_sampler_init_greedy", (struct llama_sampler * (*)(void)) &llama_sampler_init_greedy);
+    m.def("llama_sampler_init_greedy", (struct llama_sampler * (*)(void)) &llama_sampler_init_greedy, py::return_value_policy::reference);
     m.def("llama_sampler_init_dist", (struct llama_sampler * (*)(uint32_t)) &llama_sampler_init_dist, "", py::arg("seed"));
 
     m.def("llama_sampler_init_softmax", (struct llama_sampler * (*)(void)) &llama_sampler_init_softmax);
@@ -877,9 +881,12 @@ PYBIND11_MODULE(pbllama, m) {
         .value("LLAMA_PERF_TYPE_CONTEXT", LLAMA_PERF_TYPE_CONTEXT)
         .value("LLAMA_PERF_TYPE_SAMPLER_CHAIN", LLAMA_PERF_TYPE_SAMPLER_CHAIN)
         .export_values();
+
+    LLAMA_API void llama_perf_print(const void * ctx, enum llama_perf_type type);
+    LLAMA_API void llama_perf_reset(      void * ctx, enum llama_perf_type type);
     
-    m.def("llama_perf_print", (const void * (*)(enum llama_perf_type)) &llama_perf_print, "", py::arg("type"));
-    m.def("llama_perf_reset", (const void * (*)(enum llama_perf_type)) &llama_perf_reset, "", py::arg("type"));
+    m.def("llama_perf_print", (void (*)(const void *, enum llama_perf_type)) &llama_perf_print, "", py::arg("ctx"), py::arg("type"));
+    m.def("llama_perf_reset", (void (*)(const void *, enum llama_perf_type)) &llama_perf_reset, "", py::arg("ctx"), py::arg("type"));
     m.def("llama_perf_dump_yaml", (const char * (*)(FILE *, const struct llama_context *)) &llama_perf_dump_yaml, "", py::arg("stream"), py::arg("ctx"));
 
     // -----------------------------------------------------------------------
