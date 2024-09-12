@@ -8,6 +8,8 @@ Given that there is a fairly mature ctypes based wrapper provided by @abetlen's 
 
 Nonetheless, there may be some performance benefits from the use of compiled wrappers and more importantly, valuable incidental benefits such as learning more about the underlying system which is being wrapped. A future development idea may be to just replace the ctypes wrapper in `llama-cpp-python` with one of compiled python wrappers and contribute it back as a PR.
 
+Last working on `llama.cpp` commit `cb9c933eb2a0d2b514556bdcb934b56dfe5d6771`
+
 ## Status
 
 Development only on macOS to keep things simple.
