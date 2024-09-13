@@ -4,6 +4,7 @@ export PATH := $(PWD)/bin:$(PATH)
 MODEL := models/gemma-2-9b-it-IQ4_XS.gguf
 # MODEL := models/mistral-7b-instruct-v0.1.Q4_K_M.gguf
 
+
 WITH_DYLIB=0
 
 MIN_OSX_VER := -mmacosx-version-min=13.6
@@ -40,7 +41,7 @@ bind:
 	@make -f scripts/bind/bind.mk bind
 
 
-.PHONY: test test_simple test_simple2 test_cy test_pb test_nb prep_tests bench_cy bench_nb bench_pb bump
+.PHONY: test test_simple test_cy test_pb test_nb prep_tests bench_cy bench_nb bench_pb bump
 
 test:
 	@pytest
@@ -52,7 +53,7 @@ test_simple:
 		-framework Metal -framework MetalKit \
 		lib/libllama.a lib/libggml.a lib/libcommon.a \
 		tests/simple.cpp
-	@./build/simple -m $(MODEL) -p "Number of planets in our solar system" -n 512
+	@./build/simple -m $(MODEL) -p "When did the French Revolution start?" -n 512
 
 test_retrieve:
 	@./bin/llama-retrieval --model $(MODEL) \

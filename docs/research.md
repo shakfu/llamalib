@@ -4,6 +4,20 @@
 
 - [Meta's Llama page](https://ai.meta.com/blog/large-language-model-llama-meta-ai/)
 
+## Tested GGUF models
+
+- [gemma-2-9b-it-IQ4_XS.gguf](https://huggingface.co/bartowski/gemma-2-9b-it-GGUF)
+- [mistral-7b-instruct-v0.1.Q4_K_M.gguf](https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF)
+- [qwen2-1_5b-instruct-q5_k_m.gguf](https://huggingface.co/Qwen/Qwen2-1.5B-Instruct-GGUF)
+- [codellama-7b.Q4_K_M.gguf](https://huggingface.co/TheBloke/CodeLlama-7B-GGUF)
+
+pending
+
+- LongWriter-llama3.1-8b-Q3_K_L.gguf
+- LongWriter-llama3.1-8b-Q5_K_S.gguf
+
+
+
 ## llama.cpp
 
 - [llama-cpp-python docs](https://llama-cpp-python.readthedocs.io/en/latest/)
@@ -111,4 +125,28 @@ see also:
 
 - [Does there exists alternative for opaque pointer compared with boost python?](https://github.com/pybind/pybind11/issues/1778)
 
--  
+
+## GGUF Compatible Projects
+
+(taken from [here](https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF))
+
+- [llama.cpp](https://github.com/ggerganov/llama.cpp), the source project for GGUF. Offers a CLI and a server option.
+
+- [text-generation-webui](https://github.com/oobabooga/text-generation-webui, the most widely used web UI, with many features and powerful extensions. Supports GPU acceleration.
+
+- [KoboldCpp](https://github.com/LostRuins/koboldcpp), a fork of llama-cpp, fully featured web UI, with GPU accel across all platforms and GPU architectures. Especially good for story telling.
+
+- [LM Studio](https://lmstudio.ai), an easy-to-use and powerful local GUI for Windows and macOS (Silicon), with GPU acceleration.
+
+- [oLLMS Web UI](https://github.com/ParisNeo/lollms-webui), a great web UI with many interesting and unique features, including a full model library for easy model selection.
+
+- [backyard.ai](https://backyard.ai/hub), an attractive and easy to use character-based chat GUI for Windows and macOS (both Silicon and Intel), with GPU acceleration.
+
+- [ctransformers](https://github.com/marella/ctransformers), a Python library with GPU accel, LangChain support, and OpenAI-compatible AI server.
+
+- [llama-cpp-python](https://github.com/abetlen/llama-cpp-python), a Python library with GPU accel, LangChain support, and OpenAI-compatible API server.
+
+- [candle](https://github.com/huggingface/candle), a Rust ML framework with a focus on performance, including GPU support, and ease of use.
+
+
+
