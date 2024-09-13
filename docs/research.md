@@ -1,5 +1,6 @@
 # Research
 
+
 ## Llama
 
 - [Meta's Llama page](https://ai.meta.com/blog/large-language-model-llama-meta-ai/)
@@ -11,14 +12,17 @@
 - [qwen2-1_5b-instruct-q5_k_m.gguf](https://huggingface.co/Qwen/Qwen2-1.5B-Instruct-GGUF)
 - [codellama-7b.Q4_K_M.gguf](https://huggingface.co/TheBloke/CodeLlama-7B-GGUF)
 
-pending
+pending (due to memory errors)
 
 - LongWriter-llama3.1-8b-Q3_K_L.gguf
 - LongWriter-llama3.1-8b-Q5_K_S.gguf
+- codellama-7b.Q4_K_M.gguf
 
 
 
 ## llama.cpp
+
+- [llama.cpp wikipedia](https://en.wikipedia.org/wiki/Llama.cpp)
 
 - [llama-cpp-python docs](https://llama-cpp-python.readthedocs.io/en/latest/)
 
@@ -33,6 +37,8 @@ pending
 - [lama.cpp: The Ultimate Guide to Efficient LLM Inference and Applications](https://pyimagesearch.com/2024/08/26/llama-cpp-the-ultimate-guide-to-efficient-llm-inference-and-applications/)
 
 - [Llama.cpp Tutorial: A Complete Guide to Efficient LLM Inference and Implementation](https://www.datacamp.com/tutorial/llama-cpp-tutorial)
+
+- [Calling Llama.cpp from langchain](https://stackoverflow.com/questions/77753658/langchain-local-llama-compatible-model)
 
 ## Related Projects
 
@@ -148,5 +154,33 @@ see also:
 
 - [candle](https://github.com/huggingface/candle), a Rust ML framework with a focus on performance, including GPU support, and ease of use.
 
+- [llama-cpp-agent](https://github.com/Maximilian-Winter/llama-cpp-agent) - The llama-cpp-agent framework is a tool designed for easy interaction with Large Language Models (LLMs). Allowing users to chat with LLM models, execute structured function calls and get structured output. Works also with models not fine-tuned to JSON output and function calls.
+
+
+## Inference Engines
+
+- [vllm](https://github.com/vllm-project/vllm) - A high-throughput and memory-efficient inference and serving engine for LLMs (python + c++)
+
+- [text-generation-inference] - Large Language Model Text Generation Inference by Huggingface (python + rust) for a comparison between vllm and tgi see [this article](https://medium.com/@rohit.k/tgi-vs-vllm-making-informed-choices-for-llm-deployment-37c56d7ff705)
+
+- [localAI](https://github.com/mudler/LocalAI) - The free, Open Source alternative to OpenAI, Claude and others. Self-hosted and local-first. Drop-in replacement for OpenAI, running on consumer-grade hardware. No GPU required. Runs gguf, transformers, diffusers and many more models architectures. Features: Generate Text, Audio, Video, Images, Voice Cloning, Distributed inference
+
+## RAGs
+
+- [graphrag](https://github.com/microsoft/graphrag) - Microsoft modular graph-based Retrieval-Augmented Generation (RAG) system
+
+- [ragatouille](https://github.com/AnswerDotAI/RAGatouille) - Easily use and train state of the art late-interaction retrieval methods (ColBERT) in any RAG pipeline. Designed for modularity and ease-of-use, backed by research.
+
+- [llama_index](https://github.com/run-llama/llama_index) - LlamaIndex is a data framework for your LLM applications
+
+- [LARS](https://github.com/abgulati/LARS) - An application for running LLMs locally on your device, with your documents, facilitating detailed citations in generated responses (llama.cpp-based)
+
+- [kotaemon](https://github.com/Cinnamon/kotaemon) - An open-source RAG-based tool for chatting with your documents. (llamacpp-based)
+
+- [experimenting-with-RAGs](https://github.com/AtaUllahB/experimenting-with-RAGs)
+
+- [just-rag](https://github.com/samuelint/just-rag)
+
+- [pymupdf/RAG](https://github.com/pymupdf/RAG) - RAG (Retrieval-Augmented Generation) Chatbot Examples Using PyMuPDF
 
 

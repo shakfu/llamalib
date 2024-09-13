@@ -1,16 +1,24 @@
 import sys
 from pathlib import Path
-ROOT = Path(__file__).parent.parent
+ROOT = Path.cwd().parent
 sys.path.insert(0, str(ROOT / 'build'))
 
 MODEL = ROOT / 'models' / 'gemma-2-9b-it-IQ4_XS.gguf'
+# MODEL = ROOT / 'models' / 'mistral-7b-instruct-v0.1.Q4_K_M.gguf'
 
-import nbllama as nb
+import pbllama as pb
 
 def test_nb_simple():
+
     params = nb.gpt_params()
-    params.prompt = "Hello my name is"
+    params.model = str(MODEL)
+    params.prompt = "When did the universe begin?"
     params.n_predict = 32
+
+
+    args = []
+    if not nb.gpt_params_parse(args, params, nb.LLAMA_EXAMPLE_COMMON):
+        raise SystemExit("gpt_params_parse failed")
 
     # total length of the sequence including the prompt
     n_predict: int = params.n_predict
@@ -22,24 +30,38 @@ def test_nb_simple():
 
     # initialize the model
 
-    model_params: llama_model_params = nb.llama_model_params_from_gpt_params(params)
+    model_params = nb.llama_model_params_from_gpt_params(params)
 
     # set local test model
     params.model = str(MODEL)
 
-    model: llama_model = nb.llama_load_model_from_file(params.model, model_params)
+    model = nb.llama_load_model_from_file(params.model, model_params)
 
     if not model:
         raise SystemExit(f"Unable to load model: {params.model}")
 
     # initialize the context
 
-    ctx_params: llama_context_params = nb.llama_context_params_from_gpt_params(params)
+    ctx_params = nb.llama_context_params_from_gpt_params(params)
 
-    ctx: llama_context = nb.llama_new_context_with_model(model, ctx_params)
+    ctx = nb.llama_new_context_with_model(model, ctx_params)
 
     if not ctx:
         raise SystemExit("Failed to create the llama context")
+
+
+    sparams = nb.llama_sampler_chain_default_params()
+
+    sparams.no_perf = False
+
+    smpl = nb.llama_sampler_chain_init(sparams)
+
+    if not smpl:
+        raise SystemExit(f"Unable to init sampler.")
+
+
+    nb.llama_sampler_chain_add(smpl, nb.llama_sampler_init_greedy())
+
 
     # tokenize the prompt
 
@@ -49,7 +71,7 @@ def test_nb_simple():
 
     n_kv_req: int = len(tokens_list) + (n_predict - len(tokens_list))
 
-    print("n_predict = %d, n_ctx = %d, n_kv_req = %d", n_predict, n_ctx, n_kv_req)
+    print("n_predict = %d, n_ctx = %d, n_kv_req = %d" % (n_predict, n_ctx, n_kv_req))
 
     if (n_kv_req > n_ctx):
         raise SystemExit(
@@ -57,23 +79,28 @@ def test_nb_simple():
             "either reduce n_predict or increase n_ctx.")
 
     # print the prompt token-by-token
-
+    print()
+    prompt=""
     for i in tokens_list:
-        print(nb.llama_token_to_piece(ctx, i))
+        prompt += nb.llama_token_to_piece(ctx, i)
+    print(prompt)
 
     # create a llama_batch with size 512
     # we use this object to submit token data for decoding
 
-    batch: llama_batch = nb.llama_batch_init(512, 0, 1)
+    batch = nb.llama_batch_init(512, 0, 1)
 
     # evaluate the initial prompt
-
     for i, token in enumerate(tokens_list):
-        nb.llama_batch_add(batch, token, i, [], False)
-
+        nb.llama_batch_add(batch, token, i, [0], False)
 
     # llama_decode will output logits only for the last token of the prompt
-    batch.logits[batch.n_tokens - 1] = True
+    # logits = batch.get_logits()
+    # logits[batch.n_tokens - 1] = True
+    # batch.logits[batch.n_tokens - 1] = True
+    batch.set_last_logits_to_true()
+
+    logits = batch.get_logits()
 
     if nb.llama_decode(ctx, batch) != 0:
         raise SystemExit("llama_decode() failed.")
@@ -85,121 +112,60 @@ def test_nb_simple():
 
     t_main_start: int = nb.ggml_time_us()
 
+    result: str = ""
+
     while (n_cur <= n_predict):
         # sample the next token
-        n_vocab: int = nb.llama_n_vocab(model)
-        # logits: list[float] = nb.llama_get_logits_ith(ctx, batch.n_tokens - 1)
+        if True:
+            new_token_id = nb.llama_sampler_sample(smpl, ctx, batch.n_tokens - 1)
 
-        # candidates: list[llama_token_data] = []
-        # # candidates.reserve(n_vocab)
+            # print("new_token_id: ", new_token_id)
 
-        # for i in range(n_vocab):
-        #     c = nb.llama_token_data(i, logits[i], 0.0)
-        #     candidates.append(c)
+            nb.llama_sampler_accept(smpl, new_token_id);
 
-        # candidates_p: llama_token_data_array = nb.llama_token_data_array(candidates.data(), len(candidates), False)
+            # is it an end of generation?
+            if (nb.llama_token_is_eog(model, new_token_id) or n_cur == n_predict):
+                print()
+                break
 
-        # # sample the most likely token
-        # new_token_id: llama_token = nb.llama_sample_token_greedy(ctx, &candidates_p)
+            result += nb.llama_token_to_piece(ctx, new_token_id)
 
-        # if (nb.llama_token_is_eog(model, new_token_id) || n_cur == n_predict):
-        #     break
+            # prepare the next batch
+            nb.llama_batch_clear(batch);
 
-        # print(nb.llama_token_to_piece(ctx, new_token_id))
+            # push this new token for next evaluation
+            # nb.llama_batch_add(batch, new_token_id, n_cur, { 0 }, true);
+            nb.llama_batch_add(batch, new_token_id, n_cur, [0], True)
 
-        # # prepare the next batch
-        # nb.llama_batch_clear(batch)
-
-        # # push this new token for next evaluation
-        # nb.llama_batch_add(batch, new_token_id, n_cur, [], False)
-
-        n_decode += 1
+            n_decode += 1
 
         n_cur += 1
 
         # evaluate the current batch with the transformer model
+        if nb.llama_decode(ctx, batch):
+            raise SystemExit("llama_decode() failed.")
 
-        if (nb.llama_decode(ctx, batch)):
-            raise SystemExit("failed to eval, return code.")
+    print(result)
+
+    print()
 
     t_main_end: int = nb.ggml_time_us()
 
     print("decoded %d tokens in %.2f s, speed: %.2f t/s",
             n_decode, (t_main_end - t_main_start) / 1000000.0, n_decode / ((t_main_end - t_main_start) / 1000000.0))
+    print()
 
-    nb.llama_print_timings(ctx)
+
+    nb.llama_perf_print(smpl, nb.LLAMA_PERF_TYPE_SAMPLER_CHAIN)
+    nb.llama_perf_print(ctx, nb.LLAMA_PERF_TYPE_CONTEXT)
+
+    print()
 
     nb.llama_batch_free(batch)
-
+    nb.llama_sampler_free(smpl)
     nb.llama_free(ctx)
     nb.llama_free_model(model)
 
     nb.llama_backend_free()
 
-
-
-    # while (n_cur <= n_predict) {
-    #     # sample the next token
-    #     {
-    #         auto   n_vocab = llama_n_vocab(model)
-    #         auto * logits  = llama_get_logits_ith(ctx, batch.n_tokens - 1)
-
-    #         std::vector<llama_token_data> candidates
-    #         candidates.reserve(n_vocab)
-
-    #         for (llama_token token_id = 0 token_id < n_vocab token_id++) {
-    #             candidates.emplace_back(llama_token_data{ token_id, logits[token_id], 0.0f })
-    #         }
-
-    #         llama_token_data_array candidates_p = { candidates.data(), candidates.size(), false }
-
-    #         # sample the most likely token
-    #         const llama_token new_token_id = llama_sample_token_greedy(ctx, &candidates_p)
-
-    #         # is it an end of generation?
-    #         if (llama_token_is_eog(model, new_token_id) || n_cur == n_predict) {
-    #             LOG_TEE("\n")
-
-    #             break
-    #         }
-
-    #         LOG_TEE("%s", llama_token_to_piece(ctx, new_token_id).c_str())
-    #         fflush(stdout)
-
-    #         # prepare the next batch
-    #         llama_batch_clear(batch)
-
-    #         # push this new token for next evaluation
-    #         llama_batch_add(batch, new_token_id, n_cur, { 0 }, true)
-
-    #         n_decode += 1
-    #     }
-
-    #     n_cur += 1
-
-    #     # evaluate the current batch with the transformer model
-    #     if (llama_decode(ctx, batch)) {
-    #         fprintf(stderr, "%s : failed to eval, return code %d\n", __func__, 1)
-    #         return 1
-    #     }
-    # }
-
-    # LOG_TEE("\n")
-
-    # const auto t_main_end = ggml_time_us()
-
-    # LOG_TEE("%s: decoded %d tokens in %.2f s, speed: %.2f t/s\n",
-    #         __func__, n_decode, (t_main_end - t_main_start) / 1000000.0f, n_decode / ((t_main_end - t_main_start) / 1000000.0f))
-
-    # llama_print_timings(ctx)
-
-    # fprintf(stderr, "\n")
-
-    # llama_batch_free(batch)
-
-    # llama_free(ctx)
-    # llama_free_model(model)
-
-    # llama_backend_free()
-
-    assert True
+    return True

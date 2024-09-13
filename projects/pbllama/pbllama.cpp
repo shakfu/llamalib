@@ -45,57 +45,38 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
         return std::string();
     }
 
-    // if (!gpt_params_parse(argc, argv, params, LLAMA_EXAMPLE_COMMON, print_usage)) {
-    //     return 1;
-    // }
-
-    // total length of the sequence including the prompt
-    // const int n_predict = params.n_predict;
-
     // init LLM
-
     llama_backend_init();
     llama_numa_init(params.numa);
 
     // initialize the model
-
     llama_model_params model_params = llama_model_params_from_gpt_params(params);
-
     llama_model * model_ptr = llama_load_model_from_file(params.model.c_str(), model_params);
-
     if (model_ptr == NULL) {
         fprintf(stderr , "%s: error: unable to load model\n" , __func__);
         return std::string();
     }
 
     // initialize the context
-
     llama_context_params ctx_params = llama_context_params_from_gpt_params(params);
-
     llama_context * ctx = llama_new_context_with_model(model_ptr, ctx_params);
-
     if (ctx == NULL) {
         fprintf(stderr , "%s: error: failed to create the llama_context\n" , __func__);
         return std::string();
     }
 
     auto sparams = llama_sampler_chain_default_params();
-
     sparams.no_perf = false;
-
     llama_sampler * smpl = llama_sampler_chain_init(sparams);
-
     llama_sampler_chain_add(smpl, llama_sampler_init_greedy());
 
     // tokenize the prompt
-
     std::vector<llama_token> tokens_list;
     tokens_list = ::llama_tokenize(ctx, params.prompt, true);
-
     const int n_ctx    = llama_n_ctx(ctx);
     const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size());
 
-    // LOG_TEE("\n%s: n_predict = %d, n_ctx = %d, n_kv_req = %d\n", __func__, n_predict, n_ctx, n_kv_req);
+    LOG_TEE("\n%s: n_predict = %d, n_ctx = %d, n_kv_req = %d\n", __func__, n_predict, n_ctx, n_kv_req);
 
     // make sure the KV cache is big enough to hold all the prompt and generated tokens
     if (n_kv_req > n_ctx) {
@@ -137,6 +118,8 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     int n_cur    = batch.n_tokens;
     int n_decode = 0;
 
+    // std::cout << "batch.n_tokens: " << batch.n_tokens << std::endl;
+
     std::string results;
 
     const auto t_main_start = ggml_time_us();
@@ -145,6 +128,8 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
         // sample the next token
         {
             const llama_token new_token_id = llama_sampler_sample(smpl, ctx, batch.n_tokens - 1);
+
+            // std::cout << "new_token_id: " << new_token_id << std::endl;
 
             // is it an end of generation?
             if (llama_token_is_eog(model_ptr, new_token_id) || n_cur == n_predict) {
@@ -846,7 +831,9 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_sampler_chain_init", (struct llama_sampler *  (*)(struct llama_sampler_chain_params)) &llama_sampler_chain_init, "", py::arg("params"), py::return_value_policy::reference);
     m.def("llama_sampler_chain_add", (void (*)(struct llama_sampler *, struct llama_sampler *)) &llama_sampler_chain_add, "", py::arg("chain"), py::arg("smpl"));
     m.def("llama_sampler_chain_get", (struct llama_sampler * (*)(const struct llama_sampler *, int32_t)) &llama_sampler_chain_get, "", py::arg("chain"), py::arg("i"));
+    m.def("llama_sampler_chain_remove", (struct llama_sampler * (*)(const struct llama_sampler *, int32_t)) &llama_sampler_chain_remove, "", py::arg("chain"), py::arg("i"));
     m.def("llama_sampler_chain_n", (int (*)(const struct llama_sampler *)) &llama_sampler_chain_n, "", py::arg("chain"));
+
     m.def("llama_sampler_init_greedy", (struct llama_sampler * (*)(void)) &llama_sampler_init_greedy, py::return_value_policy::reference);
     m.def("llama_sampler_init_dist", (struct llama_sampler * (*)(uint32_t)) &llama_sampler_init_dist, "", py::arg("seed"));
 
@@ -1069,7 +1056,7 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_context_params_from_gpt_params", (struct llama_context_params (*)(const struct gpt_params &)) &llama_context_params_from_gpt_params, "C++: llama_context_params_from_gpt_params(const struct gpt_params &) --> struct llama_context_params", py::arg("params"));
 
     m.def("llama_batch_clear", (void (*)(struct llama_batch &)) &llama_batch_clear, "C++: llama_batch_clear(struct llama_batch &) --> void", py::arg("batch"));
-    m.def("llama_batch_add", (void (*)(struct llama_batch &, int, int, const class std::vector<int> &, bool)) &llama_batch_add, "C++: llama_batch_add(struct llama_batch &, int, int, const class std::vector<int> &, bool) --> void", py::arg("batch"), py::arg("id"), py::arg("pos"), py::arg("seq_ids"), py::arg("logits"));
+    m.def("llama_batch_add", (void (*)(struct llama_batch &, int32_t, int32_t, const class std::vector<int32_t> &, bool)) &llama_batch_add, "", py::arg("batch"), py::arg("id"), py::arg("pos"), py::arg("seq_ids"), py::arg("logits"));
 
     py::class_<llama_chat_msg, std::shared_ptr<llama_chat_msg>> (m, "llama_chat_msg", "")
         .def( py::init( [](){ return new llama_chat_msg(); } ) )

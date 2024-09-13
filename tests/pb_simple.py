@@ -10,7 +10,7 @@ import pbllama as pb
 
 params = pb.gpt_params()
 params.model = str(MODEL)
-params.prompt = "Hello my name is"
+params.prompt = "When did the universe begin?"
 params.n_predict = 32
 
 
@@ -41,7 +41,6 @@ if not model:
 # initialize the context
 
 ctx_params = pb.llama_context_params_from_gpt_params(params)
-ctx_params.n_threads  = 4
 
 ctx = pb.llama_new_context_with_model(model, ctx_params)
 
@@ -55,8 +54,11 @@ sparams.no_perf = False
 
 smpl = pb.llama_sampler_chain_init(sparams)
 
-pb.llama_sampler_chain_add(smpl, pb.llama_sampler_init_greedy())
+if not smpl:
+    raise SystemExit(f"Unable to init sampler.")
 
+
+pb.llama_sampler_chain_add(smpl, pb.llama_sampler_init_greedy())
 
 
 # tokenize the prompt
@@ -75,9 +77,11 @@ if (n_kv_req > n_ctx):
         "either reduce n_predict or increase n_ctx.")
 
 # print the prompt token-by-token
-
+print()
+prompt=""
 for i in tokens_list:
-    print(pb.llama_token_to_piece(ctx, i))
+    prompt += pb.llama_token_to_piece(ctx, i)
+print(prompt)
 
 # create a llama_batch with size 512
 # we use this object to submit token data for decoding
@@ -85,10 +89,8 @@ for i in tokens_list:
 batch = pb.llama_batch_init(512, 0, 1)
 
 # evaluate the initial prompt
-
 for i, token in enumerate(tokens_list):
-    pb.llama_batch_add(batch, token, i, [], False)
-
+    pb.llama_batch_add(batch, token, i, [0], False)
 
 # llama_decode will output logits only for the last token of the prompt
 # logits = batch.get_logits()
@@ -96,7 +98,7 @@ for i, token in enumerate(tokens_list):
 # batch.logits[batch.n_tokens - 1] = True
 batch.set_last_logits_to_true()
 
-# logits = batch.get_logits()
+logits = batch.get_logits()
 
 if pb.llama_decode(ctx, batch) != 0:
     raise SystemExit("llama_decode() failed.")
@@ -115,6 +117,8 @@ while (n_cur <= n_predict):
     if True:
         new_token_id = pb.llama_sampler_sample(smpl, ctx, batch.n_tokens - 1)
 
+        # print("new_token_id: ", new_token_id)
+
         pb.llama_sampler_accept(smpl, new_token_id);
 
         # is it an end of generation?
@@ -129,10 +133,9 @@ while (n_cur <= n_predict):
 
         # push this new token for next evaluation
         # pb.llama_batch_add(batch, new_token_id, n_cur, { 0 }, true);
-        pb.llama_batch_add(batch, new_token_id, n_cur, [0], True) # <- CRASH HERE
+        pb.llama_batch_add(batch, new_token_id, n_cur, [0], True)
 
         n_decode += 1
-
 
     n_cur += 1
 

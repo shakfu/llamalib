@@ -4,7 +4,6 @@ export PATH := $(PWD)/bin:$(PATH)
 MODEL := models/gemma-2-9b-it-IQ4_XS.gguf
 # MODEL := models/mistral-7b-instruct-v0.1.Q4_K_M.gguf
 
-
 WITH_DYLIB=0
 
 MIN_OSX_VER := -mmacosx-version-min=13.6
@@ -19,7 +18,7 @@ $(LIBLAMMA):
 	@scripts/setup.sh
 
 cmake: $(LIBLAMMA)
-	@touch projects/cyllama/cyllama.pyx
+# 	@touch projects/cyllama/cyllama.pyx
 	@mkdir -p build && cd build && cmake .. -DLLAMA_SHAREDLIB=$(WITH_DYLIB) && make
 
 setup:
@@ -55,7 +54,7 @@ test_simple:
 		tests/simple.cpp
 	@./build/simple -m $(MODEL) -p "When did the French Revolution start?" -n 512
 
-test_retrieve:
+test_retrieve: # not working!
 	@./bin/llama-retrieval --model $(MODEL) \
 		--top-k 3 --context-file README.md \
 		--context-file LICENSE \
@@ -75,8 +74,8 @@ test_cy:
 test_pb:
 	@cd tests && python3 pb_simple.py
 
-test_pb_highlevel:
-	@cd tests && python3 pb_highlevel.py
+test_pb_hl:
+	@cd tests && python3 pb_simple_highlevel.py
 
 test_nb:
 	@cd tests && python3 nb_simple.py
