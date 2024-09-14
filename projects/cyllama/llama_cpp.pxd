@@ -201,10 +201,339 @@ cdef extern from "ggml.h":
 
         # char padding[4]
 
+    cdef void    ggml_time_init() # call this once at the beginning of the program
+    cdef int64_t ggml_time_ms()
+    cdef int64_t ggml_time_us()
+    cdef int64_t ggml_cycles()
+    cdef int64_t ggml_cycles_per_ms()
+
 #------------------------------------------------------------------------------
 
 cdef extern from "ggml-backend.h":
     ctypedef bint (*ggml_backend_sched_eval_callback)(ggml_tensor * t, bint ask, void * user_data)
+
+
+
+#------------------------------------------------------------------------------
+
+cdef extern from "sampling.h":
+
+    ctypedef enum gpt_sampler_type:
+        GPT_SAMPLER_TYPE_NONE        = 0
+        GPT_SAMPLER_TYPE_TOP_K       = 1
+        GPT_SAMPLER_TYPE_TOP_P       = 2
+        GPT_SAMPLER_TYPE_MIN_P       = 3
+        GPT_SAMPLER_TYPE_TFS_Z       = 4
+        GPT_SAMPLER_TYPE_TYPICAL_P   = 5
+        GPT_SAMPLER_TYPE_TEMPERATURE = 6
+
+
+    # sampling parameters
+    ctypedef struct gpt_sampler_params:
+        uint32_t seed   ; # the seed used to initialize llama_sampler
+
+        int32_t n_prev                 # number of previous tokens to remember
+        int32_t n_probs                # if greater than 0, output the probabilities of top n_probs tokens.
+        int32_t min_keep               # 0 = disabled, otherwise samplers should return at least min_keep tokens
+        int32_t top_k                  # <= 0 to use vocab size
+        float   top_p                  # 1.0 = disabled
+        float   min_p                  # 0.0 = disabled
+        float   tfs_z                  # 1.0 = disabled
+        float   typ_p                  # typical_p, 1.0 = disabled
+        float   temp                   # <= 0.0 to sample greedily, 0.0 to not output probabilities
+        float   dynatemp_range         # 0.0 = disabled
+        float   dynatemp_exponent      # controls how entropy maps to temperature in dynamic temperature sampler
+        int32_t penalty_last_n         # last n tokens to penalize (0 = disable penalty, -1 = context size)
+        float   penalty_repeat         # 1.0 = disabled
+        float   penalty_freq           # 0.0 = disabled
+        float   penalty_present        # 0.0 = disabled
+        int32_t mirostat               # 0 = disabled, 1 = mirostat, 2 = mirostat 2.0
+        float   mirostat_tau           # target entropy
+        float   mirostat_eta           # learning rate
+        bint    penalize_nl             # consider newlines as a repeatable token
+        bint    ignore_eos
+
+        std_vector[gpt_sampler_type] samplers
+
+        std_string grammar # optional BNF-like grammar to constrain sampling
+
+        std_vector[llama_logit_bias] logit_bias # logit biases to apply
+
+        # print the parameters into a string
+        # std_string print() const
+
+
+#------------------------------------------------------------------------------
+
+cdef extern from "common.h":
+
+    ctypedef enum llama_example:
+        LLAMA_EXAMPLE_COMMON
+        LLAMA_EXAMPLE_SPECULATIVE
+        LLAMA_EXAMPLE_MAIN
+        LLAMA_EXAMPLE_INFILL
+        LLAMA_EXAMPLE_EMBEDDING
+        LLAMA_EXAMPLE_PERPLEXITY
+        LLAMA_EXAMPLE_RETRIEVAL
+        LLAMA_EXAMPLE_PASSKEY
+        LLAMA_EXAMPLE_IMATRIX
+        LLAMA_EXAMPLE_BENCH
+        LLAMA_EXAMPLE_SERVER
+        LLAMA_EXAMPLE_CVECTOR_GENERATOR
+        LLAMA_EXAMPLE_EXPORT_LORA
+        LLAMA_EXAMPLE_LLAVA
+        LLAMA_EXAMPLE_COUNT
+
+    cdef int GGML_MAX_N_THREADS = 512
+
+    ctypedef struct cpu_params:
+        int      n_threads
+        bint     cpumask[512] # CPU affinity mask.
+        bint     mask_valid                  # Default: any CPU
+        ggml_sched_priority  priority        # Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)
+        bint     strict_cpu                  # Use strict CPU placement
+        uint32_t poll                        # Polling (busywait) level (0 - no polling, 100 - mostly polling)
+
+    ctypedef struct gpt_params:
+        llama_example curr_ex
+
+        int32_t n_predict          # new tokens to predict
+        int32_t n_ctx              # context size
+        int32_t n_batch            # logical batch size for prompt processing (must be >=32 to use BLAS)
+        int32_t n_ubatch           # physical batch size for prompt processing (must be >=32 to use BLAS)
+        int32_t n_keep             # number of tokens to keep from initial prompt
+        int32_t n_draft            # number of tokens to draft during speculative decoding
+        int32_t n_chunks           # max number of chunks to process (-1 = unlimited)
+        int32_t n_parallel         # number of parallel sequences to decode
+        int32_t n_sequences        # number of sequences to decode
+        float   p_split            # speculative decoding split probability
+        int32_t n_gpu_layers       # number of layers to store in VRAM (-1 - use default)
+        int32_t n_gpu_layers_draft # number of layers to store in VRAM for the draft model (-1 - use default)
+        int32_t main_gpu           # the GPU that is used for scratch and small tensors
+        float   tensor_split[128]  # how split tensors should be distributed across GPUs
+        int32_t grp_attn_n         # group-attention factor
+        int32_t grp_attn_w         # group-attention width
+        int32_t n_print            # print token count every n tokens (-1 = disabled)
+        float   rope_freq_base     # RoPE base frequency
+        float   rope_freq_scale    # RoPE frequency scaling factor
+        float   yarn_ext_factor    # YaRN extrapolation mix factor
+        float   yarn_attn_factor   # YaRN magnitude scaling factor
+        float   yarn_beta_fast     # YaRN low correction dim
+        float   yarn_beta_slow     # YaRN high correction dim
+        int32_t yarn_orig_ctx      # YaRN original context length
+        float   defrag_thold       # KV cache defragmentation threshold
+
+        cpu_params cpuparams
+        cpu_params cpuparams_batch
+        cpu_params draft_cpuparams
+        cpu_params draft_cpuparams_batch
+
+        ggml_backend_sched_eval_callback cb_eval
+        void * cb_eval_user_data
+
+        ggml_numa_strategy numa
+
+        llama_split_mode        split_mode         # how to split the model across GPUs
+        llama_rope_scaling_type rope_scaling_type
+        llama_pooling_type      pooling_type       # pooling type for embeddings
+        llama_attention_type    attention_type     # attention type for embeddings
+
+        gpt_sampler_params sparams
+
+        std_string model                # model path
+        std_string model_draft          # draft model for speculative decoding
+        std_string model_alias          # model alias
+        std_string model_url            # model url to download
+        std_string hf_token             # HF token
+        std_string hf_repo              # HF repo
+        std_string hf_file              # HF file
+        std_string prompt               #
+        std_string prompt_file          # store the external prompt file name
+        std_string path_prompt_cache    # path to file for saving/loading prompt eval state
+        std_string input_prefix         # string to prefix user inputs with
+        std_string input_suffix         # string to suffix user inputs with
+        std_string logdir               # directory in which to save YAML log files
+        std_string lookup_cache_static  # path of static ngram cache file for lookup decoding
+        std_string lookup_cache_dynamic # path of dynamic ngram cache file for lookup decoding
+        std_string logits_file          # file for saving *all* logits
+        std_string rpc_servers          # comma separated list of RPC servers
+
+        std_vector[std_string] in_files     # all input files
+        std_vector[std_string] antiprompt   # strings upon which more user input is prompted (a.k.a. reverse prompts)
+        std_vector[llama_model_kv_override] kv_overrides
+
+        bint lora_init_without_apply # only load lora to memory, but do not apply it to ctx (user can manually apply lora later using llama_lora_adapter_apply)
+        # vector[llama_lora_adapter_info] lora_adapters # lora adapter path with user defined scale
+
+        # vector[llama_control_vector_load_info] control_vectors # control vector with user defined scale
+
+        int32_t verbosity
+        int32_t control_vector_layer_start # layer range for control vector
+        int32_t control_vector_layer_end   # layer range for control vector
+
+        int32_t ppl_stride          # stride for perplexity calculations. If left at 0, the pre-existing approach will be used.
+        int32_t ppl_output_type     # = 0 -> ppl output is as usual, = 1 -> ppl output is num_tokens, ppl, one per line
+
+        bint   hellaswag            # compute HellaSwag score over random tasks from datafile supplied in prompt
+        size_t hellaswag_tasks      # number of tasks to use when computing the HellaSwag score
+
+        bint   winogrande           # compute Winogrande score over random tasks from datafile supplied in prompt
+        size_t winogrande_tasks     # number of tasks to use when computing the Winogrande score. If 0, all tasks will be computed
+
+        bint   multiple_choice      # compute TruthfulQA score over random tasks from datafile supplied in prompt
+        size_t multiple_choice_tasks # number of tasks to use when computing the TruthfulQA score. If 0, all tasks will be computed
+
+        bint   kl_divergence        # compute KL divergence
+
+        # std::function<void(int, char **)> print_usage # print example-specific usage and example
+        bint usage                  # print usage
+        bint use_color              # use color to distinguish generations and inputs
+        bint special                # enable special token output
+        bint interactive            # interactive mode
+        bint interactive_first      # wait for user input immediately
+        bint conversation           # conversation mode (does not print special tokens and suffix/prefix)
+        bint prompt_cache_all       # save user input and generations to prompt cache
+        bint prompt_cache_ro        # open the prompt cache read-only and do not update it
+
+        bint escape                 # escape "\n", "\r", "\t", "\'", "\"", and "\\"
+        bint multiline_input        # reverse the usage of `\`
+        bint simple_io              # improves compatibility with subprocesses and limited consoles
+        bint cont_batching          # insert new sequences for decoding on-the-fly
+        bint flash_attn             # flash attention
+
+        bint input_prefix_bos       # prefix BOS to user inputs, preceding input_prefix
+        bint logits_all             # return logits for all tokens in the batch
+        bint use_mmap               # use mmap for faster loads
+        bint use_mlock              # use mlock to keep model in memory
+        bint verbose_prompt         # print prompt tokens before generation
+        bint display_prompt         # print prompt before generation
+        bint infill                 # use infill mode
+        bint dump_kv_cache          # dump the KV cache contents for debugging purposes
+        bint no_kv_offload          # disable KV offloading
+        bint warmup                 # warmup run
+        bint check_tensors          # validate tensor data
+
+        std_string cache_type_k    # KV cache data type for the K
+        std_string cache_type_v    # KV cache data type for the V
+
+        # multimodal models (see examples/llava)
+        std_string mmproj          # path to multimodal projector
+        std_vector[std_string] image # path to image file(s)
+
+        # embedding
+        bint embedding              # get only sentence embedding
+        int32_t embd_normalize      # normalisation for embendings (-1=none, 0=max absolute int16, 1=taxicab, 2=euclidean, >2=p-norm)
+        std_string embd_out        # empty = default, "array" = [[],[]...], "json" = openai style, "json+" = same "json" + cosine similarity matrix
+        std_string embd_sep        # separator of embendings
+
+        # server params
+        int32_t port                # server listens on this network port
+        int32_t timeout_read        # http read timeout in seconds
+        int32_t timeout_write       # http write timeout in seconds
+        int     n_threads_http      # number of threads to process HTTP requests (TODO: support threadpool)
+
+        std_string hostname
+        std_string public_path
+        std_string chat_template
+        std_string system_prompt
+        bint enable_chat_template
+
+        std_vector[std_string] api_keys
+
+        std_string ssl_file_key 
+        std_string ssl_file_cert
+
+        bint endpoint_slots
+        bint endpoint_metrics
+
+        bint log_json
+
+        std_string slot_save_path
+
+        float slot_prompt_similarity
+
+        # batched-bench params
+        bint is_pp_sharede
+
+        std_vector[int32_t] n_pp
+        std_vector[int32_t] n_tg
+        std_vector[int32_t] n_pl
+
+        # retrieval params
+        std_vector[std_string] context_files # context files to embed
+
+        int32_t chunk_size      # chunk size for context embedding
+
+        std_string chunk_separator # chunk separator for context embedding
+
+        # passkey params
+        int32_t n_junk      # number of times to repeat the junk text
+        int32_t i_pos       # position of the passkey in the junk text
+
+        # imatrix params
+        std_string out_file # save the resulting imatrix to this file
+
+        int32_t n_out_freq       # output the imatrix every n_out_freq iterations
+        int32_t n_save_freq      # save the imatrix every n_save_freq iterations
+        int32_t i_chunk          # start processing from this chunk
+
+        bint process_output      # collect data for the output tensor
+        bint compute_ppl         # whether to compute perplexity
+
+        # cvector-generator params
+        int n_pca_batch
+        int n_pca_iterations
+        # dimre_method cvector_dimre_method
+        std_string cvector_outfile
+        std_string cvector_positive_file
+        std_string cvector_negative_file
+
+        bint spm_infill
+
+        std_string lora_outfile
+
+        # batched-bench params
+        bint batched_bench_output_jsonl
+
+    ctypedef struct llama_arg:
+        std_set[llama_example] examples
+        std_vector[const char *] args
+        const char * value_hint   # help text or example for arg value
+        const char * value_hint_2 # for second arg value
+        const char * env         
+
+    cdef std_vector[llama_arg] gpt_params_parser_init(gpt_params & params, llama_example ex)
+
+
+#------------------------------------------------------------------------------
+
+cdef extern from "arg.h":
+
+    ctypedef struct llama_arg:
+        std_set[llama_example] examples
+        std_vector[const char *] args
+        const char * value_hint_2   # help text or example for arg value
+        const char * value_hint_2   # for second arg value
+        const char * env
+        std_string help
+        bint is_sparam              # is current arg a sampling param?
+        void (*handler_void)   (gpt_params & params)
+        void (*handler_string) (gpt_params & params, const std_string &)
+        void (*handler_str_str)(gpt_params & params, const std_string &, const std_string &)
+        void (*handler_int)    (gpt_params & params, int)
+
+    ctypedef struct gpt_params_context:
+        llama_example ex
+        gpt_params & params
+        std_vector[llama_arg] options
+        void(*print_usage)(int, char **)
+
+    # parse input arguments from CLI
+    # if one argument has invalid value, it will automatically display usage of the specific argument (and not the full usage message)
+    cdef bint gpt_params_parse(int argc, char ** argv, gpt_params & params, llama_example ex, void(*print_usage)(int, char **))
+
+    # function to be used by test-arg-parser
+    cdef gpt_params_context gpt_params_parser_init(gpt_params & params, llama_example ex, void(*print_usage)(int, char **))
 
 
 #------------------------------------------------------------------------------
@@ -433,6 +762,7 @@ cdef extern from "llama.h":
         bint embeddings  # if true, extract embeddings (together with logits)
         bint offload_kqv # whether to offload the KQV ops (including the KV cache) to GPU
         bint flash_attn  # whether to use flash attention [EXPERIMENTAL]
+        bint no_perf     # whether to measure performance timings
 
         # Abort callback
         # if it returns true, execution of llama_decode() will be aborted
@@ -1212,304 +1542,31 @@ cdef extern from "llama.h":
     # NOTE: Used by llama.cpp examples, avoid using in third-party apps. Instead, do your own performance measurements.
     #
 
-    ctypedef enum llama_perf_type:
-        LLAMA_PERF_TYPE_CONTEXT       = 0
-        LLAMA_PERF_TYPE_SAMPLER_CHAIN = 1
+    ctypedef struct llama_perf_context_data:
+        double t_start_ms
+        double t_load_ms
+        double t_p_eval_ms
+        double t_eval_ms
 
-    cdef void llama_perf_print(const void * ctx, llama_perf_type type)
-    cdef void llama_perf_reset(      void * ctx, llama_perf_type type)
+        int32_t n_p_eval
+        int32_t n_eval
+
+    ctypedef struct llama_perf_sampler_data:
+        double t_sample_ms
+
+        int32_t n_sample
+
+    cdef llama_perf_context_data llama_perf_context(const llama_context * ctx)
+    cdef void llama_perf_context_print(const llama_context * ctx)
+    cdef void llama_perf_context_reset(      llama_context * ctx)
+
+    # NOTE: the following work only with samplers constructed via llama_sampler_chain_init
+    cdef llama_perf_sampler_data llama_perf_sampler(const llama_sampler * chain)
+    cdef void llama_perf_sampler_print(const llama_sampler * chain)
+    cdef void llama_perf_sampler_reset(      llama_sampler * chain)
+
 
     cdef void llama_perf_dump_yaml(FILE * stream, const llama_context * ctx)
-
-
-#------------------------------------------------------------------------------
-
-cdef extern from "sampling.h":
-
-    ctypedef enum gpt_sampler_type:
-        GPT_SAMPLER_TYPE_NONE        = 0
-        GPT_SAMPLER_TYPE_TOP_K       = 1
-        GPT_SAMPLER_TYPE_TOP_P       = 2
-        GPT_SAMPLER_TYPE_MIN_P       = 3
-        GPT_SAMPLER_TYPE_TFS_Z       = 4
-        GPT_SAMPLER_TYPE_TYPICAL_P   = 5
-        GPT_SAMPLER_TYPE_TEMPERATURE = 6
-
-
-    # sampling parameters
-    ctypedef struct gpt_sampler_params:
-        uint32_t seed   ; # the seed used to initialize llama_sampler
-
-        int32_t n_prev                 # number of previous tokens to remember
-        int32_t n_probs                # if greater than 0, output the probabilities of top n_probs tokens.
-        int32_t min_keep               # 0 = disabled, otherwise samplers should return at least min_keep tokens
-        int32_t top_k                  # <= 0 to use vocab size
-        float   top_p                  # 1.0 = disabled
-        float   min_p                  # 0.0 = disabled
-        float   tfs_z                  # 1.0 = disabled
-        float   typ_p                  # typical_p, 1.0 = disabled
-        float   temp                   # <= 0.0 to sample greedily, 0.0 to not output probabilities
-        float   dynatemp_range         # 0.0 = disabled
-        float   dynatemp_exponent      # controls how entropy maps to temperature in dynamic temperature sampler
-        int32_t penalty_last_n         # last n tokens to penalize (0 = disable penalty, -1 = context size)
-        float   penalty_repeat         # 1.0 = disabled
-        float   penalty_freq           # 0.0 = disabled
-        float   penalty_present        # 0.0 = disabled
-        int32_t mirostat               # 0 = disabled, 1 = mirostat, 2 = mirostat 2.0
-        float   mirostat_tau           # target entropy
-        float   mirostat_eta           # learning rate
-        bint    penalize_nl             # consider newlines as a repeatable token
-        bint    ignore_eos
-
-        std_vector[gpt_sampler_type] samplers
-
-        std_string grammar # optional BNF-like grammar to constrain sampling
-
-        std_vector[llama_logit_bias] logit_bias # logit biases to apply
-
-        # print the parameters into a string
-        # std_string print() const
-
-#------------------------------------------------------------------------------
-
-cdef extern from "common.h":
-
-    ctypedef enum llama_example:
-        LLAMA_EXAMPLE_COMMON
-        LLAMA_EXAMPLE_SPECULATIVE
-        LLAMA_EXAMPLE_MAIN
-        LLAMA_EXAMPLE_INFILL
-        LLAMA_EXAMPLE_EMBEDDING
-        LLAMA_EXAMPLE_PERPLEXITY
-        LLAMA_EXAMPLE_RETRIEVAL
-        LLAMA_EXAMPLE_PASSKEY
-        LLAMA_EXAMPLE_IMATRIX
-        LLAMA_EXAMPLE_BENCH
-        LLAMA_EXAMPLE_SERVER
-        LLAMA_EXAMPLE_CVECTOR_GENERATOR
-        LLAMA_EXAMPLE_EXPORT_LORA
-        LLAMA_EXAMPLE_LLAVA
-        LLAMA_EXAMPLE_COUNT
-
-    cdef int GGML_MAX_N_THREADS = 512
-
-    ctypedef struct cpu_params:
-        int      n_threads
-        bint     cpumask[512] # CPU affinity mask.
-        bint     mask_valid                  # Default: any CPU
-        ggml_sched_priority  priority        # Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)
-        bint     strict_cpu                  # Use strict CPU placement
-        uint32_t poll                        # Polling (busywait) level (0 - no polling, 100 - mostly polling)
-
-    ctypedef struct gpt_params:
-        llama_example curr_ex
-
-        int32_t n_predict          # new tokens to predict
-        int32_t n_ctx              # context size
-        int32_t n_batch            # logical batch size for prompt processing (must be >=32 to use BLAS)
-        int32_t n_ubatch           # physical batch size for prompt processing (must be >=32 to use BLAS)
-        int32_t n_keep             # number of tokens to keep from initial prompt
-        int32_t n_draft            # number of tokens to draft during speculative decoding
-        int32_t n_chunks           # max number of chunks to process (-1 = unlimited)
-        int32_t n_parallel         # number of parallel sequences to decode
-        int32_t n_sequences        # number of sequences to decode
-        float   p_split            # speculative decoding split probability
-        int32_t n_gpu_layers       # number of layers to store in VRAM (-1 - use default)
-        int32_t n_gpu_layers_draft # number of layers to store in VRAM for the draft model (-1 - use default)
-        int32_t main_gpu           # the GPU that is used for scratch and small tensors
-        float   tensor_split[128]  # how split tensors should be distributed across GPUs
-        int32_t grp_attn_n         # group-attention factor
-        int32_t grp_attn_w         # group-attention width
-        int32_t n_print            # print token count every n tokens (-1 = disabled)
-        float   rope_freq_base     # RoPE base frequency
-        float   rope_freq_scale    # RoPE frequency scaling factor
-        float   yarn_ext_factor    # YaRN extrapolation mix factor
-        float   yarn_attn_factor   # YaRN magnitude scaling factor
-        float   yarn_beta_fast     # YaRN low correction dim
-        float   yarn_beta_slow     # YaRN high correction dim
-        int32_t yarn_orig_ctx      # YaRN original context length
-        float   defrag_thold       # KV cache defragmentation threshold
-
-        cpu_params cpuparams
-        cpu_params cpuparams_batch
-        cpu_params draft_cpuparams
-        cpu_params draft_cpuparams_batch
-
-        ggml_backend_sched_eval_callback cb_eval
-        void * cb_eval_user_data
-
-        ggml_numa_strategy numa
-
-        llama_split_mode        split_mode         # how to split the model across GPUs
-        llama_rope_scaling_type rope_scaling_type
-        llama_pooling_type      pooling_type       # pooling type for embeddings
-        llama_attention_type    attention_type     # attention type for embeddings
-
-        gpt_sampler_params sparams
-
-        std_string model                # model path
-        std_string model_draft          # draft model for speculative decoding
-        std_string model_alias          # model alias
-        std_string model_url            # model url to download
-        std_string hf_token             # HF token
-        std_string hf_repo              # HF repo
-        std_string hf_file              # HF file
-        std_string prompt               #
-        std_string prompt_file          # store the external prompt file name
-        std_string path_prompt_cache    # path to file for saving/loading prompt eval state
-        std_string input_prefix         # string to prefix user inputs with
-        std_string input_suffix         # string to suffix user inputs with
-        std_string logdir               # directory in which to save YAML log files
-        std_string lookup_cache_static  # path of static ngram cache file for lookup decoding
-        std_string lookup_cache_dynamic # path of dynamic ngram cache file for lookup decoding
-        std_string logits_file          # file for saving *all* logits
-        std_string rpc_servers          # comma separated list of RPC servers
-
-        std_vector[std_string] in_files     # all input files
-        std_vector[std_string] antiprompt   # strings upon which more user input is prompted (a.k.a. reverse prompts)
-        std_vector[llama_model_kv_override] kv_overrides
-
-        bint lora_init_without_apply # only load lora to memory, but do not apply it to ctx (user can manually apply lora later using llama_lora_adapter_apply)
-        # vector[llama_lora_adapter_info] lora_adapters # lora adapter path with user defined scale
-
-        # vector[llama_control_vector_load_info] control_vectors # control vector with user defined scale
-
-        int32_t verbosity
-        int32_t control_vector_layer_start # layer range for control vector
-        int32_t control_vector_layer_end   # layer range for control vector
-
-        int32_t ppl_stride          # stride for perplexity calculations. If left at 0, the pre-existing approach will be used.
-        int32_t ppl_output_type     # = 0 -> ppl output is as usual, = 1 -> ppl output is num_tokens, ppl, one per line
-
-        bint   hellaswag            # compute HellaSwag score over random tasks from datafile supplied in prompt
-        size_t hellaswag_tasks      # number of tasks to use when computing the HellaSwag score
-
-        bint   winogrande           # compute Winogrande score over random tasks from datafile supplied in prompt
-        size_t winogrande_tasks     # number of tasks to use when computing the Winogrande score. If 0, all tasks will be computed
-
-        bint   multiple_choice      # compute TruthfulQA score over random tasks from datafile supplied in prompt
-        size_t multiple_choice_tasks # number of tasks to use when computing the TruthfulQA score. If 0, all tasks will be computed
-
-        bint   kl_divergence        # compute KL divergence
-
-        # std::function<void(int, char **)> print_usage # print example-specific usage and example
-        bint usage                  # print usage
-        bint use_color              # use color to distinguish generations and inputs
-        bint special                # enable special token output
-        bint interactive            # interactive mode
-        bint interactive_first      # wait for user input immediately
-        bint conversation           # conversation mode (does not print special tokens and suffix/prefix)
-        bint prompt_cache_all       # save user input and generations to prompt cache
-        bint prompt_cache_ro        # open the prompt cache read-only and do not update it
-
-        bint escape                 # escape "\n", "\r", "\t", "\'", "\"", and "\\"
-        bint multiline_input        # reverse the usage of `\`
-        bint simple_io              # improves compatibility with subprocesses and limited consoles
-        bint cont_batching          # insert new sequences for decoding on-the-fly
-        bint flash_attn             # flash attention
-
-        bint input_prefix_bos       # prefix BOS to user inputs, preceding input_prefix
-        bint logits_all             # return logits for all tokens in the batch
-        bint use_mmap               # use mmap for faster loads
-        bint use_mlock              # use mlock to keep model in memory
-        bint verbose_prompt         # print prompt tokens before generation
-        bint display_prompt         # print prompt before generation
-        bint infill                 # use infill mode
-        bint dump_kv_cache          # dump the KV cache contents for debugging purposes
-        bint no_kv_offload          # disable KV offloading
-        bint warmup                 # warmup run
-        bint check_tensors          # validate tensor data
-
-        std_string cache_type_k    # KV cache data type for the K
-        std_string cache_type_v    # KV cache data type for the V
-
-        # multimodal models (see examples/llava)
-        std_string mmproj          # path to multimodal projector
-        std_vector[std_string] image # path to image file(s)
-
-        # embedding
-        bint embedding              # get only sentence embedding
-        int32_t embd_normalize      # normalisation for embendings (-1=none, 0=max absolute int16, 1=taxicab, 2=euclidean, >2=p-norm)
-        std_string embd_out        # empty = default, "array" = [[],[]...], "json" = openai style, "json+" = same "json" + cosine similarity matrix
-        std_string embd_sep        # separator of embendings
-
-        # server params
-        int32_t port                # server listens on this network port
-        int32_t timeout_read        # http read timeout in seconds
-        int32_t timeout_write       # http write timeout in seconds
-        int     n_threads_http      # number of threads to process HTTP requests (TODO: support threadpool)
-
-        std_string hostname
-        std_string public_path
-        std_string chat_template
-        std_string system_prompt
-        bint enable_chat_template
-
-        std_vector[std_string] api_keys
-
-        std_string ssl_file_key 
-        std_string ssl_file_cert
-
-        bint endpoint_slots
-        bint endpoint_metrics
-
-        bint log_json
-
-        std_string slot_save_path
-
-        float slot_prompt_similarity
-
-        # batched-bench params
-        bint is_pp_sharede
-
-        std_vector[int32_t] n_pp
-        std_vector[int32_t] n_tg
-        std_vector[int32_t] n_pl
-
-        # retrieval params
-        std_vector[std_string] context_files # context files to embed
-
-        int32_t chunk_size      # chunk size for context embedding
-
-        std_string chunk_separator # chunk separator for context embedding
-
-        # passkey params
-        int32_t n_junk      # number of times to repeat the junk text
-        int32_t i_pos       # position of the passkey in the junk text
-
-        # imatrix params
-        std_string out_file # save the resulting imatrix to this file
-
-        int32_t n_out_freq       # output the imatrix every n_out_freq iterations
-        int32_t n_save_freq      # save the imatrix every n_save_freq iterations
-        int32_t i_chunk          # start processing from this chunk
-
-        bint process_output      # collect data for the output tensor
-        bint compute_ppl         # whether to compute perplexity
-
-        # cvector-generator params
-        int n_pca_batch
-        int n_pca_iterations
-        # dimre_method cvector_dimre_method
-        std_string cvector_outfile
-        std_string cvector_positive_file
-        std_string cvector_negative_file
-
-        bint spm_infill
-
-        std_string lora_outfile
-
-        # batched-bench params
-        bint batched_bench_output_jsonl
-
-    ctypedef struct llama_arg:
-        std_set[llama_example] examples
-        std_vector[const char *] args
-        const char * value_hint   # help text or example for arg value
-        const char * value_hint_2 # for second arg value
-        const char * env         
-
-    cdef std_vector[llama_arg] gpt_params_parser_init(gpt_params & params, llama_example ex)
 
 
 

@@ -18,7 +18,7 @@ $(LIBLAMMA):
 	@scripts/setup.sh
 
 cmake: $(LIBLAMMA)
-# 	@touch projects/cyllama/cyllama.pyx
+	@touch projects/cyllama/cyllama.pyx
 	@mkdir -p build && cd build && cmake .. -DLLAMA_SHAREDLIB=$(WITH_DYLIB) && make
 
 setup:
