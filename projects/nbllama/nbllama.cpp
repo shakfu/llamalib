@@ -351,7 +351,8 @@ NB_MODULE(nbllama, m) {
         .def_rw("logits_all", &llama_context_params::logits_all)
         .def_rw("embeddings", &llama_context_params::embeddings)
         .def_rw("offload_kqv", &llama_context_params::offload_kqv)
-        .def_rw("flash_attn", &llama_context_params::flash_attn);
+        .def_rw("flash_attn", &llama_context_params::flash_attn)
+        .def_rw("no_perf", &llama_context_params::no_perf);
 
     nb::class_<llama_model_quantize_params> (m, "llama_model_quantize_params")
         .def(nb::init<>())
@@ -586,13 +587,29 @@ NB_MODULE(nbllama, m) {
     // If this is not called, or NULL is supplied, everything is output on stderr.
     m.def("llama_log_set", (void (*)(ggml_log_callback log_callback, void * user_data)) &llama_log_set, "", nb::arg("log_callback"), nb::arg("user_data"));
 
-    nb::enum_<enum llama_perf_type>(m, "llama_perf_type", "")
-        .value("LLAMA_PERF_TYPE_CONTEXT", LLAMA_PERF_TYPE_CONTEXT)
-        .value("LLAMA_PERF_TYPE_SAMPLER_CHAIN", LLAMA_PERF_TYPE_SAMPLER_CHAIN)
-        .export_values();
-    
-    m.def("llama_perf_print", (void (*)(const void *, enum llama_perf_type)) &llama_perf_print, "", nb::arg("ctx"), nb::arg("type"));
-    m.def("llama_perf_reset", (void (*)(const void *, enum llama_perf_type)) &llama_perf_reset, "", nb::arg("ctx"), nb::arg("type"));
+    nb::class_<llama_perf_context_data> (m, "llama_perf_context_data", "")
+        .def(nb::init<>())
+        .def_rw("t_start_ms", &llama_perf_context_data::t_start_ms)
+        .def_rw("t_load_ms", &llama_perf_context_data::t_load_ms)
+        .def_rw("t_p_eval_ms", &llama_perf_context_data::t_p_eval_ms)
+        .def_rw("t_eval_ms", &llama_perf_context_data::t_eval_ms)
+        .def_rw("n_p_eval", &llama_perf_context_data::n_p_eval)
+        .def_rw("n_eval", &llama_perf_context_data::n_eval);
+
+    nb::class_<llama_perf_sampler_data> (m, "llama_perf_sampler_data", "")
+        .def(nb::init<>())
+        .def_rw("t_sample_ms", &llama_perf_sampler_data::t_sample_ms)
+        .def_rw("n_sample", &llama_perf_sampler_data::n_sample);
+
+    m.def("llama_perf_context", (struct llama_perf_context_data (*)(const struct llama_context *)) &llama_perf_context, "", nb::arg("ctx"));
+    m.def("llama_perf_context_print", (void (*)(const struct llama_context *)) &llama_perf_context_print, "", nb::arg("ctx"));
+    m.def("llama_perf_context_reset", (void (*)(struct llama_context *)) &llama_perf_context_reset, "", nb::arg("ctx"));
+
+    m.def("llama_perf_sampler", (struct llama_perf_sampler_data (*)(const struct llama_sampler *)) &llama_perf_sampler, "", nb::arg("chain"));
+    m.def("llama_perf_sampler_print", (void (*)(const struct llama_sampler *)) &llama_perf_sampler_print, "", nb::arg("chain"));
+    m.def("llama_perf_sampler_reset", (void (*)(struct llama_sampler *)) &llama_perf_sampler_reset, "", nb::arg("chain"));
+
+
     m.def("llama_perf_dump_yaml", (const char * (*)(FILE *, const struct llama_context *)) &llama_perf_dump_yaml, "", nb::arg("stream"), nb::arg("ctx"));
 
 

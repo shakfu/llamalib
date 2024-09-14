@@ -505,7 +505,8 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("logits_all", &llama_context_params::logits_all)
         .def_readwrite("embeddings", &llama_context_params::embeddings)
         .def_readwrite("offload_kqv", &llama_context_params::offload_kqv)
-        .def_readwrite("flash_attn", &llama_context_params::flash_attn);
+        .def_readwrite("flash_attn", &llama_context_params::flash_attn)
+        .def_readwrite("no_perf", &llama_context_params::no_perf);
 
     py::class_<llama_model_quantize_params, std::shared_ptr<llama_model_quantize_params>> (m, "llama_model_quantize_params", "")
         .def( py::init( [](){ return new llama_model_quantize_params(); } ) )
