@@ -153,9 +153,8 @@ print("decoded %d tokens in %.2f s, speed: %.2f t/s",
         n_decode, (t_main_end - t_main_start) / 1000000.0, n_decode / ((t_main_end - t_main_start) / 1000000.0))
 print()
 
-
-pb.llama_perf_print(smpl, pb.LLAMA_PERF_TYPE_SAMPLER_CHAIN)
-pb.llama_perf_print(ctx, pb.LLAMA_PERF_TYPE_CONTEXT)
+pb.llama_perf_sampler_print(smpl)
+pb.llama_perf_context_print(ctx)
 
 print()
 

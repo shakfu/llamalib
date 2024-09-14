@@ -163,8 +163,10 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
 
     LOG_TEE("\n");
 
-    llama_perf_print(smpl, LLAMA_PERF_TYPE_SAMPLER_CHAIN);
-    llama_perf_print(ctx,  LLAMA_PERF_TYPE_CONTEXT);
+    llama_perf_sampler_print(smpl);
+    llama_perf_context_print(ctx);
+
+    fprintf(stderr, "\n");
 
     llama_batch_free(batch);
     llama_sampler_free(smpl);
@@ -865,13 +867,28 @@ PYBIND11_MODULE(pbllama, m) {
     // If this is not called, or NULL is supplied, everything is output on stderr.
     m.def("llama_log_set", (void (*)(ggml_log_callback log_callback, void * user_data)) &llama_log_set, "", py::arg("log_callback"), py::arg("user_data"));
 
-    py::enum_<enum llama_perf_type>(m, "llama_perf_type", py::arithmetic(), "")
-        .value("LLAMA_PERF_TYPE_CONTEXT", LLAMA_PERF_TYPE_CONTEXT)
-        .value("LLAMA_PERF_TYPE_SAMPLER_CHAIN", LLAMA_PERF_TYPE_SAMPLER_CHAIN)
-        .export_values();
+    py::class_<llama_perf_context_data, std::shared_ptr<llama_perf_context_data>> (m, "llama_perf_context_data", "")
+        .def( py::init( [](){ return new llama_perf_context_data(); } ) )
+        .def_readwrite("t_start_ms", &llama_perf_context_data::t_start_ms)
+        .def_readwrite("t_load_ms", &llama_perf_context_data::t_load_ms)
+        .def_readwrite("t_p_eval_ms", &llama_perf_context_data::t_p_eval_ms)
+        .def_readwrite("t_eval_ms", &llama_perf_context_data::t_eval_ms)
+        .def_readwrite("n_p_eval", &llama_perf_context_data::n_p_eval)
+        .def_readwrite("n_eval", &llama_perf_context_data::n_eval);
 
-    m.def("llama_perf_print", (void (*)(const void *, enum llama_perf_type)) &llama_perf_print, "", py::arg("ctx"), py::arg("type"));
-    m.def("llama_perf_reset", (void (*)(const void *, enum llama_perf_type)) &llama_perf_reset, "", py::arg("ctx"), py::arg("type"));
+    py::class_<llama_perf_sampler_data, std::shared_ptr<llama_perf_sampler_data>> (m, "llama_perf_sampler_data", "")
+        .def( py::init( [](){ return new llama_perf_sampler_data(); } ) )
+        .def_readwrite("t_sample_ms", &llama_perf_sampler_data::t_sample_ms)
+        .def_readwrite("n_sample", &llama_perf_sampler_data::n_sample);
+
+    m.def("llama_perf_context", (struct llama_perf_context_data (*)(const struct llama_context *)) &llama_perf_context, "", py::arg("ctx"));
+    m.def("llama_perf_context_print", (void (*)(const struct llama_context *)) &llama_perf_context_print, "", py::arg("ctx"));
+    m.def("llama_perf_context_reset", (void (*)(struct llama_context *)) &llama_perf_context_reset, "", py::arg("ctx"));
+
+    m.def("llama_perf_sampler", (struct llama_perf_sampler_data (*)(const struct llama_sampler *)) &llama_perf_sampler, "", py::arg("chain"));
+    m.def("llama_perf_sampler_print", (void (*)(const struct llama_sampler *)) &llama_perf_sampler_print, "", py::arg("chain"));
+    m.def("llama_perf_sampler_reset", (void (*)(struct llama_sampler *)) &llama_perf_sampler_reset, "", py::arg("chain"));
+
     m.def("llama_perf_dump_yaml", (const char * (*)(FILE *, const struct llama_context *)) &llama_perf_dump_yaml, "", py::arg("stream"), py::arg("ctx"));
 
     // -----------------------------------------------------------------------

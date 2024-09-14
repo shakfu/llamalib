@@ -1,4 +1,4 @@
-find_package(Python 3.8 COMPONENTS Interpreter Development Development.Module REQUIRED)
+find_package(Python 3.10 COMPONENTS Interpreter Development Development.Module REQUIRED)
 
 if(DEBUG)
 message(STATUS "Python_FOUND: ${Python_FOUND}")
@@ -59,6 +59,6 @@ set(LLAMA_LINK_LIBS
 if(Python_FOUND)
 	add_subdirectory(scratch)
 	add_subdirectory(cyllama)
-	add_subdirectory(nbllama)
+	# add_subdirectory(nbllama)
 	add_subdirectory(pbllama)
 endif()
