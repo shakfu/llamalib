@@ -98,7 +98,7 @@ for i, token in enumerate(tokens_list):
 # batch.logits[batch.n_tokens - 1] = True
 batch.set_last_logits_to_true()
 
-logits = batch.get_logits()
+# logits = batch.get_logits()
 
 if nb.llama_decode(ctx, batch) != 0:
     raise SystemExit("llama_decode() failed.")
@@ -154,10 +154,10 @@ print("decoded %d tokens in %.2f s, speed: %.2f t/s",
 print()
 
 
-nb.llama_perf_print(smpl, nb.LLAMA_PERF_TYPE_SAMPLER_CHAIN)
-nb.llama_perf_print(ctx, nb.LLAMA_PERF_TYPE_CONTEXT)
+# nb.llama_perf_print(smpl, nb.LLAMA_PERF_TYPE_SAMPLER_CHAIN)
+# nb.llama_perf_print(ctx, nb.LLAMA_PERF_TYPE_CONTEXT)
 
-print()
+# print()
 
 nb.llama_batch_free(batch)
 nb.llama_sampler_free(smpl)

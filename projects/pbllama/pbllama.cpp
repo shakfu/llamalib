@@ -530,7 +530,6 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("role", &llama_chat_message::role)
         .def_readwrite("content", &llama_chat_message::content);
 
-
     m.def("llama_model_default_params", (struct llama_model_params (*)()) &llama_model_default_params);
     m.def("llama_context_default_params", (struct llama_context_params (*)()) &llama_context_default_params);
     m.def("llama_sampler_chain_default_params", (struct llama_sampler_chain_params (*)()) &llama_sampler_chain_default_params);
@@ -778,6 +777,8 @@ PYBIND11_MODULE(pbllama, m) {
         Negative indicies can be used to access embeddings in reverse order, -1 is th=
     )pbdoc", py::arg("ctx"), py::arg("seq_id"));
 
+    m.def("llama_get_embeddings_seq", (float* (*)(const struct llama_context *, llama_seq_id)) &llama_get_embeddings_seq, "", py::arg("ctx"), py::arg("seq_id"));
+
     m.def("llama_token_get_text", (const char* (*)(const struct llama_model *, llama_token)) &llama_token_get_text, "", py::arg("model"), py::arg("token"));
     m.def("llama_token_get_score", (float (*)(const struct llama_model *, llama_token)) &llama_token_get_score, "", py::arg("model"), py::arg("token"));
 
@@ -869,9 +870,6 @@ PYBIND11_MODULE(pbllama, m) {
         .value("LLAMA_PERF_TYPE_SAMPLER_CHAIN", LLAMA_PERF_TYPE_SAMPLER_CHAIN)
         .export_values();
 
-    LLAMA_API void llama_perf_print(const void * ctx, enum llama_perf_type type);
-    LLAMA_API void llama_perf_reset(      void * ctx, enum llama_perf_type type);
-    
     m.def("llama_perf_print", (void (*)(const void *, enum llama_perf_type)) &llama_perf_print, "", py::arg("ctx"), py::arg("type"));
     m.def("llama_perf_reset", (void (*)(const void *, enum llama_perf_type)) &llama_perf_reset, "", py::arg("ctx"), py::arg("type"));
     m.def("llama_perf_dump_yaml", (const char * (*)(FILE *, const struct llama_context *)) &llama_perf_dump_yaml, "", py::arg("stream"), py::arg("ctx"));
@@ -1021,11 +1019,10 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("lora_outfile", &gpt_params::lora_outfile)
         .def("assign", (struct gpt_params & (gpt_params::*)(const struct gpt_params &)) &gpt_params::operator=, "C++: gpt_params::operator=(const struct gpt_params &) --> struct gpt_params &", py::return_value_policy::automatic, py::arg(""));
 
-
+    // overloaded
 
     m.def("llama_token_to_piece", (std::string (*)(const struct llama_context *, llama_token, bool)) &llama_token_to_piece, "", py::arg("ctx"), py::arg("token"), py::arg("special") = true);
 
-    // overloaded
     // m.def("llama_tokenize", [](const struct llama_context * ctx, const std::string & text, bool add_special, bool parse_special = false) -> std::vector<llama_token> {
     //     std::vector<llama_token> tokens_list;
     //     tokens_list = llama_tokenize(ctx, text, add_special, parse_special);

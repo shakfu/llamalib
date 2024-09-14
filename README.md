@@ -19,7 +19,7 @@ Development only on macOS to keep things simple. The following table provide an 
 | wrapper-type            | pybind11 	  | nanobind 	  | cython 	      |
 | llama.h                 | 1 			  | 1 			  | 1 			  |
 | high-level simple-cli   | 1 			  | 0 			  | 0 			  |
-| low-level simple-cli    | 1 			  | 0 			  | 0 			  |
+| low-level simple-cli    | 1 			  | 1 			  | 0 			  |
 | low-level llama-cli     | 0 			  | 0 			  | 0 			  |
   
 

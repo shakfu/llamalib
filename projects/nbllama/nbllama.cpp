@@ -3,6 +3,7 @@
 #include <nanobind/stl/vector.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/bind_vector.h>
+#include <nanobind/ndarray.h>
 
 #include <arg.h>
 #include <common.h>
@@ -17,6 +18,17 @@ struct llama_context {};
 struct llama_lora_adapter {};
 
 
+// template <typename T>
+// nb::ndarray<T> to_array(T * carr, size_t carr_size)
+// {
+//     nb::ndarray<T> arr({static_cast<ssize_t>(carr_size)});
+//     auto view = arr.view();
+//     for(size_t i = 0; i < arr.shape(0); ++i) {
+//         // printf("view(%zu) = %f\n", i, carr[i]);
+//         view(i) = carr[i];
+//     }
+//     return arr;
+// }
 
 
 NB_MODULE(nbllama, m) {
@@ -27,6 +39,10 @@ NB_MODULE(nbllama, m) {
     // attributes
     m.attr("LLAMA_DEFAULT_SEED") = 0xFFFFFFFF;
 
+
+    // -----------------------------------------------------------------------
+    // high-level api
+    //m.def("simple_prompt", &simple_prompt, "", nb::arg("model"), nb::arg("n_predict"), nb::arg("prompt"), nb::arg("disable_log"));
 
     // -----------------------------------------------------------------------
     // ggml.h
@@ -40,6 +56,69 @@ NB_MODULE(nbllama, m) {
         .value("GGML_NUMA_STRATEGY_COUNT", GGML_NUMA_STRATEGY_COUNT);
 
     m.def("ggml_time_us", (int64_t (*)(void)) &ggml_time_us);
+
+
+    // -----------------------------------------------------------------------
+    // arg.h
+
+    nb::enum_<enum llama_example>(m, "llama_example", "")
+        .value("LLAMA_EXAMPLE_COMMON", LLAMA_EXAMPLE_COMMON)
+        .value("LLAMA_EXAMPLE_SPECULATIVE", LLAMA_EXAMPLE_SPECULATIVE)
+        .value("LLAMA_EXAMPLE_MAIN", LLAMA_EXAMPLE_MAIN)
+        .value("LLAMA_EXAMPLE_INFILL", LLAMA_EXAMPLE_INFILL)
+        .value("LLAMA_EXAMPLE_EMBEDDING", LLAMA_EXAMPLE_EMBEDDING)
+        .value("LLAMA_EXAMPLE_PERPLEXITY", LLAMA_EXAMPLE_PERPLEXITY)
+        .value("LLAMA_EXAMPLE_RETRIEVAL", LLAMA_EXAMPLE_RETRIEVAL)
+        .value("LLAMA_EXAMPLE_PASSKEY", LLAMA_EXAMPLE_PASSKEY)
+        .value("LLAMA_EXAMPLE_IMATRIX", LLAMA_EXAMPLE_IMATRIX)
+        .value("LLAMA_EXAMPLE_BENCH", LLAMA_EXAMPLE_BENCH)
+        .value("LLAMA_EXAMPLE_SERVER", LLAMA_EXAMPLE_SERVER)
+        .value("LLAMA_EXAMPLE_CVECTOR_GENERATOR", LLAMA_EXAMPLE_CVECTOR_GENERATOR)
+        .value("LLAMA_EXAMPLE_EXPORT_LORA", LLAMA_EXAMPLE_EXPORT_LORA)
+        .value("LLAMA_EXAMPLE_LLAVA", LLAMA_EXAMPLE_LLAVA)
+        .value("LLAMA_EXAMPLE_LOOKUP", LLAMA_EXAMPLE_LOOKUP)
+        .value("LLAMA_EXAMPLE_PARALLEL", LLAMA_EXAMPLE_PARALLEL)
+        .value("LLAMA_EXAMPLE_COUNT", LLAMA_EXAMPLE_COUNT)
+        .export_values();
+
+    nb::class_<llama_arg> (m, "llama_arg", "")
+        // .def( nb::init( [](){ return new llama_arg(); } ) )
+        .def_rw("examples", &llama_arg::examples)
+        .def_rw("args", &llama_arg::args)
+        .def_rw("value_hint", &llama_arg::value_hint)
+        .def_rw("value_hint_2", &llama_arg::value_hint_2)
+        .def_rw("env", &llama_arg::env)
+        .def_rw("help", &llama_arg::help)
+        .def_rw("is_sparam", &llama_arg::is_sparam);
+        // .def_rw("handler_void", &llama_arg::handler_void)
+        // .def_rw("handler_string", &llama_arg::handler_string)
+        // .def_rw("handler_str_str", &llama_arg::handler_str_str)
+        // .def_rw("handler_int", &llama_arg::handler_int);
+
+    nb::class_<gpt_params_context> (m, "gpt_params_context", "")
+        .def(nb::init<gpt_params &>())
+        .def_rw("ex", &gpt_params_context::ex)
+        // .def_rw("params", &gpt_params_context::params)
+        .def_rw("options", &gpt_params_context::options);
+        // void(*print_usage)(int, char **) = nullptr;
+
+
+    m.def("gpt_params_parse", [](std::vector<std::string> args, gpt_params & params, enum llama_example example) -> bool {
+        void(*print_usage)(int, char **) = NULL;
+        std::vector<char*> cstrings;
+        cstrings.reserve(args.size());
+
+        for(size_t i = 0; i < args.size(); ++i)
+            cstrings.push_back(const_cast<char*>(args[i].c_str()));
+
+        if (cstrings.empty()) {
+            return gpt_params_parse(0, nullptr, params, example, print_usage);
+        } else {
+            return gpt_params_parse(cstrings.size(), &cstrings[0], params, example, print_usage);
+        }
+    }, "",  nb::arg("args"), nb::arg("params"), nb::arg("example"));
+
+    m.def("gpt_params_parser_init", (std::vector<llama_arg> (*)(gpt_params &, llama_example)) &gpt_params_parser_init, "", nb::arg("params"), nb::arg("ex"));
 
     // -----------------------------------------------------------------------
     // llama.h
@@ -188,7 +267,6 @@ NB_MODULE(nbllama, m) {
         .value("LLAMA_SPLIT_MODE_ROW", LLAMA_SPLIT_MODE_ROW)
         .export_values();
 
-
     nb::class_<llama_token_data>(m, "llama_token_data")
         .def(nb::init<>())
         .def(nb::init<llama_token,float,float>())
@@ -218,10 +296,12 @@ NB_MODULE(nbllama, m) {
         // .def_rw("n_seq_id", &llama_batch::n_seq_id)
         // .def_rw("seq_id", &llama_batch::seq_id)
         // FIXME: this is WRONG!!
-        .def_prop_ro("logits", [](llama_batch& self) -> std::vector<int8_t> {
-            std::vector<int8_t> result(self.logits, self.logits + self.n_tokens);
-            return result;
+        .def("set_last_logits_to_true", [](llama_batch& self) {
+            self.logits[self.n_tokens - 1] = true;
         })
+        // .def("get_logits", [](llama_batch& self) -> nb::ndarray<int8_t> {
+        //     return to_array<int8_t>(self.logits, self.n_tokens);
+        // })
         .def_rw("all_pos_0", &llama_batch::all_pos_0)
         .def_rw("all_pos_1", &llama_batch::all_pos_1)
         .def_rw("all_seq_id", &llama_batch::all_seq_id);
@@ -286,8 +366,8 @@ NB_MODULE(nbllama, m) {
 
     nb::class_<llama_logit_bias> (m, "llama_logit_bias", "")
         .def(nb::init<>());
-        // .def_readwrite("token", &llama_model_quantize_params::token)
-        // .def_readwrite("bias", &llama_model_quantize_params::bias);
+        // .def_rw("token", &llama_model_quantize_params::token)
+        // .def_rw("bias", &llama_model_quantize_params::bias);
 
     nb::class_<llama_sampler_chain_params> (m, "llama_sampler_chain_params", "")
         .def(nb::init<>())
@@ -300,6 +380,7 @@ NB_MODULE(nbllama, m) {
 
     m.def("llama_model_default_params", (struct llama_model_params (*)()) &llama_model_default_params, "C++: llama_model_default_params() --> struct llama_model_params");
     m.def("llama_context_default_params", (struct llama_context_params (*)()) &llama_context_default_params, "C++: llama_context_default_params() --> struct llama_context_params");
+    m.def("llama_sampler_chain_default_params", (struct llama_sampler_chain_params (*)()) &llama_sampler_chain_default_params);
     m.def("llama_model_quantize_default_params", (struct llama_model_quantize_params (*)()) &llama_model_quantize_default_params, "C++: llama_model_quantize_default_params() --> struct llama_model_quantize_params");
     m.def("llama_backend_init", (void (*)()) &llama_backend_init, "C++: llama_backend_init() --> void");
     m.def("llama_numa_init", (void (*)(enum ggml_numa_strategy)) &llama_numa_init, "C++: llama_numa_init(enum ggml_numa_strategy) --> void", nb::arg("numa"));
@@ -404,7 +485,7 @@ NB_MODULE(nbllama, m) {
 
     m.def("llama_set_causal_attn", (void (*)(const struct llama_context *, bool)) &llama_set_causal_attn, "", nb::arg("ctx"), nb::arg("causal_attn"));
 
-    
+    // void llama_set_abort_callback(struct llama_context * ctx, ggml_abort_callback abort_callback, void * abort_callback_data);    
 
     m.def("llama_synchronize", (void (*)(const struct llama_context *)) &llama_synchronize, "", nb::arg("ctx"));
     
@@ -439,7 +520,11 @@ NB_MODULE(nbllama, m) {
 
     m.def("llama_tokenize", (int32_t (*)(const struct llama_model *, const char*, int32_t, llama_token*, int32_t, bool, bool)) &llama_tokenize, "", nb::arg("model"), nb::arg("text"), nb::arg("text_len"), nb::arg("tokens"), nb::arg("n_tokens_max"), nb::arg("add_special"), nb::arg("parse_special"));
     // m.def("llama_token_to_piece", (int32_t (*)(const struct llama_model *, llama_token, char*, int32_t, int32_t, bool)) &llama_token_to_piece, "", nb::arg("model"), nb::arg("token"), nb::arg("buf"), nb::arg("length"), nb::arg("lstrip"), nb::arg("special"));
+    // m.def("llama_token_to_piece", [](const struct llama_model * model, llama_token token, std::string buf, int32_t lstrip, bool special) -> int32_t {
+    //     return llama_token_to_piece(model, token, buf.data(), buf.size(), lstrip, special);
+    // }, "", nb::arg("model"), nb::arg("token"), nb::arg("buf"), nb::arg("lstrip"), nb::arg("special"));
     // m.def("llama_detokenize", (int32_t (*)(const struct llama_model *, const llama_token*, int32_t, char*, int32_t, bool, bool)) &llama_detokenize, "", nb::arg("model"), nb::arg("tokens"), nb::arg("n_tokens"), nb::arg("text"), nb::arg("text_len_max"), nb::arg("remove_special"), nb::arg("unparse_special"));
+    
     // m.def("llama_chat_apply_template", (int32_t (*)(const struct llama_model *, const char*, const struct llama_chat_message*, size_t, bool, char*, int32_t)) &llama_chat_apply_template, "", nb::arg("model"), nb::arg("tmpl"), nb::arg("chat"), nb::arg("n_msg"), nb::arg("add_ass"), nb::arg("buf"), nb::arg("length"));
 
     nb::class_<llama_sampler_i> (m, "llama_sampler_i", "")
@@ -463,14 +548,16 @@ NB_MODULE(nbllama, m) {
     m.def("llama_sampler_accept", (void (*)(struct llama_sampler *, llama_token)) &llama_sampler_accept, "", nb::arg("smpl"),  nb::arg("token"));
     m.def("llama_sampler_apply", (void (*)(struct llama_sampler *, llama_token_data_array *)) &llama_sampler_apply, "", nb::arg("smpl"),  nb::arg("cur_p"));
     m.def("llama_sampler_reset", (void (*)(struct llama_sampler *)) &llama_sampler_apply, "", nb::arg("smpl"));
-    m.def("llama_sampler_clone", (struct llama_sampler * (*)(const struct llama_sampler *)) &llama_sampler_clone, "", nb::arg("smpl"));
+    m.def("llama_sampler_clone", (struct llama_sampler * (*)(const struct llama_sampler *)) &llama_sampler_clone, "", nb::arg("smpl"), nb::rv_policy::reference);
     m.def("llama_sampler_free", (void (*)(const struct llama_sampler *)) &llama_sampler_free, "", nb::arg("smpl"));
-    m.def("llama_sampler_chain_init", (struct llama_sampler *  (*)(struct llama_sampler_chain_params)) &llama_sampler_chain_init, "", nb::arg("params"));
+    m.def("llama_sampler_chain_init", (struct llama_sampler *  (*)(struct llama_sampler_chain_params)) &llama_sampler_chain_init, "", nb::arg("params"), nb::rv_policy::reference);
     m.def("llama_sampler_chain_add", (void (*)(struct llama_sampler *, struct llama_sampler *)) &llama_sampler_chain_add, "", nb::arg("chain"), nb::arg("smpl"));
-    m.def("llama_sampler_chain_get", (struct llama_sampler * (*)(const struct llama_sampler *, int32_t)) &llama_sampler_chain_get, "", nb::arg("chain"), nb::arg("i"));
+    m.def("llama_sampler_chain_get", (struct llama_sampler * (*)(const struct llama_sampler *, int32_t)) &llama_sampler_chain_get, "", nb::arg("chain"), nb::arg("i"), nb::rv_policy::reference);
+    m.def("llama_sampler_chain_remove", (struct llama_sampler * (*)(const struct llama_sampler *, int32_t)) &llama_sampler_chain_remove, "", nb::arg("chain"), nb::arg("i"), nb::rv_policy::reference);    
     m.def("llama_sampler_chain_n", (int (*)(const struct llama_sampler *)) &llama_sampler_chain_n, "", nb::arg("chain"));
-    m.def("llama_sampler_init_greedy", (struct llama_sampler * (*)(void)) &llama_sampler_init_greedy);
-    m.def("llama_sampler_init_dist", (struct llama_sampler * (*)(uint32_t)) &llama_sampler_init_dist, "", nb::arg("seed"));
+    
+    m.def("llama_sampler_init_greedy", (struct llama_sampler * (*)(void)) &llama_sampler_init_greedy, nb::rv_policy::reference);
+    m.def("llama_sampler_init_dist", (struct llama_sampler * (*)(uint32_t)) &llama_sampler_init_dist, "", nb::arg("seed"), nb::rv_policy::reference);
 
     m.def("llama_sampler_init_softmax", (struct llama_sampler * (*)(void)) &llama_sampler_init_softmax);
     m.def("llama_sampler_init_top_k", (struct llama_sampler * (*)(uint32_t)) &llama_sampler_init_top_k, "", nb::arg("k"));
@@ -480,17 +567,11 @@ NB_MODULE(nbllama, m) {
 
     m.def("llama_sampler_init_typical", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_typical, "", nb::arg("p"), nb::arg("min_keep"));
     m.def("llama_sampler_init_temp", (struct llama_sampler * (*)(float)) &llama_sampler_init_temp, "", nb::arg("t"));
-
     m.def("llama_sampler_init_temp_ext", (struct llama_sampler * (*)(float, float, float)) &llama_sampler_init_temp_ext, "", nb::arg("t"), nb::arg("delta"), nb::arg("exponent"));
-
     m.def("llama_sampler_init_mirostat", (struct llama_sampler * (*)(int32_t, uint32_t, float, float, int32_t)) &llama_sampler_init_mirostat, "", nb::arg("n_vocab"), nb::arg("seed"), nb::arg("tau"), nb::arg("eta"), nb::arg("m"));
-
     m.def("llama_sampler_init_mirostat_v2", (struct llama_sampler * (*)(uint32_t, float, float)) &llama_sampler_init_mirostat_v2, "", nb::arg("seed"), nb::arg("tau"), nb::arg("eta"));
-
     m.def("llama_sampler_init_grammar", (struct llama_sampler * (*)(const struct llama_model *, const char *, const char *)) &llama_sampler_init_grammar, "", nb::arg("model"), nb::arg("grammar_str"), nb::arg("grammar_root"));
-
     m.def("llama_sampler_init_penalties", (struct llama_sampler * (*)(int32_t, llama_token, llama_token, int32_t, float, float, float, bool, bool)) &llama_sampler_init_penalties, "", nb::arg("n_vocab"), nb::arg("special_eos_id"), nb::arg("linefeed_id"), nb::arg("penalty_last_n"), nb::arg("penalty_repeat"), nb::arg("epenalty_freq"), nb::arg("penalty_present"), nb::arg("penalize_nl"), nb::arg("ignore_eos"));
-
     m.def("llama_sampler_init_logit_bias", (struct llama_sampler * (*)(int32_t, int32_t, const llama_logit_bias *)) &llama_sampler_init_logit_bias, "", nb::arg("n_vocab"), nb::arg("n_logit_bias"), nb::arg("logit_bias"));
 
     m.def("llama_sampler_sample", (llama_token (*)(struct llama_sampler *, struct llama_context *, int32_t)) &llama_sampler_sample, "", nb::arg("smpl"), nb::arg("ctx"), nb::arg("idx"));
@@ -510,8 +591,8 @@ NB_MODULE(nbllama, m) {
         .value("LLAMA_PERF_TYPE_SAMPLER_CHAIN", LLAMA_PERF_TYPE_SAMPLER_CHAIN)
         .export_values();
     
-    m.def("llama_perf_print", (void * (*)(enum llama_perf_type)) &llama_perf_print, "", nb::arg("type"));
-    m.def("llama_perf_reset", (void * (*)(enum llama_perf_type)) &llama_perf_reset, "", nb::arg("type"));
+    m.def("llama_perf_print", (void (*)(const void *, enum llama_perf_type)) &llama_perf_print, "", nb::arg("ctx"), nb::arg("type"));
+    m.def("llama_perf_reset", (void (*)(const void *, enum llama_perf_type)) &llama_perf_reset, "", nb::arg("ctx"), nb::arg("type"));
     m.def("llama_perf_dump_yaml", (const char * (*)(FILE *, const struct llama_context *)) &llama_perf_dump_yaml, "", nb::arg("stream"), nb::arg("ctx"));
 
 
@@ -722,63 +803,5 @@ NB_MODULE(nbllama, m) {
     m.def("yaml_dump_vector_float", (void (*)(struct __sFILE *, const char *, const class std::vector<float> &)) &yaml_dump_vector_float, "C++: yaml_dump_vector_float(struct __sFILE *, const char *, const class std::vector<float> &) --> void", nb::arg("stream"), nb::arg("prop_name"), nb::arg("data"));
     m.def("yaml_dump_vector_int", (void (*)(struct __sFILE *, const char *, const class std::vector<int> &)) &yaml_dump_vector_int, "C++: yaml_dump_vector_int(struct __sFILE *, const char *, const class std::vector<int> &) --> void", nb::arg("stream"), nb::arg("prop_name"), nb::arg("data"));
     m.def("yaml_dump_string_multiline", (void (*)(struct __sFILE *, const char *, const char *)) &yaml_dump_string_multiline, "C++: yaml_dump_string_multiline(struct __sFILE *, const char *, const char *) --> void", nb::arg("stream"), nb::arg("prop_name"), nb::arg("data"));
-
-    // -----------------------------------------------------------------------
-    // arg.h
-
-    nb::enum_<enum llama_example>(m, "llama_example")
-        .value("LLAMA_EXAMPLE_COMMON", LLAMA_EXAMPLE_COMMON)
-        .value("LLAMA_EXAMPLE_SPECULATIVE", LLAMA_EXAMPLE_SPECULATIVE)
-        .value("LLAMA_EXAMPLE_MAIN", LLAMA_EXAMPLE_MAIN)
-        .value("LLAMA_EXAMPLE_INFILL", LLAMA_EXAMPLE_INFILL)
-        .value("LLAMA_EXAMPLE_EMBEDDING", LLAMA_EXAMPLE_EMBEDDING)
-        .value("LLAMA_EXAMPLE_PERPLEXITY", LLAMA_EXAMPLE_PERPLEXITY)
-        .value("LLAMA_EXAMPLE_RETRIEVAL", LLAMA_EXAMPLE_RETRIEVAL)
-        .value("LLAMA_EXAMPLE_PASSKEY", LLAMA_EXAMPLE_PASSKEY)
-        .value("LLAMA_EXAMPLE_IMATRIX", LLAMA_EXAMPLE_IMATRIX)
-        .value("LLAMA_EXAMPLE_BENCH", LLAMA_EXAMPLE_BENCH)
-        .value("LLAMA_EXAMPLE_SERVER", LLAMA_EXAMPLE_SERVER)
-        .value("LLAMA_EXAMPLE_CVECTOR_GENERATOR", LLAMA_EXAMPLE_CVECTOR_GENERATOR)
-        .value("LLAMA_EXAMPLE_EXPORT_LORA", LLAMA_EXAMPLE_EXPORT_LORA)
-        .value("LLAMA_EXAMPLE_LLAVA", LLAMA_EXAMPLE_LLAVA)
-        .value("LLAMA_EXAMPLE_COUNT", LLAMA_EXAMPLE_COUNT);
-
-    nb::class_<llama_arg> (m, "llama_arg", "")
-        // .def( nb::init( [](){ return new llama_arg(); } ) )
-        // .def(nb::init<>())
-        .def_rw("examples", &llama_arg::examples)
-        .def_rw("args", &llama_arg::args)
-        .def_rw("value_hint", &llama_arg::value_hint)
-        .def_rw("value_hint_2", &llama_arg::value_hint_2)
-        .def_rw("env", &llama_arg::env)
-        .def_rw("help", &llama_arg::help)
-        .def_rw("is_sparam", &llama_arg::is_sparam);
-        // .def_rw("handler_void", &llama_arg::handler_void)
-        // .def_rw("handler_string", &llama_arg::handler_string)
-        // .def_rw("handler_str_str", &llama_arg::handler_str_str)
-        // .def_rw("handler_int", &llama_arg::handler_int);
-
-    nb::class_<gpt_params_context> (m, "gpt_params_context", "")
-        // .def( nb::init( [](gpt_params & ps){ return new gpt_params_context(ps); } ) )
-        .def_rw("ex", &gpt_params_context::ex)
-        // .def_rw("params", &gpt_params_context::params)
-        .def_rw("options", &gpt_params_context::options);
-        // void(*print_usage)(int, char **) = nullptr;
-
-    m.def("gpt_params_parse", [](std::vector<std::string> args, gpt_params & params, enum llama_example example, void(*print_usage)(int, char **)) -> bool {
-        std::vector<char*> cstrings;
-        cstrings.reserve(args.size());
-
-        for(size_t i = 0; i < args.size(); ++i)
-            cstrings.push_back(const_cast<char*>(args[i].c_str()));
-
-        if (cstrings.empty()) {
-            return gpt_params_parse(0, nullptr, params, example, print_usage);
-        } else {
-            return gpt_params_parse(cstrings.size(), &cstrings[0], params, example, print_usage);
-        }
-    }, "",  nb::arg("args"), nb::arg("params"), nb::arg("example"), nb::arg("print_usage"));
-
-    m.def("gpt_params_parser_init", (std::vector<llama_arg> (*)(gpt_params &, llama_example)) &gpt_params_parser_init, "", nb::arg("params"), nb::arg("ex"));
 
 }
