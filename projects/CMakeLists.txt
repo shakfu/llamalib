@@ -34,7 +34,10 @@ endif()
 # common variables
 
 set(PROJECT_LIB_DIRS ${CMAKE_SOURCE_DIR}/lib)
-set(PROJECT_INCLUDES ${CMAKE_SOURCE_DIR}/include)
+set(PROJECT_INCLUDES
+	${CMAKE_SOURCE_DIR}/include
+	${CMAKE_SOURCE_DIR}/projects/llamalib
+)
 
 set(LLAMA_STATICLIB
 	${PROJECT_LIB_DIRS}/libllama${CMAKE_STATIC_LIBRARY_SUFFIX})

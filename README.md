@@ -14,16 +14,16 @@ Nonetheless, this is the most efficient way to learn about the underlying techno
 Development only on macOS to keep things simple. The following table provide an overview of the current development status:
 
 
-| milestone               | pbllama       | nbllama       | cyllama       |
-| :---------------------- | :-----------: | :-----------: | :-----------: |
-| wrapper-type            | pybind11 	  | nanobind 	  | cython 	      |
-| llama.h                 | 1 			  | 1 			  | 1 			  |
-| high-level simple-cli   | 1 			  | 0 			  | 0 			  |
-| low-level simple-cli    | 1 			  | 1 			  | 0 			  |
-| low-level llama-cli     | 0 			  | 0 			  | 0 			  |
+| milestone                    | pbllama       | nbllama       | cyllama       |
+| :--------------------------- | :-----------: | :-----------: | :-----------: |
+| wrapper-type                 | pybind11 	   | nanobind 	   | cython 	   |
+| wrap llama.h         		   | 1 			   | 1 			   | 1 			   |
+| wrap high-level simple-cli   | 1 			   | 1 			   | 0 			   |
+| wrap low-level simple-cli    | 1 			   | 1 			   | 0 			   |
+| wrap low-level llama-cli     | 0 			   | 0 			   | 0 			   |
   
 
-The initial milestone for each wrapper type is to create a high-level wrapper of the `simple.cpp` llama.cpp example, following by a low-level one. The final aim is to wrap the functionality of `llama-cli`.
+The initial milestone for each wrapper type is to create a high-level wrapper of the `simple.cpp` llama.cpp example, following by a low-level one. High-level wrapper c++ code is placed in `llamalib.h` single-header library. The final object is to fully wrap the functionality of `llama-cli` for all three wrapper-types.
 
 It goes without saying that any help / collaboration / contributions to accelerate the above would be welcome!
 

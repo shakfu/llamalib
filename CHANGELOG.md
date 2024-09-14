@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Added `llamalib.h`, a single-header library which includes high-level c++ and is used by pbllama and nbllama
+- Added first working low-level simple wrapper using nbllama 
 - Added first working low-level simple wrapper using pbllama 
 - Added first working high-level simple wrapper using pbllama
 

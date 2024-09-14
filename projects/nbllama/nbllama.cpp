@@ -5,11 +5,7 @@
 #include <nanobind/stl/bind_vector.h>
 #include <nanobind/ndarray.h>
 
-#include <arg.h>
-#include <common.h>
-#include <llama.h>
-
-#include <memory>
+#include "llamalib.h"
 
 namespace nb = nanobind;
 
@@ -42,7 +38,7 @@ NB_MODULE(nbllama, m) {
 
     // -----------------------------------------------------------------------
     // high-level api
-    //m.def("simple_prompt", &simple_prompt, "", nb::arg("model"), nb::arg("n_predict"), nb::arg("prompt"), nb::arg("disable_log"));
+    m.def("simple_prompt", &simple_prompt, "", nb::arg("model"), nb::arg("n_predict"), nb::arg("prompt"), nb::arg("disable_log"));
 
     // -----------------------------------------------------------------------
     // ggml.h

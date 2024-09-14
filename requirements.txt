@@ -1,4 +1,5 @@
 setuptools
+numpy
 cython
 pybind11
 nanobind

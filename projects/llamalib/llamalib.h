@@ -1,10 +1,14 @@
-#include "log.h"
+#ifndef LLAMALIB_H
+#define LLAMALIB_H
+
 #include "arg.h"
 #include "common.h"
 #include "llama.h"
+#include "log.h"
 
 #include <cmath>
 #include <cstdio>
+#include <memory>
 
 
 std::string simple_prompt(const std::string model, const int n_predict, const std::string prompt, bool disable_log = true) {
@@ -154,3 +158,8 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
 
     return results;
 }
+
+
+
+#endif // LLAMALIB_H
+
