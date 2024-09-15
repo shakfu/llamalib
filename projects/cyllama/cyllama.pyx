@@ -86,7 +86,6 @@ cdef class GptParams: # Still a lot left to do here!
     def n_ubatch(self, value: int):
         self.p.n_ubatch = value
 
-
     @property
     def n_keep(self) -> int:
         """number of tokens to keep from initial prompt."""
@@ -95,7 +94,6 @@ cdef class GptParams: # Still a lot left to do here!
     @n_keep.setter
     def n_keep(self, value: int):
         self.p.n_keep = value
-
 
     @property
     def n_draft(self) -> int:
@@ -272,6 +270,915 @@ cdef class GptParams: # Still a lot left to do here!
     @defrag_thold.setter
     def defrag_thold(self, value: float):
         self.p.defrag_thold = value
+
+    # @property
+    # def cpuparams(self) -> llama_cpp.cpu_params:
+    #     """cpuparams instance."""
+    #     return self.p.cpuparams
+
+    # @property
+    # def cpuparams_batch(self) -> llama_cpp.cpu_params:
+    #     """cpuparams_batch instance."""
+    #     return self.p.cpuparams_batch
+
+    # @property
+    # def draft_cpuparams(self) -> llama_cpp.cpu_params:
+    #     """draft_cpuparams instance."""
+    #     return self.p.draft_cpuparams
+
+    # @property
+    # def draft_cpuparams_batch(self) -> llama_cpp.cpu_params:
+    #     """draft_cpuparams_batch instance."""
+    #     return self.p.draft_cpuparams_batch
+
+    # @property
+    # def cb_eval(self) -> llama_cpp.ggml_backend_sched_eval_callback:
+    #     """ggml backend sched eval callback."""
+    #     return self.p.cb_eval
+
+    # @cb_eval.setter
+    # def cb_eval(self, value: llama_cpp.ggml_backend_sched_eval_callback):
+    #     self.p.cb_eval = value
+
+    # @property
+    # def cb_eval_user_data(self):
+    #     """cb eval user data."""
+    #     return self.p.cb_eval_user_data
+
+    # @cb_eval_user_data.setter
+    # def cb_eval_user_data(self, value):
+    #     self.p.cb_eval_user_data = value
+
+    @property
+    def numa(self) -> llama_cpp.ggml_numa_strategy:
+        """KV cache defragmentation threshold."""
+        return self.p.numa
+
+    @numa.setter
+    def numa(self, value: llama_cpp.ggml_numa_strategy):
+        self.p.numa = value
+
+    @property
+    def split_mode(self) -> llama_cpp.llama_split_mode:
+        """how to split the model across GPUs."""
+        return self.p.split_mode
+
+    @split_mode.setter
+    def split_mode(self, value: llama_cpp.llama_split_mode):
+        self.p.split_mode = value
+
+    # @property
+    # def rope_scaling_type(self) -> llama_cpp.llama_rope_scaling_type:
+    #     """rope scaling type."""
+    #     return self.p.rope_scaling_type
+
+    # @rope_scaling_type.setter
+    # def rope_scaling_type(self, value: llama_cpp.rope_scaling_type):
+    #     self.p.rope_scaling_type = value
+
+    # @property
+    # def pooling_type(self) -> llama_cpp.llama_pooling_type:
+    #     """pooling type for embeddings."""
+    #     return self.p.pooling_type
+
+    # @pooling_type.setter
+    # def pooling_type(self, value: llama_cpp.llama_pooling_type):
+    #     self.p.pooling_type = value
+
+    # @property
+    # def attention_type(self) -> llama_cpp.llama_attention_type:
+    #     """attention type for embeddings."""
+    #     return self.p.attention_type
+
+    # @attention_type.setter
+    # def attention_type(self, value: llama_cpp.llama_attention_type):
+    #     self.p.attention_type = value
+
+    @property
+    def sparams(self) -> llama_cpp.gpt_sampler_params:
+        """gpt sampler params."""
+        return self.p.sparams
+
+    @sparams.setter
+    def sparams(self, value: llama_cpp.gpt_sampler_params):
+        self.p.sparams = value
+
+    @property
+    def model(self) -> str:
+        """model path"""
+        return self.p.model.decode()
+
+    @model.setter
+    def model(self, value: str):
+        self.p.model = value.encode('utf8')
+
+    @property
+    def model_draft(self) -> str:
+        """draft model for speculative decoding"""
+        return self.p.model_draft.decode()
+
+    @model_draft.setter
+    def model_draft(self, value: str):
+        self.p.model_draft = value.encode('utf8')
+
+    @property
+    def model_alias(self) -> str:
+        """model alias"""
+        return self.p.model_alias.decode()
+
+    @model_alias.setter
+    def model_alias(self, value: str):
+        self.p.model_alias = value.encode('utf8')
+
+    @property
+    def model_url(self) -> str:
+        """model url to download """
+        return self.p.model_url.decode()
+
+    @model_url.setter
+    def model_url(self, value: str):
+        self.p.model_url = value.encode('utf8')
+
+    @property
+    def hf_token(self) -> str:
+        """hf token"""
+        return self.p.hf_token.decode()
+
+    @hf_token.setter
+    def hf_token(self, value: str):
+        self.p.hf_token = value.encode('utf8')
+
+    @property
+    def hf_repo(self) -> str:
+        """hf repo"""
+        return self.p.hf_repo.decode()
+
+    @hf_repo.setter
+    def hf_repo(self, value: str):
+        self.p.hf_repo = value.encode('utf8')
+
+    @property
+    def hf_file(self) -> str:
+        """hf file"""
+        return self.p.hf_file.decode()
+
+    @hf_file.setter
+    def hf_file(self, value: str):
+        self.p.hf_file = value.encode('utf8')
+
+    @property
+    def prompt(self) -> str:
+        """the prompt text"""
+        return self.p.prompt.decode()
+
+    @prompt.setter
+    def prompt(self, value: str):
+        self.p.prompt = value.encode('utf8')
+
+    @property
+    def prompt_file(self) -> str:
+        """store the external prompt file name"""
+        return self.p.prompt_file.decode()
+
+    @prompt_file.setter
+    def prompt_file(self, value: str):
+        self.p.prompt_file = value.encode('utf8')
+
+    @property
+    def path_prompt_cache(self) -> str:
+        """path to file for saving/loading prompt eval state"""
+        return self.p.path_prompt_cache.decode()
+
+    @path_prompt_cache.setter
+    def path_prompt_cache(self, value: str):
+        self.p.path_prompt_cache = value.encode('utf8')
+
+    @property
+    def input_prefix(self) -> str:
+        """string to prefix user inputs with"""
+        return self.p.input_prefix.decode()
+
+    @input_prefix.setter
+    def input_prefix(self, value: str):
+        self.p.input_prefix = value.encode('utf8')
+
+    @property
+    def input_suffix(self) -> str:
+        """string to suffix user inputs with"""
+        return self.p.input_suffix.decode()
+
+    @input_suffix.setter
+    def input_suffix(self, value: str):
+        self.p.input_suffix = value.encode('utf8')
+
+    @property
+    def logdir(self) -> str:
+        """directory in which to save YAML log files"""
+        return self.p.logdir.decode()
+
+    @logdir.setter
+    def logdir(self, value: str):
+        self.p.logdir = value.encode('utf8')
+
+    @property
+    def lookup_cache_static(self) -> str:
+        """path of static ngram cache file for lookup decoding"""
+        return self.p.lookup_cache_static.decode()
+
+    @lookup_cache_static.setter
+    def lookup_cache_static(self, value: str):
+        self.p.lookup_cache_static = value.encode('utf8')
+
+    @property
+    def lookup_cache_dynamic(self) -> str:
+        """path of dynamic ngram cache file for lookup decoding"""
+        return self.p.lookup_cache_dynamic.decode()
+
+    @lookup_cache_dynamic.setter
+    def lookup_cache_dynamic(self, value: str):
+        self.p.lookup_cache_dynamic = value.encode('utf8')
+
+    @property
+    def logits_file(self) -> str:
+        """file for saving *all* logits"""
+        return self.p.logits_file.decode()
+
+    @logits_file.setter
+    def logits_file(self, value: str):
+        self.p.logits_file = value.encode('utf8')
+
+    @property
+    def rpc_servers(self) -> str:
+        """comma separated list of RPC servers"""
+        return self.p.rpc_servers.decode()
+
+    @rpc_servers.setter
+    def rpc_servers(self, value: str):
+        self.p.rpc_servers = value.encode('utf8')
+
+    @property
+    def in_files(self) -> [str]:
+        """all input files."""
+        result = []
+        for i in range(self.p.in_files.size()):
+            result.append(self.p.in_files[i].decode())
+        return result
+
+    @in_files.setter
+    def in_files(self, files: [str]):
+        self.p.in_files.clear()
+        for i in files:
+            self.p.in_files.push_back(i.encode('utf8'))
+
+    @property
+    def antiprompt(self) -> [str]:
+        """strings upon which more user input is prompted (a.k.a. reverse prompts)."""
+        result = []
+        for i in range(self.p.antiprompt.size()):
+            result.append(self.p.antiprompt[i].decode())
+        return result
+
+    @antiprompt.setter
+    def antiprompt(self, values: [str]):
+        self.p.antiprompt.clear()
+        for i in values:
+            self.p.antiprompt.push_back(i.encode('utf8'))
+
+    # std::vector<llama_model_kv_override> kv_overrides;
+
+    @property
+    def lora_init_without_apply(self) -> bool:
+        """only load lora to memory, but do not apply it to ctx (user can manually apply lora later using llama_lora_adapter_apply)."""
+        return self.p.lora_init_without_apply
+
+    @lora_init_without_apply.setter
+    def lora_init_without_apply(self, value: bool):
+        self.p.lora_init_without_apply = value
+
+    # std::vector<llama_lora_adapter_info> lora_adapters; // lora adapter path with user defined scale
+
+    # std::vector<llama_control_vector_load_info> control_vectors; // control vector with user defined scale
+
+
+    @property
+    def verbosity(self) -> int:
+        """verbosity"""
+        return self.p.verbosity
+
+    @verbosity.setter
+    def verbosity(self, value: int):
+        self.p.verbosity = value
+
+    @property
+    def control_vector_layer_start(self) -> int:
+        """layer range for control vector"""
+        return self.p.control_vector_layer_start
+
+    @control_vector_layer_start.setter
+    def control_vector_layer_start(self, value: int):
+        self.p.control_vector_layer_start = value
+
+    @property
+    def control_vector_layer_end(self) -> int:
+        """layer range for control vector"""
+        return self.p.control_vector_layer_end
+
+    @control_vector_layer_end.setter
+    def control_vector_layer_end(self, value: int):
+        self.p.control_vector_layer_end = value
+
+    @property
+    def ppl_stride(self) -> int:
+        """stride for perplexity calculations. If left at 0, the pre-existing approach will be used."""
+        return self.p.ppl_stride
+
+    @ppl_stride.setter
+    def ppl_stride(self, value: int):
+        self.p.ppl_stride = value
+
+    @property
+    def ppl_output_type(self) -> int:
+        """0 -> ppl output is as usual, = 1 -> ppl output is num_tokens, ppl, one per line 
+
+        (which is more convenient to use for plotting)
+        """
+        return self.p.ppl_output_type
+
+    @ppl_output_type.setter
+    def ppl_output_type(self, value: int):
+        self.p.ppl_output_type = value
+
+    @property
+    def hellaswag(self) -> bool:
+        """compute HellaSwag score over random tasks from datafile supplied in prompt"""
+        return self.p.hellaswag
+
+    @hellaswag.setter
+    def hellaswag(self, value: bool):
+        self.p.hellaswag = value
+
+    @property
+    def hellaswag_tasks(self) -> int:
+        """number of tasks to use when computing the HellaSwag score"""
+        return self.p.hellaswag_tasks
+
+    @hellaswag_tasks.setter
+    def hellaswag_tasks(self, value: int):
+        self.p.hellaswag_tasks = value
+
+    @property
+    def winogrande(self) -> bool:
+        """compute Winogrande score over random tasks from datafile supplied in prompt"""
+        return self.p.winogrande
+
+    @winogrande.setter
+    def winogrande(self, value: bool):
+        self.p.winogrande = value
+
+    @property
+    def winogrande_tasks(self) -> int:
+        """number of tasks to use when computing the Winogrande score. If 0, all tasks will be computed"""
+        return self.p.winogrande_tasks
+
+    @winogrande_tasks.setter
+    def winogrande_tasks(self, value: int):
+        self.p.winogrande_tasks = value
+
+    @property
+    def multiple_choice(self) -> bool:
+        """compute TruthfulQA score over random tasks from datafile supplied in prompt"""
+        return self.p.multiple_choice
+
+    @multiple_choice.setter
+    def multiple_choice(self, value: bool):
+        self.p.multiple_choice = value
+
+    @property
+    def multiple_choice_tasks(self) -> int:
+        """number of tasks to use when computing the TruthfulQA score. If 0, all tasks will be computed"""
+        return self.p.multiple_choice_tasks
+
+    @multiple_choice_tasks.setter
+    def multiple_choice_tasks(self, value: int):
+        self.p.multiple_choice_tasks = value
+
+    @property
+    def kl_divergence(self) -> bool:
+        """compute KL divergence"""
+        return self.p.kl_divergence
+
+    @kl_divergence.setter
+    def kl_divergence(self, value: bool):
+        self.p.kl_divergence = value
+
+    @property
+    def usage(self) -> bool:
+        """print usage"""
+        return self.p.usage
+
+    @usage.setter
+    def usage(self, value: bool):
+        self.p.usage = value
+
+    @property
+    def use_color(self) -> bool:
+        """use color to distinguish generations and inputs"""
+        return self.p.use_color
+
+    @use_color.setter
+    def use_color(self, value: bool):
+        self.p.use_color = value
+
+    @property
+    def special(self) -> bool:
+        """enable special token output"""
+        return self.p.special
+
+    @special.setter
+    def special(self, value: bool):
+        self.p.special = value
+
+    @property
+    def interactive(self) -> bool:
+        """interactive mode"""
+        return self.p.interactive
+
+    @interactive.setter
+    def interactive(self, value: bool):
+        self.p.interactive = value
+
+    @property
+    def interactive_first(self) -> bool:
+        """wait for user input immediately"""
+        return self.p.interactive_first
+
+    @interactive_first.setter
+    def interactive_first(self, value: bool):
+        self.p.interactive_first = value
+
+    @property
+    def conversation(self) -> bool:
+        """conversation mode (does not print special tokens and suffix/prefix)"""
+        return self.p.conversation
+
+    @conversation.setter
+    def conversation(self, value: bool):
+        self.p.conversation = value
+
+    @property
+    def prompt_cache_all(self) -> bool:
+        """save user input and generations to prompt cache"""
+        return self.p.prompt_cache_all
+
+    @prompt_cache_all.setter
+    def prompt_cache_all(self, value: bool):
+        self.p.prompt_cache_all = value
+
+    @property
+    def prompt_cache_ro(self) -> bool:
+        """open the prompt cache read-only and do not update it"""
+        return self.p.prompt_cache_ro
+
+    @prompt_cache_ro.setter
+    def prompt_cache_ro(self, value: bool):
+        self.p.prompt_cache_ro = value
+
+    @property
+    def use_color(self) -> bool:
+        """use color to distinguish generations and inputs"""
+        return self.p.use_color
+
+    @use_color.setter
+    def use_color(self, value: bool):
+        self.p.use_color = value
+
+    @property
+    def special(self) -> bool:
+        """enable special token output"""
+        return self.p.special
+
+    @special.setter
+    def special(self, value: bool):
+        self.p.special = value
+
+    @property
+    def interactive(self) -> bool:
+        """interactive mode"""
+        return self.p.interactive
+
+    @interactive.setter
+    def interactive(self, value: bool):
+        self.p.interactive = value
+
+    @property
+    def interactive_first(self) -> bool:
+        """wait for user input immediately"""
+        return self.p.interactive_first
+
+    @interactive_first.setter
+    def interactive_first(self, value: bool):
+        self.p.interactive_first = value
+
+    @property
+    def conversation(self) -> bool:
+        """conversation mode (does not print special tokens and suffix/prefix)"""
+        return self.p.conversation
+
+    @conversation.setter
+    def conversation(self, value: bool):
+        self.p.conversation = value
+
+    @property
+    def prompt_cache_all(self) -> bool:
+        """save user input and generations to prompt cache"""
+        return self.p.prompt_cache_all
+
+    @prompt_cache_all.setter
+    def prompt_cache_all(self, value: bool):
+        self.p.prompt_cache_all = value
+
+    @property
+    def prompt_cache_ro(self) -> bool:
+        """ open the prompt cache read-only and do not update it"""
+        return self.p.prompt_cache_ro
+
+    @prompt_cache_ro.setter
+    def prompt_cache_ro(self, value: bool):
+        self.p.prompt_cache_ro = value
+
+    @property
+    def escape(self) -> bool:
+        """escape special characters"""
+        return self.p.escape
+
+    @escape.setter
+    def escape(self, value: bool):
+        self.p.escape = value
+
+    @property
+    def multiline_input(self) -> bool:
+        """reverse the usage of "\""""
+        return self.p.multiline_input
+
+    @multiline_input.setter
+    def multiline_input(self, value: bool):
+        self.p.multiline_input = value
+
+    @property
+    def simple_io(self) -> bool:
+        """improves compatibility with subprocesses and limited consoles"""
+        return self.p.simple_io
+
+    @simple_io.setter
+    def simple_io(self, value: bool):
+        self.p.simple_io = value
+
+    @property
+    def cont_batching(self) -> bool:
+        """insert new sequences for decoding on-the-fly"""
+        return self.p.cont_batching
+
+    @cont_batching.setter
+    def cont_batching(self, value: bool):
+        self.p.cont_batching = value
+
+    @property
+    def flash_attn(self) -> bool:
+        """flash attention"""
+        return self.p.flash_attn
+
+    @flash_attn.setter
+    def flash_attn(self, value: bool):
+        self.p.flash_attn = value
+
+    # @property
+    # def no_perf(self) -> bool:
+    #     """disable performance metrics"""
+    #     return self.p.no_perf
+
+    # @no_perf.setter
+    # def no_perf(self, value: bool):
+    #     self.p.no_perf = value
+
+    @property
+    def input_prefix_bos(self) -> bool:
+        """prefix BOS to user inputs, preceding input_prefix"""
+        return self.p.input_prefix_bos
+
+    @input_prefix_bos.setter
+    def input_prefix_bos(self, value: bool):
+        self.p.input_prefix_bos = value
+
+    @property
+    def logits_all(self) -> bool:
+        """return logits for all tokens in the batch"""
+        return self.p.logits_all
+
+    @logits_all.setter
+    def logits_all(self, value: bool):
+        self.p.logits_all = value
+
+    @property
+    def use_mmap(self) -> bool:
+        """use mmap for faster loads"""
+        return self.p.use_mmap
+
+    @use_mmap.setter
+    def use_mmap(self, value: bool):
+        self.p.use_mmap = value
+
+    @property
+    def use_mlock(self) -> bool:
+        """use mlock to keep model in memory"""
+        return self.p.use_mlock
+
+    @use_mlock.setter
+    def use_mlock(self, value: bool):
+        self.p.use_mlock = value
+
+    @property
+    def verbose_prompt(self) -> bool:
+        """print prompt tokens before generation"""
+        return self.p.verbose_prompt
+
+    @verbose_prompt.setter
+    def verbose_prompt(self, value: bool):
+        self.p.verbose_prompt = value
+
+    @property
+    def display_prompt(self) -> bool:
+        """print prompt before generation"""
+        return self.p.display_prompt
+
+    @display_prompt.setter
+    def display_prompt(self, value: bool):
+        self.p.display_prompt = value
+
+    @property
+    def dump_kv_cache(self) -> bool:
+        """dump the KV cache contents for debugging purposes"""
+        return self.p.dump_kv_cache
+
+    @dump_kv_cache.setter
+    def dump_kv_cache(self, value: bool):
+        self.p.dump_kv_cache = value
+
+    @property
+    def no_kv_offload(self) -> bool:
+        """disable KV offloading"""
+        return self.p.no_kv_offload
+
+    @no_kv_offload.setter
+    def no_kv_offload(self, value: bool):
+        self.p.no_kv_offload = value
+
+    @property
+    def warmup(self) -> bool:
+        """warmup run"""
+        return self.p.warmup
+
+    @warmup.setter
+    def warmup(self, value: bool):
+        self.p.warmup = value
+
+    @property
+    def check_tensors(self) -> bool:
+        """validate tensor data"""
+        return self.p.check_tensors
+
+    @check_tensors.setter
+    def check_tensors(self, value: bool):
+        self.p.check_tensors = value
+
+    @property
+    def mmproj(self) -> str:
+        """path to multimodal projector"""
+        return self.p.mmproj.decode()
+
+    @mmproj.setter
+    def mmproj(self, value: str):
+        self.p.mmproj = value.encode('utf8')
+
+    @property
+    def image(self) -> [str]:
+        """paths to image file(s)"""
+        result = []
+        for i in range(self.p.image.size()):
+            result.append(self.p.image[i].decode())
+        return result
+
+    @image.setter
+    def image(self, files: [str]):
+        self.p.image.clear()
+        for i in files:
+            self.p.image.push_back(i.encode('utf8'))
+
+    @property
+    def embedding(self) -> bool:
+        """get only sentence embedding"""
+        return self.p.embedding
+
+    @embedding.setter
+    def embedding(self, value: bool):
+        self.p.embedding = value
+
+    @property
+    def embd_normalize(self) -> int:
+        """normalisation for embendings (-1=none, 0=max absolute int16, 1=taxicab, 2=euclidean, >2=p-norm)"""
+        return self.p.embd_normalize
+
+    @embd_normalize.setter
+    def embd_normalize(self, value: int):
+        self.p.embd_normalize = value
+
+    @property
+    def embd_out(self) -> str:
+        """empty = default, "array" = [[],[]...], "json" = openai style, "json+" = same "json" + cosine similarity matrix"""
+        return self.p.embd_out.decode()
+
+    @embd_out.setter
+    def embd_out(self, value: str):
+        self.p.embd_out = value.encode('utf8')
+
+    @property
+    def embd_sep(self) -> str:
+        """separator of embendings"""
+        return self.p.embd_sep.decode()
+
+    @embd_sep.setter
+    def embd_sep(self, value: str):
+        self.p.embd_sep = value.encode('utf8')
+
+    @property
+    def hostname(self) -> str:
+        """server hostname"""
+        return self.p.hostname.decode()
+
+    @hostname.setter
+    def hostname(self, value: str):
+        self.p.hostname = value.encode('utf8')
+
+    @property
+    def public_path(self) -> str:
+        """server public_path"""
+        return self.p.public_path.decode()
+
+    @public_path.setter
+    def public_path(self, value: str):
+        self.p.public_path = value.encode('utf8')
+
+    @property
+    def chat_template(self) -> str:
+        """chat template"""
+        return self.p.chat_template.decode()
+
+    @chat_template.setter
+    def chat_template(self, value: str):
+        self.p.chat_template = value.encode('utf8')
+
+    @property
+    def system_prompt(self) -> str:
+        """system prompt"""
+        return self.p.system_prompt.decode()
+
+    @system_prompt.setter
+    def system_prompt(self, value: str):
+        self.p.system_prompt = value.encode('utf8')
+
+    @property
+    def enable_chat_template(self) -> bool:
+        """enable chat template"""
+        return self.p.enable_chat_template
+
+    @enable_chat_template.setter
+    def enable_chat_template(self, value: bool):
+        self.p.enable_chat_template = value
+
+    @property
+    def api_keys(self) -> [str]:
+        """list of api keys"""
+        result = []
+        for i in range(self.p.api_keys.size()):
+            result.append(self.p.api_keys[i].decode())
+        return result
+
+    @api_keys.setter
+    def api_keys(self, files: [str]):
+        self.p.api_keys.clear()
+        for i in files:
+            self.p.api_keys.push_back(i.encode('utf8'))
+
+    @property
+    def ssl_file_key(self) -> str:
+        """ssl file key"""
+        return self.p.ssl_file_key.decode()
+
+    @ssl_file_key.setter
+    def ssl_file_key(self, value: str):
+        self.p.ssl_file_key = value.encode('utf8')
+
+    @property
+    def ssl_file_cert(self) -> str:
+        """ssl file cert"""
+        return self.p.ssl_file_cert.decode()
+
+    @ssl_file_cert.setter
+    def ssl_file_cert(self, value: str):
+        self.p.ssl_file_cert = value.encode('utf8')
+
+    @property
+    def endpoint_slots(self) -> bool:
+        """endpoint slots"""
+        return self.p.endpoint_slots
+
+    @endpoint_slots.setter
+    def endpoint_slots(self, value: bool):
+        self.p.endpoint_slots = value
+
+    @property
+    def endpoint_metrics(self) -> bool:
+        """endpoint metrics"""
+        return self.p.endpoint_metrics
+
+    @endpoint_metrics.setter
+    def endpoint_metrics(self, value: bool):
+        self.p.endpoint_metrics = value
+
+    @property
+    def log_json(self) -> bool:
+        """log json"""
+        return self.p.log_json
+
+    @log_json.setter
+    def log_json(self, value: bool):
+        self.p.log_json = value
+
+    def slot_save_path(self) -> str:
+        """slot save path"""
+        return self.p.slot_save_path.decode()
+
+    @slot_save_path.setter
+    def slot_save_path(self, value: str):
+        self.p.slot_save_path = value.encode('utf8')
+
+    @property
+    def slot_prompt_similarity(self) -> float:
+        """slot prompt similarity."""
+        return self.p.slot_prompt_similarity
+
+    @slot_prompt_similarity.setter
+    def slot_prompt_similarity(self, value: float):
+        self.p.slot_prompt_similarity = value
+
+    # @property
+    # def is_pp_shared(self) -> bool:
+    #     """batched-bench params"""
+    #     return self.p.is_pp_shared
+
+    # @is_pp_shared.setter
+    # def is_pp_shared(self, value: bool):
+    #     self.p.is_pp_shared = value
+
+
+    # std::vector<int32_t> n_pp;
+    # std::vector<int32_t> n_tg;
+    # std::vector<int32_t> n_pl;
+
+    # // retrieval params
+    # std::vector<std::string> context_files; // context files to embed
+
+    # int32_t chunk_size = 64; // chunk size for context embedding
+
+    # std::string chunk_separator = "\n"; // chunk separator for context embedding
+
+    # // passkey params
+    # int32_t n_junk = 250; // number of times to repeat the junk text
+    # int32_t i_pos  = -1;  // position of the passkey in the junk text
+
+    # // imatrix params
+    # std::string out_file = "imatrix.dat"; // save the resulting imatrix to this file
+
+    # int32_t n_out_freq  = 10; // output the imatrix every n_out_freq iterations
+    # int32_t n_save_freq =  0; // save the imatrix every n_save_freq iterations
+    # int32_t i_chunk     =  0; // start processing from this chunk
+
+    # bool process_output = false; // collect data for the output tensor
+    # bool compute_ppl    = true;  // whether to compute perplexity
+
+    # // cvector-generator params
+    # int n_pca_batch = 100;
+    # int n_pca_iterations = 1000;
+    # dimre_method cvector_dimre_method = DIMRE_METHOD_PCA;
+    # std::string cvector_outfile       = "control_vector.gguf";
+    # std::string cvector_positive_file = "examples/cvector-generator/positive.txt";
+    # std::string cvector_negative_file = "examples/cvector-generator/negative.txt";
+
+    # bool spm_infill = false; // suffix/prefix/middle pattern for infill
+
+    # std::string lora_outfile = "ggml-lora-merged-f16.gguf";
+
+    # // batched-bench params
+    # bool batched_bench_output_jsonl = false;
 
 
 
