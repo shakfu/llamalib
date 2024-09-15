@@ -40,7 +40,8 @@ bind:
 	@make -f scripts/bind/bind.mk bind
 
 
-.PHONY: test test_simple test_cy test_pb test_nb prep_tests bench_cy bench_nb bench_pb bump
+.PHONY: test test_simple test_main test_retrieve tsst_model \
+		test_cy test_pb test_nb prep_tests bench_cy bench_nb bench_pb bump
 
 test:
 	@pytest
@@ -52,7 +53,19 @@ test_simple:
 		-framework Metal -framework MetalKit \
 		lib/libllama.a lib/libggml.a lib/libcommon.a \
 		tests/simple.cpp
-	@./build/simple -m $(MODEL) -p "When did the French Revolution start?" -n 512
+	@./build/simple -m $(MODEL) \
+		-p "When did the French Revolution start?" -n 512
+
+test_main:
+	@g++ -std=c++14 -o build/main \
+		-I./include -L./lib  \
+		-framework Foundation -framework Accelerate \
+		-framework Metal -framework MetalKit \
+		lib/libllama.a lib/libggml.a lib/libcommon.a \
+		tests/main.cpp
+	@./build/main -m $(MODEL) --log-disable \
+		-p "When did the French Revolution start?" -n 512
+
 
 test_retrieve: # not working!
 	@./bin/llama-retrieval --model $(MODEL) \

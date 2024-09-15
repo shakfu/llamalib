@@ -2,6 +2,10 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
+// #include <cmath>
+#include <iostream>
+// #include <memory>
+
 namespace py = pybind11;
 
 
@@ -20,6 +24,54 @@ typedef struct _config {
 float square(float x) {
     return x * x;
 }
+
+class Array {
+private:
+    int* ptr;
+    int _size;
+
+public:
+    // constructor for array class
+    Array(int* p = NULL, int s = 0)
+    {
+        this->_size = s;
+        this->ptr = NULL;
+        if (s != 0) {
+            this->ptr = new int[s];
+            for (int i = 0; i < s; i++)
+                this->ptr[i] = p[i];
+        }
+    }
+
+    // Implementation of [] operator. This function must return
+    // a reference as array element can be put on left side
+    int& operator[](int index)
+    {
+        if (index >= this->_size) {
+            std::cout << "Array index out of bound, exiting" << std::endl;
+            exit(0);
+        }
+        return this->ptr[index];
+    }
+
+    // Utility function to print contents
+    void print() const
+    {
+        for (int i = 0; i < this->_size; i++)
+            std::cout << this->ptr[i] << " ";
+        std::cout << std::endl;
+    }
+
+    void* data()
+    {
+        return this->ptr;
+    }
+
+    int size()
+    {
+        return this->_size;
+    }
+};
 
 
 class Matrix {
@@ -274,6 +326,26 @@ PYBIND11_MODULE(scratch, m) {
     m.def("get_matrix2", &get_matrix2);
 
     m.def("get_array", &get_array);
+
+    // py::class_<Array, std::shared_ptr<Array>>(m, "Array", py::buffer_protocol())
+    //     .def(py::init([](std::vector<int> vec) -> std::shared_ptr<Array> {
+    //         return std::shared_ptr<Array>(new Array(vec.data(), vec.size()));
+    //      }))
+    //     // .def("dump", [](Array& self) -> py::array_t<int> {
+    //     //     return to_array(self.data(), self.size());
+    //     // })
+    //     .def_buffer([](Array &a) -> py::buffer_info {
+    //         return py::buffer_info(
+    //             a.data(),                             /* Pointer to buffer */
+    //             sizeof(int),                          /* Size of one scalar */
+    //             py::format_descriptor<int>::format(), /* Python struct-style format descriptor */
+    //             1,                                    /* Number of dimensions */
+    //             {a.size(),},                          /* Buffer dimensions */
+    //             {a.size() * sizeof(int),}             /* Strides (in bytes) for each index */
+    //         );
+    //     })
+    //     .def("size", &Array::size);
+
 
     py::class_<Matrix, std::shared_ptr<Matrix>>(m, "Matrix", py::buffer_protocol())
        .def(py::init<size_t, size_t>()) // can be used: np.array(m) or np.array(m, copy = False)

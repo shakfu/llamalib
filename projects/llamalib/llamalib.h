@@ -10,6 +10,8 @@
 #include <cstdio>
 #include <memory>
 
+#define LOG_DISABLE_LOGS
+
 
 std::string simple_prompt(const std::string model, const int n_predict, const std::string prompt, bool disable_log = true) {
     gpt_params params;
@@ -158,7 +160,6 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
 
     return results;
 }
-
 
 
 #endif // LLAMALIB_H

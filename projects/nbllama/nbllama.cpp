@@ -14,21 +14,8 @@ struct llama_context {};
 struct llama_lora_adapter {};
 
 
-// template <typename T>
-// nb::ndarray<T> to_array(T * carr, size_t carr_size)
-// {
-//     nb::ndarray<T> arr({static_cast<ssize_t>(carr_size)});
-//     auto view = arr.view();
-//     for(size_t i = 0; i < arr.shape(0); ++i) {
-//         // printf("view(%zu) = %f\n", i, carr[i]);
-//         view(i) = carr[i];
-//     }
-//     return arr;
-// }
-
-
 NB_MODULE(nbllama, m) {
-    m.doc() = "nanobind nbllama wrapper"; // optional module docstring
+    m.doc() = "nanobind nbllama wrapper";
     m.attr("__version__") = "0.0.1";
 
     // -----------------------------------------------------------------------

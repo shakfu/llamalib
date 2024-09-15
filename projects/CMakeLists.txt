@@ -1,4 +1,5 @@
-find_package(Python 3.10 COMPONENTS Interpreter Development Development.Module REQUIRED)
+find_package(Python 3.8 COMPONENTS Interpreter Development Development.Module REQUIRED)
+
 
 if(DEBUG)
 message(STATUS "Python_FOUND: ${Python_FOUND}")
@@ -54,7 +55,6 @@ set(LLAMA_LINK_LIBS
     $<IF:$<BOOL:${LLAMA_SHAREDLIB}>,-lcommon,${COMMON_STATICLIB}>
     "$<$<PLATFORM_ID:Darwin>:-framework Accelerate>"
     "$<$<PLATFORM_ID:Darwin>:-framework Foundation>"
-	# "$<$<PLATFORM_ID:Darwin>:-framework CoreFoundation>"
     "$<$<PLATFORM_ID:Darwin>:-framework Metal>"
     "$<$<PLATFORM_ID:Darwin>:-framework MetalKit>"
 )
