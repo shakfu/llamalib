@@ -23,6 +23,7 @@ py::array_t<T> to_array(T * carr, size_t carr_size)
     return arr;
 }
 
+// ggml > ggml-backend > sampling > common > arg > llama
 
 
 PYBIND11_MODULE(pbllama, m) {
@@ -52,6 +53,231 @@ PYBIND11_MODULE(pbllama, m) {
 
     m.def("ggml_time_us", (int64_t (*)(void)) &ggml_time_us);
 
+
+    // -----------------------------------------------------------------------
+    // sampling.h
+
+    // -----------------------------------------------------------------------
+    // common.h
+
+    py::class_<gpt_params, std::shared_ptr<gpt_params>> (m, "gpt_params", "")
+        .def( py::init( [](){ return new gpt_params(); } ) )
+        .def( py::init( [](gpt_params const &o){ return new gpt_params(o); } ) )
+        .def_readwrite("n_predict", &gpt_params::n_predict)
+        .def_readwrite("n_ctx", &gpt_params::n_ctx)
+        .def_readwrite("n_batch", &gpt_params::n_batch)
+        .def_readwrite("n_ubatch", &gpt_params::n_ubatch)
+        .def_readwrite("n_keep", &gpt_params::n_keep)
+        .def_readwrite("n_draft", &gpt_params::n_draft)
+        .def_readwrite("n_chunks", &gpt_params::n_chunks)
+        .def_readwrite("n_parallel", &gpt_params::n_parallel)
+        .def_readwrite("n_sequences", &gpt_params::n_sequences)
+        .def_readwrite("p_split", &gpt_params::p_split)
+        .def_readwrite("n_gpu_layers", &gpt_params::n_gpu_layers)
+        .def_readwrite("n_gpu_layers_draft", &gpt_params::n_gpu_layers_draft)
+        .def_readwrite("main_gpu", &gpt_params::main_gpu)
+        .def_readwrite("grp_attn_n", &gpt_params::grp_attn_n)
+        .def_readwrite("grp_attn_w", &gpt_params::grp_attn_w)
+        .def_readwrite("n_print", &gpt_params::n_print)
+        .def_readwrite("rope_freq_base", &gpt_params::rope_freq_base)
+        .def_readwrite("rope_freq_scale", &gpt_params::rope_freq_scale)
+        .def_readwrite("yarn_ext_factor", &gpt_params::yarn_ext_factor)
+        .def_readwrite("yarn_attn_factor", &gpt_params::yarn_attn_factor)
+        .def_readwrite("yarn_beta_fast", &gpt_params::yarn_beta_fast)
+        .def_readwrite("yarn_beta_slow", &gpt_params::yarn_beta_slow)
+        .def_readwrite("yarn_orig_ctx", &gpt_params::yarn_orig_ctx)
+        .def_readwrite("defrag_thold", &gpt_params::defrag_thold)
+        .def_readwrite("numa", &gpt_params::numa)
+        .def_readwrite("split_mode", &gpt_params::split_mode)
+        .def_readwrite("rope_scaling_type", &gpt_params::rope_scaling_type)
+        .def_readwrite("pooling_type", &gpt_params::pooling_type)
+        .def_readwrite("attention_type", &gpt_params::attention_type)
+        .def_readwrite("sparams", &gpt_params::sparams)
+        .def_readwrite("model", &gpt_params::model)
+        .def_readwrite("model_draft", &gpt_params::model_draft)
+        .def_readwrite("model_alias", &gpt_params::model_alias)
+        .def_readwrite("model_url", &gpt_params::model_url)
+        .def_readwrite("hf_token", &gpt_params::hf_token)
+        .def_readwrite("hf_repo", &gpt_params::hf_repo)
+        .def_readwrite("hf_file", &gpt_params::hf_file)
+        .def_readwrite("prompt", &gpt_params::prompt)
+        .def_readwrite("prompt_file", &gpt_params::prompt_file)
+        .def_readwrite("path_prompt_cache", &gpt_params::path_prompt_cache)
+        .def_readwrite("input_prefix", &gpt_params::input_prefix)
+        .def_readwrite("input_suffix", &gpt_params::input_suffix)
+        .def_readwrite("logdir", &gpt_params::logdir)
+        .def_readwrite("lookup_cache_static", &gpt_params::lookup_cache_static)
+        .def_readwrite("lookup_cache_dynamic", &gpt_params::lookup_cache_dynamic)
+        .def_readwrite("logits_file", &gpt_params::logits_file)
+        .def_readwrite("rpc_servers", &gpt_params::rpc_servers)
+        .def_readwrite("in_files", &gpt_params::in_files)
+        .def_readwrite("antiprompt", &gpt_params::antiprompt)
+        .def_readwrite("kv_overrides", &gpt_params::kv_overrides)
+        .def_readwrite("lora_adapters", &gpt_params::lora_adapters)
+        .def_readwrite("control_vectors", &gpt_params::control_vectors)
+        .def_readwrite("verbosity", &gpt_params::verbosity)
+        .def_readwrite("control_vector_layer_start", &gpt_params::control_vector_layer_start)
+        .def_readwrite("control_vector_layer_end", &gpt_params::control_vector_layer_end)
+        .def_readwrite("ppl_stride", &gpt_params::ppl_stride)
+        .def_readwrite("ppl_output_type", &gpt_params::ppl_output_type)
+        .def_readwrite("hellaswag", &gpt_params::hellaswag)
+        .def_readwrite("hellaswag_tasks", &gpt_params::hellaswag_tasks)
+        .def_readwrite("winogrande", &gpt_params::winogrande)
+        .def_readwrite("winogrande_tasks", &gpt_params::winogrande_tasks)
+        .def_readwrite("multiple_choice", &gpt_params::multiple_choice)
+        .def_readwrite("multiple_choice_tasks", &gpt_params::multiple_choice_tasks)
+        .def_readwrite("kl_divergence", &gpt_params::kl_divergence)
+        .def_readwrite("usage", &gpt_params::usage)
+        .def_readwrite("use_color", &gpt_params::use_color)
+        .def_readwrite("special", &gpt_params::special)
+        .def_readwrite("interactive", &gpt_params::interactive)
+        .def_readwrite("interactive_first", &gpt_params::interactive_first)
+        .def_readwrite("conversation", &gpt_params::conversation)
+        .def_readwrite("prompt_cache_all", &gpt_params::prompt_cache_all)
+        .def_readwrite("prompt_cache_ro", &gpt_params::prompt_cache_ro)
+        .def_readwrite("escape", &gpt_params::escape)
+        .def_readwrite("multiline_input", &gpt_params::multiline_input)
+        .def_readwrite("simple_io", &gpt_params::simple_io)
+        .def_readwrite("cont_batching", &gpt_params::cont_batching)
+        .def_readwrite("flash_attn", &gpt_params::flash_attn)
+        .def_readwrite("input_prefix_bos", &gpt_params::input_prefix_bos)
+        // .def_readwrite("ignore_eos", &gpt_params::ignore_eos)
+        .def_readwrite("logits_all", &gpt_params::logits_all)
+        .def_readwrite("use_mmap", &gpt_params::use_mmap)
+        .def_readwrite("use_mlock", &gpt_params::use_mlock)
+        .def_readwrite("verbose_prompt", &gpt_params::verbose_prompt)
+        .def_readwrite("display_prompt", &gpt_params::display_prompt)
+        // .def_readwrite("infill", &gpt_params::infill)
+        .def_readwrite("dump_kv_cache", &gpt_params::dump_kv_cache)
+        .def_readwrite("no_kv_offload", &gpt_params::no_kv_offload)
+        .def_readwrite("warmup", &gpt_params::warmup)
+        .def_readwrite("check_tensors", &gpt_params::check_tensors)
+        .def_readwrite("cache_type_k", &gpt_params::cache_type_k)
+        .def_readwrite("cache_type_v", &gpt_params::cache_type_v)
+        .def_readwrite("mmproj", &gpt_params::mmproj)
+        .def_readwrite("image", &gpt_params::image)
+        .def_readwrite("embedding", &gpt_params::embedding)
+        .def_readwrite("embd_normalize", &gpt_params::embd_normalize)
+        .def_readwrite("embd_out", &gpt_params::embd_out)
+        .def_readwrite("embd_sep", &gpt_params::embd_sep)
+        .def_readwrite("port", &gpt_params::port)
+        .def_readwrite("timeout_read", &gpt_params::timeout_read)
+        .def_readwrite("timeout_write", &gpt_params::timeout_write)
+        .def_readwrite("n_threads_http", &gpt_params::n_threads_http)
+        .def_readwrite("hostname", &gpt_params::hostname)
+        .def_readwrite("public_path", &gpt_params::public_path)
+        .def_readwrite("chat_template", &gpt_params::chat_template)
+        .def_readwrite("system_prompt", &gpt_params::system_prompt)
+        .def_readwrite("enable_chat_template", &gpt_params::enable_chat_template)
+        .def_readwrite("api_keys", &gpt_params::api_keys)
+        .def_readwrite("ssl_file_key", &gpt_params::ssl_file_key)
+        .def_readwrite("ssl_file_cert", &gpt_params::ssl_file_cert)
+        .def_readwrite("endpoint_slots", &gpt_params::endpoint_slots)
+        .def_readwrite("endpoint_metrics", &gpt_params::endpoint_metrics)
+        .def_readwrite("log_json", &gpt_params::log_json)
+        .def_readwrite("slot_save_path", &gpt_params::slot_save_path)
+        .def_readwrite("slot_prompt_similarity", &gpt_params::slot_prompt_similarity)
+        .def_readwrite("is_pp_shared", &gpt_params::is_pp_shared)
+        .def_readwrite("n_pp", &gpt_params::n_pp)
+        .def_readwrite("n_tg", &gpt_params::n_tg)
+        .def_readwrite("n_pl", &gpt_params::n_pl)
+        .def_readwrite("context_files", &gpt_params::context_files)
+        .def_readwrite("chunk_size", &gpt_params::chunk_size)
+        .def_readwrite("chunk_separator", &gpt_params::chunk_separator)
+        .def_readwrite("n_junk", &gpt_params::n_junk)
+        .def_readwrite("i_pos", &gpt_params::i_pos)
+        .def_readwrite("out_file", &gpt_params::out_file)
+        .def_readwrite("n_out_freq", &gpt_params::n_out_freq)
+        .def_readwrite("n_save_freq", &gpt_params::n_save_freq)
+        .def_readwrite("i_chunk", &gpt_params::i_chunk)
+        .def_readwrite("process_output", &gpt_params::process_output)
+        .def_readwrite("compute_ppl", &gpt_params::compute_ppl)
+        .def_readwrite("n_pca_batch", &gpt_params::n_pca_batch)
+        .def_readwrite("n_pca_iterations", &gpt_params::n_pca_iterations)
+        .def_readwrite("cvector_dimre_method", &gpt_params::cvector_dimre_method)
+        .def_readwrite("cvector_outfile", &gpt_params::cvector_outfile)
+        .def_readwrite("cvector_positive_file", &gpt_params::cvector_positive_file)
+        .def_readwrite("cvector_negative_file", &gpt_params::cvector_negative_file)
+        .def_readwrite("spm_infill", &gpt_params::spm_infill)
+        .def_readwrite("lora_outfile", &gpt_params::lora_outfile)
+        .def("assign", (struct gpt_params & (gpt_params::*)(const struct gpt_params &)) &gpt_params::operator=, "C++: gpt_params::operator=(const struct gpt_params &) --> struct gpt_params &", py::return_value_policy::automatic, py::arg(""));
+
+    // overloaded
+
+    m.def("llama_token_to_piece", (std::string (*)(const struct llama_context *, llama_token, bool)) &llama_token_to_piece, "", py::arg("ctx"), py::arg("token"), py::arg("special") = true);
+
+    // m.def("llama_tokenize", [](const struct llama_context * ctx, const std::string & text, bool add_special, bool parse_special = false) -> std::vector<llama_token> {
+    //     std::vector<llama_token> tokens_list;
+    //     tokens_list = llama_tokenize(ctx, text, add_special, parse_special);
+    //     return tokens_list;
+    // });
+    m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("ctx"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
+    m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
+
+    // m.def("gpt_params_parse_from_env", (void (*)(struct gpt_params &)) &gpt_params_parse_from_env, "", py::arg("params"));
+    // m.def("gpt_params_handle_model_default", (void (*)(struct gpt_params &)) &gpt_params_handle_model_default, "C++: gpt_params_handle_model_default(struct gpt_params &) --> void", py::arg("params"));
+    m.def("gpt_params_get_system_info", (std::string (*)(const struct gpt_params &)) &gpt_params_get_system_info, "C++: gpt_params_get_system_info(const struct gpt_params &) --> std::string", py::arg("params"));
+
+    m.def("string_split", (class std::vector<std::string> (*)(std::string, char)) &string_split, "C++: string_split(std::string, char) --> class std::vector<std::string>", py::arg("input"), py::arg("separator"));
+    m.def("string_strip", (std::string (*)(const std::string &)) &string_strip, "C++: string_strip(const std::string &) --> std::string", py::arg("str"));
+    m.def("string_get_sortable_timestamp", (std::string (*)()) &string_get_sortable_timestamp, "C++: string_get_sortable_timestamp() --> std::string");
+    m.def("string_parse_kv_override", (bool (*)(const char *, class std::vector<struct llama_model_kv_override> &)) &string_parse_kv_override, "C++: string_parse_kv_override(const char *, class std::vector<struct llama_model_kv_override> &) --> bool", py::arg("data"), py::arg("overrides"));
+    m.def("string_process_escapes", (void (*)(std::string &)) &string_process_escapes, "C++: string_process_escapes(std::string &) --> void", py::arg("input"));
+
+    m.def("fs_validate_filename", (bool (*)(const std::string &)) &fs_validate_filename, "C++: fs_validate_filename(const std::string &) --> bool", py::arg("filename"));
+    m.def("fs_create_directory_with_parents", (bool (*)(const std::string &)) &fs_create_directory_with_parents, "C++: fs_create_directory_with_parents(const std::string &) --> bool", py::arg("path"));
+    m.def("fs_get_cache_directory", (std::string (*)()) &fs_get_cache_directory, "C++: fs_get_cache_directory() --> std::string");
+    m.def("fs_get_cache_file", (std::string (*)(const std::string &)) &fs_get_cache_file, "C++: fs_get_cache_file(const std::string &) --> std::string", py::arg("filename"));
+
+    m.def("llama_init_from_gpt_params", (class std::tuple<struct llama_model *, struct llama_context *> (*)(struct gpt_params &)) &llama_init_from_gpt_params, "C++: llama_init_from_gpt_params(struct gpt_params &) --> class std::tuple<struct llama_model *, struct llama_context *>", py::arg("params"));
+
+    m.def("llama_model_params_from_gpt_params", (struct llama_model_params (*)(const struct gpt_params &)) &llama_model_params_from_gpt_params, "C++: llama_model_params_from_gpt_params(const struct gpt_params &) --> struct llama_model_params", py::arg("params"));
+
+    m.def("llama_context_params_from_gpt_params", (struct llama_context_params (*)(const struct gpt_params &)) &llama_context_params_from_gpt_params, "C++: llama_context_params_from_gpt_params(const struct gpt_params &) --> struct llama_context_params", py::arg("params"));
+
+    m.def("llama_batch_clear", (void (*)(struct llama_batch &)) &llama_batch_clear, "C++: llama_batch_clear(struct llama_batch &) --> void", py::arg("batch"));
+    m.def("llama_batch_add", (void (*)(struct llama_batch &, int32_t, int32_t, const class std::vector<int32_t> &, bool)) &llama_batch_add, "", py::arg("batch"), py::arg("id"), py::arg("pos"), py::arg("seq_ids"), py::arg("logits"));
+
+    py::class_<llama_chat_msg, std::shared_ptr<llama_chat_msg>> (m, "llama_chat_msg", "")
+        .def( py::init( [](){ return new llama_chat_msg(); } ) )
+        .def( py::init( [](llama_chat_msg const &o){ return new llama_chat_msg(o); } ) )
+        .def_readwrite("role", &llama_chat_msg::role)
+        .def_readwrite("content", &llama_chat_msg::content)
+        .def("assign", (struct llama_chat_msg & (llama_chat_msg::*)(const struct llama_chat_msg &)) &llama_chat_msg::operator=, "", py::return_value_policy::automatic, py::arg(""));
+
+    m.def("llama_chat_verify_template", (bool (*)(const std::string &)) &llama_chat_verify_template, "C++: llama_chat_verify_template(const std::string &) --> bool", py::arg("tmpl"));
+
+    m.def("llama_kv_cache_dump_view", [](const struct llama_kv_cache_view & a0) -> void { return llama_kv_cache_dump_view(a0); }, "", py::arg("view"));
+    m.def("llama_kv_cache_dump_view", (void (*)(const struct llama_kv_cache_view &, int)) &llama_kv_cache_dump_view, "C++: llama_kv_cache_dump_view(const struct llama_kv_cache_view &, int) --> void", py::arg("view"), py::arg("row_size"));
+
+    m.def("llama_kv_cache_dump_view_seqs", [](const struct llama_kv_cache_view & a0) -> void { return llama_kv_cache_dump_view_seqs(a0); }, "", py::arg("view"));
+    m.def("llama_kv_cache_dump_view_seqs", (void (*)(const struct llama_kv_cache_view &, int)) &llama_kv_cache_dump_view_seqs, "C++: llama_kv_cache_dump_view_seqs(const struct llama_kv_cache_view &, int) --> void", py::arg("view"), py::arg("row_size"));
+
+    m.def("llama_embd_normalize", [](const float * a0, float * a1, int const & a2) -> void { return llama_embd_normalize(a0, a1, a2); }, "", py::arg("inp"), py::arg("out"), py::arg("n"));
+    m.def("llama_embd_normalize", (void (*)(const float *, float *, int, int)) &llama_embd_normalize, "C++: llama_embd_normalize(const float *, float *, int, int) --> void", py::arg("inp"), py::arg("out"), py::arg("n"), py::arg("embd_norm"));
+
+    m.def("llama_embd_similarity_cos", (float (*)(const float *, const float *, int)) &llama_embd_similarity_cos, "C++: llama_embd_similarity_cos(const float *, const float *, int) --> float", py::arg("embd1"), py::arg("embd2"), py::arg("n"));
+
+    py::class_<llama_control_vector_data, std::shared_ptr<llama_control_vector_data>> (m, "llama_control_vector_data", "")
+        .def( py::init( [](){ return new llama_control_vector_data(); } ) )
+        .def( py::init( [](llama_control_vector_data const &o){ return new llama_control_vector_data(o); } ) )
+        .def_readwrite("n_embd", &llama_control_vector_data::n_embd)
+        .def_readwrite("data", &llama_control_vector_data::data)
+        .def("assign", (struct llama_control_vector_data & (llama_control_vector_data::*)(const struct llama_control_vector_data &)) &llama_control_vector_data::operator=, "", py::return_value_policy::automatic, py::arg(""));
+
+    py::class_<llama_control_vector_load_info, std::shared_ptr<llama_control_vector_load_info>> (m, "llama_control_vector_load_info", "")
+        .def( py::init( [](){ return new llama_control_vector_load_info(); } ) )
+        .def( py::init( [](llama_control_vector_load_info const &o){ return new llama_control_vector_load_info(o); } ) )
+        .def_readwrite("strength", &llama_control_vector_load_info::strength)
+        .def_readwrite("fname", &llama_control_vector_load_info::fname)
+        .def("assign", (struct llama_control_vector_load_info & (llama_control_vector_load_info::*)(const struct llama_control_vector_load_info &)) &llama_control_vector_load_info::operator=, "C++: llama_control_vector_load_info::operator=(const struct llama_control_vector_load_info &) --> struct llama_control_vector_load_info &", py::return_value_policy::automatic, py::arg(""));
+
+    m.def("llama_control_vector_load", (struct llama_control_vector_data (*)(const class std::vector<struct llama_control_vector_load_info> &)) &llama_control_vector_load, "C++: llama_control_vector_load(const class std::vector<struct llama_control_vector_load_info> &) --> struct llama_control_vector_data", py::arg("load_infos"));
+
+    m.def("yaml_dump_vector_float", (void (*)(struct __sFILE *, const char *, const class std::vector<float> &)) &yaml_dump_vector_float, "C++: yaml_dump_vector_float(struct __sFILE *, const char *, const class std::vector<float> &) --> void", py::arg("stream"), py::arg("prop_name"), py::arg("data"));
+    m.def("yaml_dump_vector_int", (void (*)(struct __sFILE *, const char *, const class std::vector<int> &)) &yaml_dump_vector_int, "C++: yaml_dump_vector_int(struct __sFILE *, const char *, const class std::vector<int> &) --> void", py::arg("stream"), py::arg("prop_name"), py::arg("data"));
+    m.def("yaml_dump_string_multiline", (void (*)(struct __sFILE *, const char *, const char *)) &yaml_dump_string_multiline, "C++: yaml_dump_string_multiline(struct __sFILE *, const char *, const char *) --> void", py::arg("stream"), py::arg("prop_name"), py::arg("data"));
+
     // -----------------------------------------------------------------------
     // arg.h
 
@@ -75,7 +301,6 @@ PYBIND11_MODULE(pbllama, m) {
         .value("LLAMA_EXAMPLE_COUNT", LLAMA_EXAMPLE_COUNT)
         .export_values();
 
-
     py::class_<llama_arg, std::shared_ptr<llama_arg>> (m, "llama_arg", "")
         // .def( py::init( [](){ return new llama_arg(); } ) )
         .def_readwrite("examples", &llama_arg::examples)
@@ -96,7 +321,6 @@ PYBIND11_MODULE(pbllama, m) {
         // .def_readwrite("params", &gpt_params_context::params)
         .def_readwrite("options", &gpt_params_context::options);
         // void(*print_usage)(int, char **) = nullptr;
-
 
     m.def("gpt_params_parse", [](std::vector<std::string> args, gpt_params & params, enum llama_example example) -> bool {
         void(*print_usage)(int, char **) = NULL;
@@ -734,226 +958,5 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_perf_sampler_reset", (void (*)(struct llama_sampler *)) &llama_perf_sampler_reset, "", py::arg("chain"));
 
     m.def("llama_perf_dump_yaml", (const char * (*)(FILE *, const struct llama_context *)) &llama_perf_dump_yaml, "", py::arg("stream"), py::arg("ctx"));
-
-    // -----------------------------------------------------------------------
-    // common.h
-
-    py::class_<gpt_params, std::shared_ptr<gpt_params>> (m, "gpt_params", "")
-        .def( py::init( [](){ return new gpt_params(); } ) )
-        .def( py::init( [](gpt_params const &o){ return new gpt_params(o); } ) )
-        .def_readwrite("n_predict", &gpt_params::n_predict)
-        .def_readwrite("n_ctx", &gpt_params::n_ctx)
-        .def_readwrite("n_batch", &gpt_params::n_batch)
-        .def_readwrite("n_ubatch", &gpt_params::n_ubatch)
-        .def_readwrite("n_keep", &gpt_params::n_keep)
-        .def_readwrite("n_draft", &gpt_params::n_draft)
-        .def_readwrite("n_chunks", &gpt_params::n_chunks)
-        .def_readwrite("n_parallel", &gpt_params::n_parallel)
-        .def_readwrite("n_sequences", &gpt_params::n_sequences)
-        .def_readwrite("p_split", &gpt_params::p_split)
-        .def_readwrite("n_gpu_layers", &gpt_params::n_gpu_layers)
-        .def_readwrite("n_gpu_layers_draft", &gpt_params::n_gpu_layers_draft)
-        .def_readwrite("main_gpu", &gpt_params::main_gpu)
-        .def_readwrite("grp_attn_n", &gpt_params::grp_attn_n)
-        .def_readwrite("grp_attn_w", &gpt_params::grp_attn_w)
-        .def_readwrite("n_print", &gpt_params::n_print)
-        .def_readwrite("rope_freq_base", &gpt_params::rope_freq_base)
-        .def_readwrite("rope_freq_scale", &gpt_params::rope_freq_scale)
-        .def_readwrite("yarn_ext_factor", &gpt_params::yarn_ext_factor)
-        .def_readwrite("yarn_attn_factor", &gpt_params::yarn_attn_factor)
-        .def_readwrite("yarn_beta_fast", &gpt_params::yarn_beta_fast)
-        .def_readwrite("yarn_beta_slow", &gpt_params::yarn_beta_slow)
-        .def_readwrite("yarn_orig_ctx", &gpt_params::yarn_orig_ctx)
-        .def_readwrite("defrag_thold", &gpt_params::defrag_thold)
-        .def_readwrite("numa", &gpt_params::numa)
-        .def_readwrite("split_mode", &gpt_params::split_mode)
-        .def_readwrite("rope_scaling_type", &gpt_params::rope_scaling_type)
-        .def_readwrite("pooling_type", &gpt_params::pooling_type)
-        .def_readwrite("attention_type", &gpt_params::attention_type)
-        .def_readwrite("sparams", &gpt_params::sparams)
-        .def_readwrite("model", &gpt_params::model)
-        .def_readwrite("model_draft", &gpt_params::model_draft)
-        .def_readwrite("model_alias", &gpt_params::model_alias)
-        .def_readwrite("model_url", &gpt_params::model_url)
-        .def_readwrite("hf_token", &gpt_params::hf_token)
-        .def_readwrite("hf_repo", &gpt_params::hf_repo)
-        .def_readwrite("hf_file", &gpt_params::hf_file)
-        .def_readwrite("prompt", &gpt_params::prompt)
-        .def_readwrite("prompt_file", &gpt_params::prompt_file)
-        .def_readwrite("path_prompt_cache", &gpt_params::path_prompt_cache)
-        .def_readwrite("input_prefix", &gpt_params::input_prefix)
-        .def_readwrite("input_suffix", &gpt_params::input_suffix)
-        .def_readwrite("logdir", &gpt_params::logdir)
-        .def_readwrite("lookup_cache_static", &gpt_params::lookup_cache_static)
-        .def_readwrite("lookup_cache_dynamic", &gpt_params::lookup_cache_dynamic)
-        .def_readwrite("logits_file", &gpt_params::logits_file)
-        .def_readwrite("rpc_servers", &gpt_params::rpc_servers)
-        .def_readwrite("in_files", &gpt_params::in_files)
-        .def_readwrite("antiprompt", &gpt_params::antiprompt)
-        .def_readwrite("kv_overrides", &gpt_params::kv_overrides)
-        .def_readwrite("lora_adapters", &gpt_params::lora_adapters)
-        .def_readwrite("control_vectors", &gpt_params::control_vectors)
-        .def_readwrite("verbosity", &gpt_params::verbosity)
-        .def_readwrite("control_vector_layer_start", &gpt_params::control_vector_layer_start)
-        .def_readwrite("control_vector_layer_end", &gpt_params::control_vector_layer_end)
-        .def_readwrite("ppl_stride", &gpt_params::ppl_stride)
-        .def_readwrite("ppl_output_type", &gpt_params::ppl_output_type)
-        .def_readwrite("hellaswag", &gpt_params::hellaswag)
-        .def_readwrite("hellaswag_tasks", &gpt_params::hellaswag_tasks)
-        .def_readwrite("winogrande", &gpt_params::winogrande)
-        .def_readwrite("winogrande_tasks", &gpt_params::winogrande_tasks)
-        .def_readwrite("multiple_choice", &gpt_params::multiple_choice)
-        .def_readwrite("multiple_choice_tasks", &gpt_params::multiple_choice_tasks)
-        .def_readwrite("kl_divergence", &gpt_params::kl_divergence)
-        .def_readwrite("usage", &gpt_params::usage)
-        .def_readwrite("use_color", &gpt_params::use_color)
-        .def_readwrite("special", &gpt_params::special)
-        .def_readwrite("interactive", &gpt_params::interactive)
-        .def_readwrite("interactive_first", &gpt_params::interactive_first)
-        .def_readwrite("conversation", &gpt_params::conversation)
-        .def_readwrite("prompt_cache_all", &gpt_params::prompt_cache_all)
-        .def_readwrite("prompt_cache_ro", &gpt_params::prompt_cache_ro)
-        .def_readwrite("escape", &gpt_params::escape)
-        .def_readwrite("multiline_input", &gpt_params::multiline_input)
-        .def_readwrite("simple_io", &gpt_params::simple_io)
-        .def_readwrite("cont_batching", &gpt_params::cont_batching)
-        .def_readwrite("flash_attn", &gpt_params::flash_attn)
-        .def_readwrite("input_prefix_bos", &gpt_params::input_prefix_bos)
-        // .def_readwrite("ignore_eos", &gpt_params::ignore_eos)
-        .def_readwrite("logits_all", &gpt_params::logits_all)
-        .def_readwrite("use_mmap", &gpt_params::use_mmap)
-        .def_readwrite("use_mlock", &gpt_params::use_mlock)
-        .def_readwrite("verbose_prompt", &gpt_params::verbose_prompt)
-        .def_readwrite("display_prompt", &gpt_params::display_prompt)
-        // .def_readwrite("infill", &gpt_params::infill)
-        .def_readwrite("dump_kv_cache", &gpt_params::dump_kv_cache)
-        .def_readwrite("no_kv_offload", &gpt_params::no_kv_offload)
-        .def_readwrite("warmup", &gpt_params::warmup)
-        .def_readwrite("check_tensors", &gpt_params::check_tensors)
-        .def_readwrite("cache_type_k", &gpt_params::cache_type_k)
-        .def_readwrite("cache_type_v", &gpt_params::cache_type_v)
-        .def_readwrite("mmproj", &gpt_params::mmproj)
-        .def_readwrite("image", &gpt_params::image)
-        .def_readwrite("embedding", &gpt_params::embedding)
-        .def_readwrite("embd_normalize", &gpt_params::embd_normalize)
-        .def_readwrite("embd_out", &gpt_params::embd_out)
-        .def_readwrite("embd_sep", &gpt_params::embd_sep)
-        .def_readwrite("port", &gpt_params::port)
-        .def_readwrite("timeout_read", &gpt_params::timeout_read)
-        .def_readwrite("timeout_write", &gpt_params::timeout_write)
-        .def_readwrite("n_threads_http", &gpt_params::n_threads_http)
-        .def_readwrite("hostname", &gpt_params::hostname)
-        .def_readwrite("public_path", &gpt_params::public_path)
-        .def_readwrite("chat_template", &gpt_params::chat_template)
-        .def_readwrite("system_prompt", &gpt_params::system_prompt)
-        .def_readwrite("enable_chat_template", &gpt_params::enable_chat_template)
-        .def_readwrite("api_keys", &gpt_params::api_keys)
-        .def_readwrite("ssl_file_key", &gpt_params::ssl_file_key)
-        .def_readwrite("ssl_file_cert", &gpt_params::ssl_file_cert)
-        .def_readwrite("endpoint_slots", &gpt_params::endpoint_slots)
-        .def_readwrite("endpoint_metrics", &gpt_params::endpoint_metrics)
-        .def_readwrite("log_json", &gpt_params::log_json)
-        .def_readwrite("slot_save_path", &gpt_params::slot_save_path)
-        .def_readwrite("slot_prompt_similarity", &gpt_params::slot_prompt_similarity)
-        .def_readwrite("is_pp_shared", &gpt_params::is_pp_shared)
-        .def_readwrite("n_pp", &gpt_params::n_pp)
-        .def_readwrite("n_tg", &gpt_params::n_tg)
-        .def_readwrite("n_pl", &gpt_params::n_pl)
-        .def_readwrite("context_files", &gpt_params::context_files)
-        .def_readwrite("chunk_size", &gpt_params::chunk_size)
-        .def_readwrite("chunk_separator", &gpt_params::chunk_separator)
-        .def_readwrite("n_junk", &gpt_params::n_junk)
-        .def_readwrite("i_pos", &gpt_params::i_pos)
-        .def_readwrite("out_file", &gpt_params::out_file)
-        .def_readwrite("n_out_freq", &gpt_params::n_out_freq)
-        .def_readwrite("n_save_freq", &gpt_params::n_save_freq)
-        .def_readwrite("i_chunk", &gpt_params::i_chunk)
-        .def_readwrite("process_output", &gpt_params::process_output)
-        .def_readwrite("compute_ppl", &gpt_params::compute_ppl)
-        .def_readwrite("n_pca_batch", &gpt_params::n_pca_batch)
-        .def_readwrite("n_pca_iterations", &gpt_params::n_pca_iterations)
-        .def_readwrite("cvector_dimre_method", &gpt_params::cvector_dimre_method)
-        .def_readwrite("cvector_outfile", &gpt_params::cvector_outfile)
-        .def_readwrite("cvector_positive_file", &gpt_params::cvector_positive_file)
-        .def_readwrite("cvector_negative_file", &gpt_params::cvector_negative_file)
-        .def_readwrite("spm_infill", &gpt_params::spm_infill)
-        .def_readwrite("lora_outfile", &gpt_params::lora_outfile)
-        .def("assign", (struct gpt_params & (gpt_params::*)(const struct gpt_params &)) &gpt_params::operator=, "C++: gpt_params::operator=(const struct gpt_params &) --> struct gpt_params &", py::return_value_policy::automatic, py::arg(""));
-
-    // overloaded
-
-    m.def("llama_token_to_piece", (std::string (*)(const struct llama_context *, llama_token, bool)) &llama_token_to_piece, "", py::arg("ctx"), py::arg("token"), py::arg("special") = true);
-
-    // m.def("llama_tokenize", [](const struct llama_context * ctx, const std::string & text, bool add_special, bool parse_special = false) -> std::vector<llama_token> {
-    //     std::vector<llama_token> tokens_list;
-    //     tokens_list = llama_tokenize(ctx, text, add_special, parse_special);
-    //     return tokens_list;
-    // });
-    m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("ctx"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
-    m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("add_special"), py::arg("parse_special") = false, py::return_value_policy::reference_internal);
-
-    // m.def("gpt_params_parse_from_env", (void (*)(struct gpt_params &)) &gpt_params_parse_from_env, "", py::arg("params"));
-    // m.def("gpt_params_handle_model_default", (void (*)(struct gpt_params &)) &gpt_params_handle_model_default, "C++: gpt_params_handle_model_default(struct gpt_params &) --> void", py::arg("params"));
-    m.def("gpt_params_get_system_info", (std::string (*)(const struct gpt_params &)) &gpt_params_get_system_info, "C++: gpt_params_get_system_info(const struct gpt_params &) --> std::string", py::arg("params"));
-
-    m.def("string_split", (class std::vector<std::string> (*)(std::string, char)) &string_split, "C++: string_split(std::string, char) --> class std::vector<std::string>", py::arg("input"), py::arg("separator"));
-    m.def("string_strip", (std::string (*)(const std::string &)) &string_strip, "C++: string_strip(const std::string &) --> std::string", py::arg("str"));
-    m.def("string_get_sortable_timestamp", (std::string (*)()) &string_get_sortable_timestamp, "C++: string_get_sortable_timestamp() --> std::string");
-    m.def("string_parse_kv_override", (bool (*)(const char *, class std::vector<struct llama_model_kv_override> &)) &string_parse_kv_override, "C++: string_parse_kv_override(const char *, class std::vector<struct llama_model_kv_override> &) --> bool", py::arg("data"), py::arg("overrides"));
-    m.def("string_process_escapes", (void (*)(std::string &)) &string_process_escapes, "C++: string_process_escapes(std::string &) --> void", py::arg("input"));
-
-    m.def("fs_validate_filename", (bool (*)(const std::string &)) &fs_validate_filename, "C++: fs_validate_filename(const std::string &) --> bool", py::arg("filename"));
-    m.def("fs_create_directory_with_parents", (bool (*)(const std::string &)) &fs_create_directory_with_parents, "C++: fs_create_directory_with_parents(const std::string &) --> bool", py::arg("path"));
-    m.def("fs_get_cache_directory", (std::string (*)()) &fs_get_cache_directory, "C++: fs_get_cache_directory() --> std::string");
-    m.def("fs_get_cache_file", (std::string (*)(const std::string &)) &fs_get_cache_file, "C++: fs_get_cache_file(const std::string &) --> std::string", py::arg("filename"));
-
-    m.def("llama_init_from_gpt_params", (class std::tuple<struct llama_model *, struct llama_context *> (*)(struct gpt_params &)) &llama_init_from_gpt_params, "C++: llama_init_from_gpt_params(struct gpt_params &) --> class std::tuple<struct llama_model *, struct llama_context *>", py::arg("params"));
-
-    m.def("llama_model_params_from_gpt_params", (struct llama_model_params (*)(const struct gpt_params &)) &llama_model_params_from_gpt_params, "C++: llama_model_params_from_gpt_params(const struct gpt_params &) --> struct llama_model_params", py::arg("params"));
-
-    m.def("llama_context_params_from_gpt_params", (struct llama_context_params (*)(const struct gpt_params &)) &llama_context_params_from_gpt_params, "C++: llama_context_params_from_gpt_params(const struct gpt_params &) --> struct llama_context_params", py::arg("params"));
-
-    m.def("llama_batch_clear", (void (*)(struct llama_batch &)) &llama_batch_clear, "C++: llama_batch_clear(struct llama_batch &) --> void", py::arg("batch"));
-    m.def("llama_batch_add", (void (*)(struct llama_batch &, int32_t, int32_t, const class std::vector<int32_t> &, bool)) &llama_batch_add, "", py::arg("batch"), py::arg("id"), py::arg("pos"), py::arg("seq_ids"), py::arg("logits"));
-
-    py::class_<llama_chat_msg, std::shared_ptr<llama_chat_msg>> (m, "llama_chat_msg", "")
-        .def( py::init( [](){ return new llama_chat_msg(); } ) )
-        .def( py::init( [](llama_chat_msg const &o){ return new llama_chat_msg(o); } ) )
-        .def_readwrite("role", &llama_chat_msg::role)
-        .def_readwrite("content", &llama_chat_msg::content)
-        .def("assign", (struct llama_chat_msg & (llama_chat_msg::*)(const struct llama_chat_msg &)) &llama_chat_msg::operator=, "", py::return_value_policy::automatic, py::arg(""));
-
-    m.def("llama_chat_verify_template", (bool (*)(const std::string &)) &llama_chat_verify_template, "C++: llama_chat_verify_template(const std::string &) --> bool", py::arg("tmpl"));
-
-    m.def("llama_kv_cache_dump_view", [](const struct llama_kv_cache_view & a0) -> void { return llama_kv_cache_dump_view(a0); }, "", py::arg("view"));
-    m.def("llama_kv_cache_dump_view", (void (*)(const struct llama_kv_cache_view &, int)) &llama_kv_cache_dump_view, "C++: llama_kv_cache_dump_view(const struct llama_kv_cache_view &, int) --> void", py::arg("view"), py::arg("row_size"));
-
-    m.def("llama_kv_cache_dump_view_seqs", [](const struct llama_kv_cache_view & a0) -> void { return llama_kv_cache_dump_view_seqs(a0); }, "", py::arg("view"));
-    m.def("llama_kv_cache_dump_view_seqs", (void (*)(const struct llama_kv_cache_view &, int)) &llama_kv_cache_dump_view_seqs, "C++: llama_kv_cache_dump_view_seqs(const struct llama_kv_cache_view &, int) --> void", py::arg("view"), py::arg("row_size"));
-
-    m.def("llama_embd_normalize", [](const float * a0, float * a1, int const & a2) -> void { return llama_embd_normalize(a0, a1, a2); }, "", py::arg("inp"), py::arg("out"), py::arg("n"));
-    m.def("llama_embd_normalize", (void (*)(const float *, float *, int, int)) &llama_embd_normalize, "C++: llama_embd_normalize(const float *, float *, int, int) --> void", py::arg("inp"), py::arg("out"), py::arg("n"), py::arg("embd_norm"));
-
-    m.def("llama_embd_similarity_cos", (float (*)(const float *, const float *, int)) &llama_embd_similarity_cos, "C++: llama_embd_similarity_cos(const float *, const float *, int) --> float", py::arg("embd1"), py::arg("embd2"), py::arg("n"));
-
-    py::class_<llama_control_vector_data, std::shared_ptr<llama_control_vector_data>> (m, "llama_control_vector_data", "")
-        .def( py::init( [](){ return new llama_control_vector_data(); } ) )
-        .def( py::init( [](llama_control_vector_data const &o){ return new llama_control_vector_data(o); } ) )
-        .def_readwrite("n_embd", &llama_control_vector_data::n_embd)
-        .def_readwrite("data", &llama_control_vector_data::data)
-        .def("assign", (struct llama_control_vector_data & (llama_control_vector_data::*)(const struct llama_control_vector_data &)) &llama_control_vector_data::operator=, "", py::return_value_policy::automatic, py::arg(""));
-
-    py::class_<llama_control_vector_load_info, std::shared_ptr<llama_control_vector_load_info>> (m, "llama_control_vector_load_info", "")
-        .def( py::init( [](){ return new llama_control_vector_load_info(); } ) )
-        .def( py::init( [](llama_control_vector_load_info const &o){ return new llama_control_vector_load_info(o); } ) )
-        .def_readwrite("strength", &llama_control_vector_load_info::strength)
-        .def_readwrite("fname", &llama_control_vector_load_info::fname)
-        .def("assign", (struct llama_control_vector_load_info & (llama_control_vector_load_info::*)(const struct llama_control_vector_load_info &)) &llama_control_vector_load_info::operator=, "C++: llama_control_vector_load_info::operator=(const struct llama_control_vector_load_info &) --> struct llama_control_vector_load_info &", py::return_value_policy::automatic, py::arg(""));
-
-    m.def("llama_control_vector_load", (struct llama_control_vector_data (*)(const class std::vector<struct llama_control_vector_load_info> &)) &llama_control_vector_load, "C++: llama_control_vector_load(const class std::vector<struct llama_control_vector_load_info> &) --> struct llama_control_vector_data", py::arg("load_infos"));
-
-    m.def("yaml_dump_vector_float", (void (*)(struct __sFILE *, const char *, const class std::vector<float> &)) &yaml_dump_vector_float, "C++: yaml_dump_vector_float(struct __sFILE *, const char *, const class std::vector<float> &) --> void", py::arg("stream"), py::arg("prop_name"), py::arg("data"));
-    m.def("yaml_dump_vector_int", (void (*)(struct __sFILE *, const char *, const class std::vector<int> &)) &yaml_dump_vector_int, "C++: yaml_dump_vector_int(struct __sFILE *, const char *, const class std::vector<int> &) --> void", py::arg("stream"), py::arg("prop_name"), py::arg("data"));
-    m.def("yaml_dump_string_multiline", (void (*)(struct __sFILE *, const char *, const char *)) &yaml_dump_string_multiline, "C++: yaml_dump_string_multiline(struct __sFILE *, const char *, const char *) --> void", py::arg("stream"), py::arg("prop_name"), py::arg("data"));
 
 }

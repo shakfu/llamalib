@@ -47,6 +47,234 @@ cdef class GGMLTensor:
         return GGMLTensor.from_ptr(ptr, owner=True)
 
 
+cdef class GptParams: # Still a lot left to do here!
+    cdef llama_cpp.gpt_params p
+
+    @property
+    def n_predict(self) -> int:
+        """new tokens to predict."""
+        return self.p.n_predict
+
+    @n_predict.setter
+    def n_predict(self, value: int):
+        self.p.n_predict = value
+
+    @property
+    def n_ctx(self) -> int:
+        """context size."""
+        return self.p.n_ctx
+
+    @n_ctx.setter
+    def n_ctx(self, value: int):
+        self.p.n_ctx = value
+
+    @property
+    def n_batch(self) -> int:
+        """logical batch size for prompt processing (must be >=32)."""
+        return self.p.n_batch
+
+    @n_batch.setter
+    def n_batch(self, value: int):
+        self.p.n_batch = value
+
+    @property
+    def n_ubatch(self) -> int:
+        """physical batch size for prompt processing (must be >=32)."""
+        return self.p.n_ubatch
+
+    @n_ubatch.setter
+    def n_ubatch(self, value: int):
+        self.p.n_ubatch = value
+
+
+    @property
+    def n_keep(self) -> int:
+        """number of tokens to keep from initial prompt."""
+        return self.p.n_keep
+
+    @n_keep.setter
+    def n_keep(self, value: int):
+        self.p.n_keep = value
+
+
+    @property
+    def n_draft(self) -> int:
+        """number of tokens to draft during speculative decoding."""
+        return self.p.n_draft
+
+    @n_draft.setter
+    def n_draft(self, value: int):
+        self.p.n_draft = value
+
+    @property
+    def n_chunks(self) -> int:
+        """max number of chunks to process (-1 = unlimited)."""
+        return self.p.n_chunks
+
+    @n_chunks.setter
+    def n_chunks(self, value: int):
+        self.p.n_chunks = value
+
+    @property
+    def n_parallel(self) -> int:
+        """number of parallel sequences to decode."""
+        return self.p.n_parallel
+
+    @n_parallel.setter
+    def n_parallel(self, value: int):
+        self.p.n_parallel = value
+
+    @property
+    def n_sequences(self) -> int:
+        """number of sequences to decode."""
+        return self.p.n_sequences
+
+    @n_sequences.setter
+    def n_sequences(self, value: int):
+        self.p.n_sequences = value
+
+    @property
+    def p_split(self) -> float:
+        """speculative decoding split probability."""
+        return self.p.p_split
+
+    @p_split.setter
+    def p_split(self, value: float):
+        self.p.p_split = value
+
+    @property
+    def n_gpu_layers(self) -> int:
+        """number of layers to store in VRAM (-1 - use default)."""
+        return self.p.n_gpu_layers
+
+    @n_gpu_layers.setter
+    def n_gpu_layers(self, value: int):
+        self.p.n_gpu_layers = value
+
+    @property
+    def n_gpu_layers_draft(self) -> int:
+        """number of layers to store in VRAM for the draft model (-1 - use default)."""
+        return self.p.n_gpu_layers_draft
+
+    @n_gpu_layers_draft.setter
+    def n_gpu_layers_draft(self, value: int):
+        self.p.n_gpu_layers_draft = value
+
+    @property
+    def tensor_split(self) -> list[float]:
+        """how split tensors should be distributed across GPUs."""
+        result = []
+        for i in range(128):
+            result.append(self.p.tensor_split[i])
+        return result
+
+    @tensor_split.setter
+    def tensor_split(self, value: list[float]):
+        assert len(value) == 128, "tensor must of length 128"
+        for i in range(128):
+            self.p.tensor_split[i] = value[i]
+
+    @property
+    def grp_attn_n(self) -> int:
+        """group-attention factor."""
+        return self.p.grp_attn_n
+
+    @grp_attn_n.setter
+    def grp_attn_n(self, value: int):
+        self.p.grp_attn_n = value
+
+    @property
+    def grp_attn_w(self) -> int:
+        """group-attention width."""
+        return self.p.grp_attn_w
+
+    @grp_attn_w.setter
+    def grp_attn_w(self, value: int):
+        self.p.grp_attn_w = value
+
+    @property
+    def n_print(self) -> int:
+        """print token count every n tokens (-1 = disabled)."""
+        return self.p.n_print
+
+    @n_print.setter
+    def n_print(self, value: int):
+        self.p.n_print = value
+
+    @property
+    def rope_freq_base(self) -> float:
+        """RoPE base frequency."""
+        return self.p.rope_freq_base
+
+    @rope_freq_base.setter
+    def rope_freq_base(self, value: float):
+        self.p.rope_freq_base = value
+
+    @property
+    def rope_freq_scale(self) -> float:
+        """RoPE frequency scaling factor."""
+        return self.p.rope_freq_scale
+
+    @rope_freq_scale.setter
+    def rope_freq_scale(self, value: float):
+        self.p.rope_freq_scale = value
+
+    @property
+    def yarn_ext_factor(self) -> float:
+        """YaRN extrapolation mix factor."""
+        return self.p.yarn_ext_factor
+
+    @yarn_ext_factor.setter
+    def yarn_ext_factor(self, value: float):
+        self.p.yarn_ext_factor = value
+
+    @property
+    def yarn_attn_factor(self) -> float:
+        """YaRN magnitude scaling factor."""
+        return self.p.yarn_attn_factor
+
+    @yarn_attn_factor.setter
+    def yarn_attn_factor(self, value: float):
+        self.p.yarn_attn_factor = value
+
+    @property
+    def yarn_beta_fast(self) -> float:
+        """YaRN low correction dim."""
+        return self.p.yarn_beta_fast
+
+    @yarn_beta_fast.setter
+    def yarn_beta_fast(self, value: float):
+        self.p.yarn_beta_fast = value
+
+    @property
+    def yarn_beta_slow(self) -> float:
+        """YaRN high correction dim."""
+        return self.p.yarn_beta_slow
+
+    @yarn_beta_slow.setter
+    def yarn_beta_slow(self, value: float):
+        self.p.yarn_beta_slow = value
+
+    @property
+    def yarn_orig_ctx(self) -> int:
+        """YaRN original context length."""
+        return self.p.yarn_orig_ctx
+
+    @yarn_orig_ctx.setter
+    def yarn_orig_ctx(self, value: int):
+        self.p.yarn_orig_ctx = value
+
+    @property
+    def defrag_thold(self) -> float:
+        """KV cache defragmentation threshold."""
+        return self.p.defrag_thold
+
+    @defrag_thold.setter
+    def defrag_thold(self, value: float):
+        self.p.defrag_thold = value
+
+
+
 cdef class ModelParams:
     cdef llama_cpp.llama_model_params p
 

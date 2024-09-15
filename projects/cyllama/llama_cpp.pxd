@@ -213,7 +213,6 @@ cdef extern from "ggml-backend.h":
     ctypedef bint (*ggml_backend_sched_eval_callback)(ggml_tensor * t, bint ask, void * user_data)
 
 
-
 #------------------------------------------------------------------------------
 
 cdef extern from "sampling.h":
