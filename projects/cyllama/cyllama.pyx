@@ -47,7 +47,7 @@ cdef class GGMLTensor:
         return GGMLTensor.from_ptr(ptr, owner=True)
 
 
-cdef class GptParams: # Still a lot left to do here!
+cdef class GptParams: # WIP!
     cdef llama_cpp.gpt_params p
 
     @property
@@ -1179,7 +1179,6 @@ cdef class GptParams: # Still a lot left to do here!
 
     # // batched-bench params
     # bool batched_bench_output_jsonl = false;
-
 
 
 cdef class ModelParams:

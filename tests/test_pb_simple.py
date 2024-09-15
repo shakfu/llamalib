@@ -1,17 +1,14 @@
 import sys
 from pathlib import Path
-ROOT = Path.cwd().parent
+ROOT = Path.cwd()
 sys.path.insert(0, str(ROOT / 'build'))
-
-MODEL = ROOT / 'models' / 'gemma-2-9b-it-IQ4_XS.gguf'
-# MODEL = ROOT / 'models' / 'mistral-7b-instruct-v0.1.Q4_K_M.gguf'
 
 import pbllama as pb
 
-def test_pb_simple():
+def test_pb_simple(MODEL):
 
     params = pb.gpt_params()
-    params.model = str(MODEL)
+    params.model = MODEL
     params.prompt = "When did the universe begin?"
     params.n_predict = 32
 
@@ -33,7 +30,7 @@ def test_pb_simple():
     model_params = pb.llama_model_params_from_gpt_params(params)
 
     # set local test model
-    params.model = str(MODEL)
+    params.model = MODEL
 
     model = pb.llama_load_model_from_file(params.model, model_params)
 
@@ -156,11 +153,6 @@ def test_pb_simple():
     print()
 
 
-    pb.llama_perf_print(smpl, pb.LLAMA_PERF_TYPE_SAMPLER_CHAIN)
-    pb.llama_perf_print(ctx, pb.LLAMA_PERF_TYPE_CONTEXT)
-
-    print()
-
     pb.llama_batch_free(batch)
     pb.llama_sampler_free(smpl)
     pb.llama_free(ctx)
@@ -168,4 +160,4 @@ def test_pb_simple():
 
     pb.llama_backend_free()
 
-    return True
+    assert True

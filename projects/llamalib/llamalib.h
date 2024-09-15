@@ -20,10 +20,6 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     params.model = model;
     params.n_predict = n_predict;
 
-    if (disable_log) {
-        log_disable();
-    }
-
     if (!gpt_params_parse(0, nullptr, params, LLAMA_EXAMPLE_COMMON, nullptr)) {
         return std::string();
     }
@@ -59,12 +55,12 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     const int n_ctx    = llama_n_ctx(ctx);
     const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size());
 
-    LOG_TEE("\n%s: n_predict = %d, n_ctx = %d, n_kv_req = %d\n", __func__, n_predict, n_ctx, n_kv_req);
+    LOG("\n%s: n_predict = %d, n_ctx = %d, n_kv_req = %d\n", __func__, n_predict, n_ctx, n_kv_req);
 
     // make sure the KV cache is big enough to hold all the prompt and generated tokens
     if (n_kv_req > n_ctx) {
-        LOG_TEE("%s: error: n_kv_req > n_ctx, the required KV cache size is not big enough\n", __func__);
-        LOG_TEE("%s:        either reduce n_predict or increase n_ctx\n", __func__);
+        LOG("%s: error: n_kv_req > n_ctx, the required KV cache size is not big enough\n", __func__);
+        LOG("%s:        either reduce n_predict or increase n_ctx\n", __func__);
         return std::string();
     }
 
@@ -92,7 +88,7 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     batch.logits[batch.n_tokens - 1] = true;
 
     if (llama_decode(ctx, batch) != 0) {
-        LOG_TEE("%s: llama_decode() failed\n", __func__);
+        LOG("%s: llama_decode() failed\n", __func__);
         return std::string();
     }
 
@@ -141,10 +137,10 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
 
     const auto t_main_end = ggml_time_us();
 
-    LOG_TEE("%s: decoded %d tokens in %.2f s, speed: %.2f t/s\n",
+    LOG("%s: decoded %d tokens in %.2f s, speed: %.2f t/s\n",
             __func__, n_decode, (t_main_end - t_main_start) / 1000000.0f, n_decode / ((t_main_end - t_main_start) / 1000000.0f));
 
-    LOG_TEE("\n");
+    LOG("\n");
 
     llama_perf_sampler_print(smpl);
     llama_perf_context_print(ctx);

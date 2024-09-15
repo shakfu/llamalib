@@ -156,12 +156,13 @@ see also:
 
 - [llama-cpp-agent](https://github.com/Maximilian-Winter/llama-cpp-agent) - The llama-cpp-agent framework is a tool designed for easy interaction with Large Language Models (LLMs). Allowing users to chat with LLM models, execute structured function calls and get structured output. Works also with models not fine-tuned to JSON output and function calls.
 
+- [open-interpreter](https://github.com/OpenInterpreter/open-interpreter) - A natural language interface for computers
 
 ## Inference Engines
 
 - [vllm](https://github.com/vllm-project/vllm) - A high-throughput and memory-efficient inference and serving engine for LLMs (python + c++)
 
-- [text-generation-inference] - Large Language Model Text Generation Inference by Huggingface (python + rust) for a comparison between vllm and tgi see [this article](https://medium.com/@rohit.k/tgi-vs-vllm-making-informed-choices-for-llm-deployment-37c56d7ff705)
+- [text-generation-inference](https://github.com/huggingface/text-generation-inference) - Large Language Model Text Generation Inference by Huggingface (python + rust) for a comparison between vllm and tgi see [this article](https://medium.com/@rohit.k/tgi-vs-vllm-making-informed-choices-for-llm-deployment-37c56d7ff705)
 
 - [localAI](https://github.com/mudler/LocalAI) - The free, Open Source alternative to OpenAI, Claude and others. Self-hosted and local-first. Drop-in replacement for OpenAI, running on consumer-grade hardware. No GPU required. Runs gguf, transformers, diffusers and many more models architectures. Features: Generate Text, Audio, Video, Images, Voice Cloning, Distributed inference
 

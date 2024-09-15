@@ -1,17 +1,14 @@
 import sys
 from pathlib import Path
-ROOT = Path.cwd().parent
+ROOT = Path.cwd()
 sys.path.insert(0, str(ROOT / 'build'))
 
-MODEL = ROOT / 'models' / 'gemma-2-9b-it-IQ4_XS.gguf'
-# MODEL = ROOT / 'models' / 'mistral-7b-instruct-v0.1.Q4_K_M.gguf'
+import nbllama as nb
 
-import pbllama as pb
-
-def test_nb_simple():
+def test_nb_simple(MODEL):
 
     params = nb.gpt_params()
-    params.model = str(MODEL)
+    params.model = MODEL
     params.prompt = "When did the universe begin?"
     params.n_predict = 32
 
@@ -33,7 +30,7 @@ def test_nb_simple():
     model_params = nb.llama_model_params_from_gpt_params(params)
 
     # set local test model
-    params.model = str(MODEL)
+    params.model = MODEL
 
     model = nb.llama_load_model_from_file(params.model, model_params)
 
@@ -100,7 +97,7 @@ def test_nb_simple():
     # batch.logits[batch.n_tokens - 1] = True
     batch.set_last_logits_to_true()
 
-    logits = batch.get_logits()
+    # logits = batch.get_logits()
 
     if nb.llama_decode(ctx, batch) != 0:
         raise SystemExit("llama_decode() failed.")
@@ -156,11 +153,6 @@ def test_nb_simple():
     print()
 
 
-    nb.llama_perf_print(smpl, nb.LLAMA_PERF_TYPE_SAMPLER_CHAIN)
-    nb.llama_perf_print(ctx, nb.LLAMA_PERF_TYPE_CONTEXT)
-
-    print()
-
     nb.llama_batch_free(batch)
     nb.llama_sampler_free(smpl)
     nb.llama_free(ctx)
@@ -168,4 +160,5 @@ def test_nb_simple():
 
     nb.llama_backend_free()
 
-    return True
+    assert True
+
