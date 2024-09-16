@@ -10,10 +10,10 @@
 #include <cstdio>
 #include <memory>
 
-#define LOG_DISABLE_LOGS
 
-
-std::string simple_prompt(const std::string model, const int n_predict, const std::string prompt, bool disable_log = true) {
+std::string simple_prompt(const std::string model, const int n_predict, const std::string prompt, 
+                          bool disable_log = true) 
+{
     gpt_params params;
 
     params.prompt = prompt;
@@ -21,8 +21,11 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     params.n_predict = n_predict;
 
     if (!gpt_params_parse(0, nullptr, params, LLAMA_EXAMPLE_COMMON, nullptr)) {
+        LOG_ERR("%s: error: unable to parse gpt params\n" , __func__);
         return std::string();
     }
+
+    gpt_init();
 
     // init LLM
     llama_backend_init();
@@ -32,7 +35,7 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     llama_model_params model_params = llama_model_params_from_gpt_params(params);
     llama_model * model_ptr = llama_load_model_from_file(params.model.c_str(), model_params);
     if (model_ptr == NULL) {
-        fprintf(stderr , "%s: error: unable to load model\n" , __func__);
+        LOG_ERR("%s: error: unable to load model\n" , __func__);
         return std::string();
     }
 
@@ -40,7 +43,7 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     llama_context_params ctx_params = llama_context_params_from_gpt_params(params);
     llama_context * ctx = llama_new_context_with_model(model_ptr, ctx_params);
     if (ctx == NULL) {
-        fprintf(stderr , "%s: error: failed to create the llama_context\n" , __func__);
+        LOG_ERR("%s: error: failed to create the llama_context\n" , __func__);
         return std::string();
     }
 
@@ -55,24 +58,21 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     const int n_ctx    = llama_n_ctx(ctx);
     const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size());
 
-    LOG("\n%s: n_predict = %d, n_ctx = %d, n_kv_req = %d\n", __func__, n_predict, n_ctx, n_kv_req);
+    LOG("\n");
+    LOG_INF("\n%s: n_predict = %d, n_ctx = %d, n_kv_req = %d\n", __func__, n_predict, n_ctx, n_kv_req);
 
     // make sure the KV cache is big enough to hold all the prompt and generated tokens
     if (n_kv_req > n_ctx) {
-        LOG("%s: error: n_kv_req > n_ctx, the required KV cache size is not big enough\n", __func__);
-        LOG("%s:        either reduce n_predict or increase n_ctx\n", __func__);
+        LOG_ERR("%s: error: n_kv_req > n_ctx, the required KV cache size is not big enough\n", __func__);
+        LOG_ERR("%s:        either reduce n_predict or increase n_ctx\n", __func__);
         return std::string();
     }
 
     // print the prompt token-by-token
-
-    // fprintf(stderr, "\n");
-
-    // for (auto id : tokens_list) {
-    //     fprintf(stderr, "%s", llama_token_to_piece(ctx, id).c_str());
-    // }
-
-    // fflush(stderr);
+    LOG("\n");
+    for (auto id : tokens_list) {
+        LOG("%s", llama_token_to_piece(ctx, id).c_str());
+    }
 
     // create a llama_batch with size 512
     // we use this object to submit token data for decoding
@@ -88,7 +88,7 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     batch.logits[batch.n_tokens - 1] = true;
 
     if (llama_decode(ctx, batch) != 0) {
-        LOG("%s: llama_decode() failed\n", __func__);
+        LOG_ERR("%s: llama_decode() failed\n", __func__);
         return std::string();
     }
 
@@ -106,16 +106,17 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     while (n_cur <= n_predict) {
         // sample the next token
         {
-            const llama_token new_token_id = llama_sampler_sample(smpl, ctx, batch.n_tokens - 1);
-
-            // std::cout << "new_token_id: " << new_token_id << std::endl;
+            const llama_token new_token_id = llama_sampler_sample(smpl, ctx, -1);
 
             // is it an end of generation?
             if (llama_token_is_eog(model_ptr, new_token_id) || n_cur == n_predict) {
+                LOG("\n");
+
                 break;
             }
 
-            results += llama_token_to_piece(ctx, new_token_id);
+            LOG("%s", llama_token_to_piece(ctx, new_token_id).c_str());
+            fflush(stdout);
 
             // prepare the next batch
             llama_batch_clear(batch);
@@ -130,14 +131,16 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
 
         // evaluate the current batch with the transformer model
         if (llama_decode(ctx, batch)) {
-            fprintf(stderr, "%s : failed to eval, return code %d\n", __func__, 1);
+            LOG_ERR("%s : failed to eval, return code %d\n", __func__, 1);
             return std::string();
         }
     }
 
+    LOG("\n");
+
     const auto t_main_end = ggml_time_us();
 
-    LOG("%s: decoded %d tokens in %.2f s, speed: %.2f t/s\n",
+    LOG_INF("%s: decoded %d tokens in %.2f s, speed: %.2f t/s\n",
             __func__, n_decode, (t_main_end - t_main_start) / 1000000.0f, n_decode / ((t_main_end - t_main_start) / 1000000.0f));
 
     LOG("\n");
@@ -145,7 +148,7 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     llama_perf_sampler_print(smpl);
     llama_perf_context_print(ctx);
 
-    fprintf(stderr, "\n");
+    LOG("\n");
 
     llama_batch_free(batch);
     llama_sampler_free(smpl);
