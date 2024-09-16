@@ -39,7 +39,14 @@ PYBIND11_MODULE(pbllama, m) {
     // -----------------------------------------------------------------------
     // high-level api
     
-    m.def("simple_prompt", &simple_prompt, "", py::arg("model"), py::arg("n_predict"), py::arg("prompt"), py::arg("disable_log"));
+    m.def("simple_prompt", &simple_prompt, 
+        "Return a textual response after prompting a given model.", 
+        py::arg("model"),
+        py::arg("prompt"),
+        py::arg("n_predict") = 512,
+        py::arg("disable_log") = true,
+        py::arg("n_threads") = 4
+    );
 
     // -----------------------------------------------------------------------
     // ggml.h

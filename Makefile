@@ -93,15 +93,6 @@ test_pb_hl:
 test_nb:
 	@cd tests && python3 nb_simple.py
 
-bench_pb:
-	@cd tests && hyperfine 'python3 pb_simple.py'
-
-bench_nb:
-	@cd tests && hyperfine 'python3 nb_simple.py'
-
-bench_cy:
-	@cd tests && hyperfine 'python3 cy_simple.py'
-
 bump:
 	@scripts/bump.sh
 

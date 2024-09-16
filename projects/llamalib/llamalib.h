@@ -11,23 +11,29 @@
 #include <memory>
 
 
-std::string simple_prompt(const std::string model, const int n_predict, const std::string prompt, bool disable_log = true) 
+std::string simple_prompt(
+    const std::string model_path,
+    const std::string prompt,
+    const int n_predict = 512,
+    bool disable_log = true,
+    int n_threads = 4)
 {
     gpt_params params;
 
     params.prompt = prompt;
-    params.model = model;
+    params.model = model_path;
     params.n_predict = n_predict;
     params.verbosity = -1;
+    params.cpuparams.n_threads = n_threads;
 
     if (disable_log) {
         gpt_log_set_verbosity_thold(params.verbosity);
     }
 
-    if (!gpt_params_parse(0, nullptr, params, LLAMA_EXAMPLE_COMMON, nullptr)) {
-        LOG_ERR("%s: error: unable to parse gpt params\n" , __func__);
-        return std::string();
-    }
+    // if (!gpt_params_parse(0, nullptr, params, LLAMA_EXAMPLE_COMMON, nullptr)) {
+    //     LOG_ERR("%s: error: unable to parse gpt params\n" , __func__);
+    //     return std::string();
+    // }
 
     gpt_init();
 

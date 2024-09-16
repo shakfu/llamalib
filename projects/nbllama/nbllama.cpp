@@ -27,7 +27,14 @@ NB_MODULE(nbllama, m) {
     // -----------------------------------------------------------------------
     // high-level api
     
-    m.def("simple_prompt", &simple_prompt, "", nb::arg("model"), nb::arg("n_predict"), nb::arg("prompt"), nb::arg("disable_log"));
+    m.def("simple_prompt", &simple_prompt, 
+        "Return a textual response after prompting a given model.", 
+        nb::arg("model"),
+        nb::arg("prompt"),
+        nb::arg("n_predict") = 512,
+        nb::arg("disable_log") = true,
+        nb::arg("n_threads") = 4
+    );
 
     // -----------------------------------------------------------------------
     // ggml.h
