@@ -11,7 +11,6 @@ find_package(nanobind CONFIG REQUIRED)
 
 nanobind_add_module(
     ${PROJECT_NAME}
-    ${RTAUDIO_SRC}
     ${PROJECT_SRC}
 )
 

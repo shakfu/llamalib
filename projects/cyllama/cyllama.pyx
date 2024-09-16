@@ -10,6 +10,12 @@ import os
 from typing import Optional, Sequence
 
 
+def ask(str prompt, str model, n_predict=512, disable_log=True, n_threads=4) -> str:
+    """ask/prompt a llama model"""
+    cdef str result = llama_cpp.simple_prompt(model.encode(), prompt.encode(), n_predict, disable_log,  n_threads).decode()
+    return result.strip()
+
+
 cdef class GGMLTensor:
     cdef llama_cpp.ggml_tensor * ptr
     cdef bint ptr_owner
@@ -1113,6 +1119,7 @@ cdef class GptParams: # WIP!
     def log_json(self, value: bool):
         self.p.log_json = value
 
+    @property
     def slot_save_path(self) -> str:
         """slot save path"""
         return self.p.slot_save_path.decode()
