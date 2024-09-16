@@ -20,11 +20,13 @@ NB_MODULE(nbllama, m) {
 
     // -----------------------------------------------------------------------
     // attributes
+
     m.attr("LLAMA_DEFAULT_SEED") = 0xFFFFFFFF;
 
 
     // -----------------------------------------------------------------------
     // high-level api
+    
     m.def("simple_prompt", &simple_prompt, "", nb::arg("model"), nb::arg("n_predict"), nb::arg("prompt"), nb::arg("disable_log"));
 
     // -----------------------------------------------------------------------

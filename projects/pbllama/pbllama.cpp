@@ -33,10 +33,12 @@ PYBIND11_MODULE(pbllama, m) {
 
     // -----------------------------------------------------------------------
     // attributes
+    
     m.attr("LLAMA_DEFAULT_SEED") = 0xFFFFFFFF;
 
     // -----------------------------------------------------------------------
     // high-level api
+    
     m.def("simple_prompt", &simple_prompt, "", py::arg("model"), py::arg("n_predict"), py::arg("prompt"), py::arg("disable_log"));
 
     // -----------------------------------------------------------------------

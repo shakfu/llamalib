@@ -8,10 +8,10 @@ MODEL = ROOT / 'models' / 'gemma-2-9b-it-IQ4_XS.gguf'
 
 import pbllama as pb
 
-def ask(prompt, n_predict=512, model=str(MODEL), disable_log=True):
-    "ask/prompt a llama model"
-    print(pb.simple_prompt(model=model, n_predict=n_predict, prompt=prompt, disable_log=disable_log))
+def ask(prompt, n_predict=512, model=str(MODEL), disable_log=True) -> str:
+    """ask/prompt a llama model"""
+    return pb.simple_prompt(model=model, n_predict=n_predict, prompt=prompt, disable_log=disable_log).strip()
 
 
 if __name__ == '__main__':
-    ask("When did the universe begin?")
+    print(ask("When did the universe begin?"))

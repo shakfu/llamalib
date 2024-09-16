@@ -11,14 +11,18 @@
 #include <memory>
 
 
-std::string simple_prompt(const std::string model, const int n_predict, const std::string prompt, 
-                          bool disable_log = true) 
+std::string simple_prompt(const std::string model, const int n_predict, const std::string prompt, bool disable_log = true) 
 {
     gpt_params params;
 
     params.prompt = prompt;
     params.model = model;
     params.n_predict = n_predict;
+    params.verbosity = -1;
+
+    if (disable_log) {
+        gpt_log_set_verbosity_thold(params.verbosity);
+    }
 
     if (!gpt_params_parse(0, nullptr, params, LLAMA_EXAMPLE_COMMON, nullptr)) {
         LOG_ERR("%s: error: unable to parse gpt params\n" , __func__);
@@ -26,6 +30,7 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
     }
 
     gpt_init();
+
 
     // init LLM
     llama_backend_init();
@@ -111,12 +116,10 @@ std::string simple_prompt(const std::string model, const int n_predict, const st
             // is it an end of generation?
             if (llama_token_is_eog(model_ptr, new_token_id) || n_cur == n_predict) {
                 LOG("\n");
-
                 break;
             }
 
-            LOG("%s", llama_token_to_piece(ctx, new_token_id).c_str());
-            fflush(stdout);
+            results += llama_token_to_piece(ctx, new_token_id);
 
             // prepare the next batch
             llama_batch_clear(batch);
