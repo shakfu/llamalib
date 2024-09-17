@@ -149,6 +149,8 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("simple_io", &gpt_params::simple_io)
         .def_readwrite("cont_batching", &gpt_params::cont_batching)
         .def_readwrite("flash_attn", &gpt_params::flash_attn)
+        .def_readwrite("no_perf", &gpt_params::flash_attn)
+        .def_readwrite("ctx_shift", &gpt_params::flash_attn)
         .def_readwrite("input_prefix_bos", &gpt_params::input_prefix_bos)
         // .def_readwrite("ignore_eos", &gpt_params::ignore_eos)
         .def_readwrite("logits_all", &gpt_params::logits_all)
@@ -637,6 +639,7 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_n_ctx_train", (int32_t (*)(const struct llama_model *)) &llama_n_ctx_train, "get n_ctx_train from model", py::arg("model"));
     m.def("llama_n_embd", (int32_t (*)(const struct llama_model *)) &llama_n_embd, "get n_embed from model", py::arg("model"));
     m.def("llama_n_layer", (int32_t (*)(const struct llama_model *)) &llama_n_layer, "get n_layer from model", py::arg("model"));
+    m.def("llama_n_head", (int32_t (*)(const struct llama_model *)) &llama_n_head, "get n_head from model", py::arg("model"));
 
     m.def("llama_get_model", (const struct llama_model * (*)(const struct llama_context *)) &llama_get_model, "get model from context", py::arg("ctx"));
     m.def("get_llama_pooling_type", (enum llama_pooling_type (*)(const struct llama_context *)) &llama_pooling_type, "get pooling_type from context", py::arg("ctx"));

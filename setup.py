@@ -3,12 +3,14 @@ import platform
 from setuptools import Extension, setup
 from Cython.Build import cythonize
 
+PLATFORM = platform.system()
+
 WITH_DYLIB = os.getenv("WITH_DYLIB", False)
 
 INCLUDE_DIRS = []
 LIBRARY_DIRS = []
 EXTRA_OBJECTS = []
-EXTRA_LINK_ARGS = ['-mmacosx-version-min=13.6']
+EXTRA_LINK_ARGS = []
 LIBRARIES = ["pthread"]
 
 if WITH_DYLIB:
@@ -21,18 +23,16 @@ LIB = os.path.join(CWD, 'lib')
 LIBRARY_DIRS.append(LIB)
 INCLUDE_DIRS.append(os.path.join(CWD, 'include'))
 
-# add local rpath
-if platform.system() == 'Darwin':
+if PLATFORM == 'Darwin':
+    EXTRA_LINK_ARGS.append('-mmacosx-version-min=13.6')
+    # add local rpath
     EXTRA_LINK_ARGS.append('-Wl,-rpath,'+LIB)
-
-
-os.environ['LDFLAGS'] = ' '.join([
-    '-framework Accelerate',
-    '-framework Foundation',
-    # '-framework CoreFoundation',
-    '-framework Metal',
-    '-framework MetalKit',
-])
+    os.environ['LDFLAGS'] = ' '.join([
+        '-framework Accelerate',
+        '-framework Foundation',
+        '-framework Metal',
+        '-framework MetalKit',
+    ])
 
 extensions = [
     Extension("cyllama", 

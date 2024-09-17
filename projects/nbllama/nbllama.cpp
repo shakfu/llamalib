@@ -135,6 +135,8 @@ NB_MODULE(nbllama, m) {
         .def_rw("simple_io", &gpt_params::simple_io)
         .def_rw("cont_batching", &gpt_params::cont_batching)
         .def_rw("flash_attn", &gpt_params::flash_attn)
+        .def_rw("no_perf", &gpt_params::flash_attn)
+        .def_rw("ctx_shift", &gpt_params::flash_attn)
         .def_rw("input_prefix_bos", &gpt_params::input_prefix_bos)
         // .def_rw("ignore_eos", &gpt_params::ignore_eos)
         .def_rw("logits_all", &gpt_params::logits_all)
@@ -611,6 +613,7 @@ NB_MODULE(nbllama, m) {
     m.def("llama_n_ctx_train", (int32_t (*)(const struct llama_model *)) &llama_n_ctx_train, "get n_ctx_train from model", nb::arg("model"));
     m.def("llama_n_embd", (int32_t (*)(const struct llama_model *)) &llama_n_embd, "get n_embed from model", nb::arg("model"));
     m.def("llama_n_layer", (int32_t (*)(const struct llama_model *)) &llama_n_layer, "get n_layer from model", nb::arg("model"));
+    m.def("llama_n_head", (int32_t (*)(const struct llama_model *)) &llama_n_head, "get n_head from model", nb::arg("model"));
 
     m.def("llama_get_model", (const struct llama_model * (*)(const struct llama_context *)) &llama_get_model, "get model from context", nb::arg("ctx"));
     m.def("get_llama_pooling_type", (enum llama_pooling_type (*)(const struct llama_context *)) &llama_pooling_type, "get pooling_type from context", nb::arg("ctx"));

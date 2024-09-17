@@ -399,6 +399,8 @@ cdef extern from "common.h":
         bint simple_io              # improves compatibility with subprocesses and limited consoles
         bint cont_batching          # insert new sequences for decoding on-the-fly
         bint flash_attn             # flash attention
+        bint no_perf                # disable performance metric
+        bint ctx_shift              # context shift on inifinite text generation
 
         bint input_prefix_bos       # prefix BOS to user inputs, preceding input_prefix
         bint logits_all             # return logits for all tokens in the batch
@@ -850,6 +852,7 @@ cdef extern from "llama.h":
     cdef int32_t llama_n_ctx_train(const llama_model * model)
     cdef int32_t llama_n_embd     (const llama_model * model)
     cdef int32_t llama_n_layer    (const llama_model * model)
+    cdef int32_t llama_n_head     (const llama_model * model)
 
     cdef const llama_model * llama_get_model(const llama_context * ctx)
 

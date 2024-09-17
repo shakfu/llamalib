@@ -857,14 +857,23 @@ cdef class GptParams: # WIP!
     def flash_attn(self, value: bool):
         self.p.flash_attn = value
 
-    # @property
-    # def no_perf(self) -> bool:
-    #     """disable performance metrics"""
-    #     return self.p.no_perf
+    @property
+    def no_perf(self) -> bool:
+        """disable performance metrics"""
+        return self.p.no_perf
 
-    # @no_perf.setter
-    # def no_perf(self, value: bool):
-    #     self.p.no_perf = value
+    @no_perf.setter
+    def no_perf(self, value: bool):
+        self.p.no_perf = value
+
+    @property
+    def ctx_shift(self) -> bool:
+        """context shift on inifinite text generation"""
+        return self.p.ctx_shift
+
+    @ctx_shift.setter
+    def ctx_shift(self, value: bool):
+        self.p.ctx_shift = value
 
     @property
     def input_prefix_bos(self) -> bool:
