@@ -68,7 +68,7 @@ test_main:
 
 
 test_retrieve: # not working!
-	@./bin/llama-retrieval --model models/bge-base-en-v1.5-q4_k_m.gguf \
+	@./bin/llama-retrieval --model models/all-MiniLM-L6-v2-Q5_K_S.gguf \
 		--top-k 3 --context-file README.md \
 		--context-file LICENSE \
 		--chunk-size 100 \

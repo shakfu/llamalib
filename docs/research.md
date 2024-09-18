@@ -19,7 +19,6 @@ pending (due to memory errors)
 - codellama-7b.Q4_K_M.gguf
 
 
-
 ## llama.cpp
 
 - [llama.cpp wikipedia](https://en.wikipedia.org/wiki/Llama.cpp)
@@ -156,7 +155,11 @@ see also:
 
 - [llama-cpp-agent](https://github.com/Maximilian-Winter/llama-cpp-agent) - The llama-cpp-agent framework is a tool designed for easy interaction with Large Language Models (LLMs). Allowing users to chat with LLM models, execute structured function calls and get structured output. Works also with models not fine-tuned to JSON output and function calls.
 
-- [open-interpreter](https://github.com/OpenInterpreter/open-interpreter) - A natural language interface for computers
+- [open-interpreter](https://github.com/OpenInterpreter/open-interpreter) - A natural language interface for computers (can you llama-studio)
+
+- [LlamaEdge](https://github.com/LlamaEdge/LlamaEdge) - backend-agnostic inference frontend - The easiest & fastest way to run customized and fine-tuned LLMs locally or on the edge ([based on llama.cpp](https://www.secondstate.io/articles/fast-llm-inference/
+): "The llama.cpp project is one of the inference backends for LlamaEdge"), (see also; [main site](https://llamaedge.com))
+
 
 ## Inference Engines
 
@@ -166,7 +169,13 @@ see also:
 
 - [localAI](https://github.com/mudler/LocalAI) - The free, Open Source alternative to OpenAI, Claude and others. Self-hosted and local-first. Drop-in replacement for OpenAI, running on consumer-grade hardware. No GPU required. Runs gguf, transformers, diffusers and many more models architectures. Features: Generate Text, Audio, Video, Images, Voice Cloning, Distributed inference
 
+- [mlx](https://github.com/ml-explore/mlx) and [mlx-lm](https://github.com/ml-explore/mlx-examples/tree/main/llms) - Apple Silicon friendly tensor library and llm inference engine respectively.
+
+
+
 ## RAGs
+
+- [sentence-transformers](https://github.com/UKPLab/sentence-transformers) - this framework provides an easy method to compute dense vector representations for sentences, paragraphs, and images. The models are based on transformer networks like BERT / RoBERTa / XLM-RoBERTa etc. and achieve state-of-the-art performance in various tasks. Text is embedded in vector space such that similar text are closer and can efficiently be found using cosine similarity.
 
 - [graphrag](https://github.com/microsoft/graphrag) - Microsoft modular graph-based Retrieval-Augmented Generation (RAG) system
 
@@ -183,5 +192,9 @@ see also:
 - [just-rag](https://github.com/samuelint/just-rag)
 
 - [pymupdf/RAG](https://github.com/pymupdf/RAG) - RAG (Retrieval-Augmented Generation) Chatbot Examples Using PyMuPDF
+
+## ML Libraries
+
+- [transformers](https://github.com/huggingface/transformers) - Transformers: State-of-the-art Machine Learning for Pytorch, TensorFlow, and JAX.
 
 
