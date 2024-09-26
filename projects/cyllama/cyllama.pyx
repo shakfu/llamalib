@@ -12,7 +12,13 @@ from typing import Optional, Sequence
 
 def ask(str prompt, str model, n_predict=512, disable_log=True, n_threads=4) -> str:
     """ask/prompt a llama model"""
-    cdef str result = llama_cpp.simple_prompt(model.encode(), prompt.encode(), n_predict, disable_log,  n_threads).decode()
+
+    cdef str result = llama_cpp.simple_prompt(
+        model.encode(),
+        prompt.encode(),
+        n_predict,
+        disable_log,
+        n_threads).decode()
     return result.strip()
 
 
@@ -35,6 +41,10 @@ cdef class GGMLTensor:
         # since we cannot pass a struct pointer into a Python constructor.
         raise TypeError("This class cannot be instantiated directly.")
 
+    # Get a llama model tensor
+    # struct ggml_tensor * llama_get_model_tensor(struct llama_model * model, const char * name);
+
+
     @staticmethod
     cdef GGMLTensor from_ptr(llama_cpp.ggml_tensor *ptr, bint owner=False):
         # Fast call to __new__() that bypasses the __init__() constructor.
@@ -51,6 +61,125 @@ cdef class GGMLTensor:
         # ptr.a = 0
         # ptr.b = 0
         return GGMLTensor.from_ptr(ptr, owner=True)
+
+
+
+cdef class SamplerChainParams:
+    cdef llama_cpp.llama_sampler_chain_params p
+
+    def __init__(self):
+        self.p = llama_cpp.llama_sampler_chain_default_params()
+
+    @staticmethod
+    cdef SamplerChainParams from_instance(llama_cpp.llama_sampler_chain_params params):
+        cdef SamplerChainParams wrapper = SamplerChainParams.__new__(SamplerChainParams)
+        wrapper.p = params
+        return wrapper
+
+    @property
+    def no_perf(self) -> bool:
+        """whether to measure performance timings."""
+        return self.p.no_perf
+
+    @no_perf.setter
+    def no_perf(self, value: bool):
+        self.p.no_perf = value
+
+cdef class Sampler:
+    """cython wrapper for llama_cpp.llama_sampler."""
+    cdef llama_cpp.llama_sampler * ptr
+    cdef bint owner
+
+    def __cinit__(self):
+        self.ptr = NULL
+        self.owner = True
+
+    def __init__(self, params: SamplerChainParams):
+        self.ptr = llama_cpp.llama_sampler_chain_init(params.p)
+
+        if self.ptr is NULL:
+            raise ValueError("Failed to init Sampler")
+
+    def __dealloc__(self):
+        if self.ptr is not NULL and self.owner is True:
+            llama_cpp.llama_sampler_free(self.ptr)
+            self.ptr = NULL
+
+    @staticmethod
+    cdef Sampler init_greedy():
+        cdef Sampler wrapper = Sampler.__new__(Sampler)
+        wrapper.ptr = llama_cpp.llama_sampler_init_greedy()
+        return wrapper
+
+    def chain_add(self, smplr: Sampler):
+        smplr.owner = False
+        llama_cpp.llama_sampler_chain_add(self.ptr, smplr.ptr)
+
+    def chain_add_greedy(self):
+        self.chain_add(Sampler.init_greedy())
+
+cdef class CpuParams:
+    cdef llama_cpp.cpu_params p
+
+    @staticmethod
+    cdef CpuParams from_instance(llama_cpp.cpu_params params):
+        cdef CpuParams wrapper = CpuParams.__new__(CpuParams)
+        wrapper.p = params
+        return wrapper
+
+    @property
+    def n_threads(self) -> int:
+        """number of threads."""
+        return self.p.n_threads
+
+    @n_threads.setter
+    def n_threads(self, value: int):
+        self.p.n_threads = value
+
+    # @property
+    # def cpumask(self) -> list[bool]:
+    #     """CPU affinity mask."""
+    #     return self.p.cpumask
+
+    # @cpumask.setter
+    # def cpumask(self, value: list[bool]):
+    #     self.p.cpumask = value
+
+    @property
+    def mask_valid(self) -> bool:
+        """Default: any CPU."""
+        return self.p.mask_valid
+
+    @mask_valid.setter
+    def mask_valid(self, value: bool):
+        self.p.mask_valid = value
+
+    @property
+    def priority(self) -> llama_cpp.ggml_sched_priority:
+        """Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)."""
+        return self.p.priority
+
+    @priority.setter
+    def priority(self, value: llama_cpp.ggml_sched_priority):
+        self.p.priority = value
+
+    # @property
+    # def llama_cpp.ggml_sched_strict_cpu strict_cpu(self):
+    #     """Use strict CPU placement."""
+    #     return self.p.strict_cpu
+
+    # @strict_cpu.setter
+    # def strict_cpu(self, llama_cpp.ggml_sched_strict_cpu value):
+    #     self.p.strict_cpu = value
+
+    # @property
+    # def poll(self) -> llama_cpp.ggml_sched_poll:
+    #     """Use strict CPU placement"""
+    #     return self.p.poll
+
+    # @poll.setter
+    # def poll(self, value: llama_cpp.ggml_sched_poll):
+    #     self.p.poll = value
 
 
 cdef class GptParams: # WIP!
@@ -277,25 +406,25 @@ cdef class GptParams: # WIP!
     def defrag_thold(self, value: float):
         self.p.defrag_thold = value
 
-    # @property
-    # def cpuparams(self) -> llama_cpp.cpu_params:
-    #     """cpuparams instance."""
-    #     return self.p.cpuparams
+    @property
+    def cpuparams(self) -> CpuParams:
+        """cpuparams instance."""
+        return CpuParams.from_instance(self.p.cpuparams)
 
-    # @property
-    # def cpuparams_batch(self) -> llama_cpp.cpu_params:
-    #     """cpuparams_batch instance."""
-    #     return self.p.cpuparams_batch
+    @property
+    def cpuparams_batch(self) -> CpuParams:
+        """cpuparams_batch instance."""
+        return CpuParams.from_instance(self.p.cpuparams_batch)
 
-    # @property
-    # def draft_cpuparams(self) -> llama_cpp.cpu_params:
-    #     """draft_cpuparams instance."""
-    #     return self.p.draft_cpuparams
+    @property
+    def draft_cpuparams(self) -> CpuParams:
+        """draft_cpuparams instance."""
+        return CpuParams.from_instance(self.p.draft_cpuparams)
 
-    # @property
-    # def draft_cpuparams_batch(self) -> llama_cpp.cpu_params:
-    #     """draft_cpuparams_batch instance."""
-    #     return self.p.draft_cpuparams_batch
+    @property
+    def draft_cpuparams_batch(self) -> CpuParams:
+        """draft_cpuparams_batch instance."""
+        return CpuParams.from_instance(self.p.draft_cpuparams_batch)
 
     # @property
     # def cb_eval(self) -> llama_cpp.ggml_backend_sched_eval_callback:
@@ -1203,6 +1332,12 @@ cdef class ModelParams:
     def __init__(self):
         self.p = llama_cpp.llama_model_default_params()
 
+    @staticmethod
+    cdef ModelParams from_instance(llama_cpp.llama_model_params params):
+        cdef ModelParams wrapper = ModelParams.__new__(ModelParams)
+        wrapper.p = params
+        return wrapper
+
     @property
     def n_gpu_layers(self) -> int:
         """Number of layers to store in VRAM."""
@@ -1544,6 +1679,12 @@ cdef class ContextParams:
 
     def __init__(self):
         self.p = llama_cpp.llama_context_default_params()
+
+    @staticmethod
+    cdef ContextParams from_gpt_params(GptParams params):
+        cdef ContextParams wrapper = ContextParams.__new__(ContextParams)
+        wrapper.p = llama_cpp.llama_context_params_from_gpt_params(params.p)
+        return wrapper
 
     # @property
     # def seed(self) -> int:
@@ -1972,5 +2113,22 @@ cdef class LlamaBatch:
 #         if self.candidates is not NULL and self.owner is True:
 #             llama_cpp.llama_batch_free(self.batch[0])
 #             self.batch = NULL
+
+
+def llama_backend_init():
+    llama_cpp.llama_backend_init()
+
+def llama_numa_init(llama_cpp.ggml_numa_strategy numa):
+    llama_cpp.llama_numa_init(numa)
+
+def llama_model_params_from_gpt_params(params: GptParams) -> ModelParams:
+    cdef llama_cpp.llama_model_params model_params = llama_cpp.llama_model_params_from_gpt_params(params.p)
+    return ModelParams.from_instance(model_params)
+
+def llama_context_params_from_gpt_params(params: GptParams) -> ContextParams:
+    return ContextParams.from_gpt_params(params)
+
+def llama_sampler_chain_default_params() -> SamplerChainParams:
+    return SamplerChainParams()
 
 

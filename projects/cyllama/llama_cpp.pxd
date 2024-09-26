@@ -10,10 +10,12 @@ from libcpp.set cimport set as std_set
 cdef extern from "ggml.h":
 
     ctypedef enum ggml_log_level:
-        GGML_LOG_LEVEL_ERROR = 2
-        GGML_LOG_LEVEL_WARN  = 3
-        GGML_LOG_LEVEL_INFO  = 4
-        GGML_LOG_LEVEL_DEBUG = 5
+        GGML_LOG_LEVEL_NONE  = 0
+        GGML_LOG_LEVEL_INFO  = 1
+        GGML_LOG_LEVEL_WARN  = 2
+        GGML_LOG_LEVEL_ERROR = 3
+        GGML_LOG_LEVEL_DEBUG = 4
+        GGML_LOG_LEVEL_CONT  = 5
 
     ctypedef void (*ggml_log_callback)(ggml_log_level level, const char * text, void * user_data)
     ctypedef bint (*ggml_abort_callback)(void * data)
@@ -505,6 +507,10 @@ cdef extern from "common.h":
 
     cdef std_vector[llama_arg] gpt_params_parser_init(gpt_params & params, llama_example ex)
 
+    cdef llama_model_params llama_model_params_from_gpt_params(const gpt_params & params)
+
+    cdef llama_context_params llama_context_params_from_gpt_params(const gpt_params & params)
+
 
 #------------------------------------------------------------------------------
 
@@ -816,7 +822,7 @@ cdef extern from "llama.h":
     cdef void llama_backend_init()
 
     #optional:
-    # cdef void llama_numa_init(ggml_numa_strategy numa)
+    cdef void llama_numa_init(ggml_numa_strategy numa)
 
     # Call once at the end of the program - currently only used for MPI
     cdef void llama_backend_free()

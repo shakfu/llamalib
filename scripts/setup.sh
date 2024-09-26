@@ -2,7 +2,6 @@ CWD=`pwd`
 LIB=${CWD}/lib/
 INCLUDE=${CWD}/include/
 LLAMACPP_VERSION="bdf314f"
-# git checkout bdf314f38a2c90e18285f7d7067e8d736a14000a
 
 get_llamacpp() {
 	echo "update from llama.cpp main repo"
@@ -26,6 +25,18 @@ get_llamacpp() {
 		cp examples/llava/libllava_static.a ${LIB}/libllava.a
 }
 
+get_llamacpp_python() {
+	echo "update from llama-cpp-python main repo"
+	mkdir -p build thirdparty && \
+		cd build && \
+		if [ ! -d "llama-cpp-python" ]; then
+			git clone --depth 1 https://github.com/abetlen/llama-cpp-python.git
+		fi && \
+		rm -rf ../thirdparty/llama_cpp && \
+		cp -rf llama-cpp-python/llama_cpp ../thirdparty/llama_cpp
+}
+
+
 remove_current() {
 	echo "remove current"
 	rm -rf build/llama.cpp
@@ -35,8 +46,8 @@ remove_current() {
 
 main() {
 	remove_current && \
-	get_llamacpp
+	get_llamacpp && \
+	get_llamacpp_python
 }
 
-# main
-get_llamacpp
+main

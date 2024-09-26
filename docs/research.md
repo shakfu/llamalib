@@ -130,6 +130,13 @@ see also:
 
 - [Does there exists alternative for opaque pointer compared with boost python?](https://github.com/pybind/pybind11/issues/1778)
 
+## ML Libraries / Frameworks
+
+- [transformers](https://github.com/huggingface/transformers) - Transformers: State-of-the-art Machine Learning for Pytorch, TensorFlow, and JAX.
+
+ [distilabel](https://github.com/argilla-io/distilabel) - Distilabel is a framework for synthetic data and AI feedback for engineers who need fast, reliable and scalable pipelines based on verified research papers.
+
+
 
 ## GGUF Compatible Projects
 
@@ -171,6 +178,10 @@ see also:
 
 - [mlx](https://github.com/ml-explore/mlx) and [mlx-lm](https://github.com/ml-explore/mlx-examples/tree/main/llms) - Apple Silicon friendly tensor library and llm inference engine respectively.
 
+## Prompt Engineering
+
+- ell - a Python library for language model programming (LMP). It provides a simple
+    and intuitive interface for working with large language models.
 
 
 ## RAGs
@@ -193,8 +204,5 @@ see also:
 
 - [pymupdf/RAG](https://github.com/pymupdf/RAG) - RAG (Retrieval-Augmented Generation) Chatbot Examples Using PyMuPDF
 
-## ML Libraries
-
-- [transformers](https://github.com/huggingface/transformers) - Transformers: State-of-the-art Machine Learning for Pytorch, TensorFlow, and JAX.
-
+- [MemoryRAG](https://github.com/qhjqhj00/MemoRAG) - Empowering RAG with a memory-based data interface for all-purpose applications!
 

@@ -1,5 +1,6 @@
 .DS_Store
 bind/
+binder/
 models/
 
 # editors

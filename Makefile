@@ -10,7 +10,8 @@ MIN_OSX_VER := -mmacosx-version-min=13.6
 
 LIBLAMMA := ./lib/libllama.a
 
-.PHONY: cmake clean reset setup setup_inplace wheel bind
+
+.PHONY: cmake clean reset setup setup_inplace wheel bind header
 
 all: cmake
 
@@ -35,8 +36,11 @@ ifeq ($(WITH_DYLIB),1)
 	delocate-wheel -v dist/*.whl 
 endif
 
-bind:
-	@rm -rf bind
+build/include:
+	@scripts/header_utils.py --force-overwrite --output_dir build/include include
+
+bind: build/include
+	@rm -rf build/bind
 	@make -f scripts/bind/bind.mk bind
 
 
@@ -101,4 +105,5 @@ clean:
 
 reset:
 	@rm -rf build bin lib include
+
 
