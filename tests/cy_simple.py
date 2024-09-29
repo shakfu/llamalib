@@ -64,7 +64,7 @@ if not smplr:
 
 
 # cy.llama_sampler_chain_add(smplr, cy.llama_sampler_init_greedy())
-cy.chain_add_greedy()
+smplr.chain_add_greedy()
 
 
 # tokenize the prompt

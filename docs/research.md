@@ -180,9 +180,18 @@ see also:
 
 ## Prompt Engineering
 
-- ell - a Python library for language model programming (LMP). It provides a simple
-    and intuitive interface for working with large language models.
+- [awesome-prompt-engineering](https://github.com/promptslab/Awesome-Prompt-Engineering)
 
+- [ell](https://github.com/MadcowD/ell) - a Python library for language model programming (LMP). It provides a simple and intuitive interface for working with large language models.
+
+
+## Fine-Tuning
+
+- [lmx]()
+
+- [unsloth](https://github.com/unslothai/unsloth) - Finetune Llama 3.1, Mistral, Phi & Gemma LLMs 2-5x faster with 80% less memory
+
+- [axolotl](https://github.com/axolotl-ai-cloud/axolotl) - Go ahead and axolotl questions
 
 ## RAGs
 

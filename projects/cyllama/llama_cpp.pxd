@@ -426,8 +426,9 @@ cdef extern from "common.h":
         # embedding
         bint embedding              # get only sentence embedding
         int32_t embd_normalize      # normalisation for embendings (-1=none, 0=max absolute int16, 1=taxicab, 2=euclidean, >2=p-norm)
-        std_string embd_out        # empty = default, "array" = [[],[]...], "json" = openai style, "json+" = same "json" + cosine similarity matrix
-        std_string embd_sep        # separator of embendings
+        std_string embd_out         # empty = default, "array" = [[],[]...], "json" = openai style, "json+" = same "json" + cosine similarity matrix
+        std_string embd_sep         # separator of embendings
+        bint reranking              # enable reranking support on server
 
         # server params
         int32_t port                # server listens on this network port
@@ -588,6 +589,10 @@ cdef extern from "llama.h":
         LLAMA_VOCAB_PRE_TYPE_TEKKEN
         LLAMA_VOCAB_PRE_TYPE_SMOLLM
         LLAMA_VOCAB_PRE_TYPE_CODESHELL
+        LLAMA_VOCAB_PRE_TYPE_BLOOM
+        LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH
+        LLAMA_VOCAB_PRE_TYPE_EXAONE
+        LLAMA_VOCAB_PRE_TYPE_CHAMELEON
 
     ctypedef enum llama_rope_type:
         LLAMA_ROPE_TYPE_NONE = -1
@@ -671,6 +676,7 @@ cdef extern from "llama.h":
         LLAMA_POOLING_TYPE_MEAN = 1
         LLAMA_POOLING_TYPE_CLS  = 2
         LLAMA_POOLING_TYPE_LAST = 3
+        LLAMA_POOLING_TYPE_RANK = 4 # used by reranking models to attach the classification head to the graph
 
     ctypedef enum llama_attention_type:
         LLAMA_ATTENTION_TYPE_UNSPECIFIED = -1
@@ -678,9 +684,9 @@ cdef extern from "llama.h":
         LLAMA_ATTENTION_TYPE_NON_CAUSAL  = 1
 
     ctypedef enum llama_split_mode:
-        LLAMA_SPLIT_MODE_NONE    = 0
-        LLAMA_SPLIT_MODE_LAYER   = 1
-        LLAMA_SPLIT_MODE_ROW     = 2
+        LLAMA_SPLIT_MODE_NONE  = 0
+        LLAMA_SPLIT_MODE_LAYER = 1
+        LLAMA_SPLIT_MODE_ROW   = 2
 
     ctypedef struct llama_token_data:
         llama_token id
@@ -1245,13 +1251,13 @@ cdef extern from "llama.h":
     # Get the embeddings for the ith token. For positive indices, Equivalent to:
     # llama_get_embeddings(ctx) + ctx->output_ids[i]*n_embd
     # Negative indicies can be used to access embeddings in reverse order, -1 is the last embedding.
-    # shape: [n_embd] (1-dimensional)
     # returns NULL for invalid ids.
     cdef float * llama_get_embeddings_ith( llama_context * ctx, int32_t i)
 
     # Get the embeddings for a sequence id
     # Returns NULL if pooling_type is LLAMA_POOLING_TYPE_NONE
-    # shape: [n_embd] (1-dimensional)
+    # when pooling_type == LLAMA_POOLING_TYPE_RANK, returns float[1] with the rank of the sequence
+    # otherwise: float[n_embd] (1-dimensional)
     cdef float * llama_get_embeddings_seq( llama_context * ctx, llama_seq_id seq_id)
 
 
@@ -1292,7 +1298,7 @@ cdef extern from "llama.h":
     cdef llama_token llama_token_eot   (const  llama_model * model) # End of infill middle
 
     #
-    # Tokenization
+    # Tokenization (The API is thread-safe)
     #
 
     # @details Convert the provided text into tokens.

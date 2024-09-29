@@ -171,6 +171,7 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("embd_normalize", &gpt_params::embd_normalize)
         .def_readwrite("embd_out", &gpt_params::embd_out)
         .def_readwrite("embd_sep", &gpt_params::embd_sep)
+        .def_readwrite("reranking", &gpt_params::reranking)
         .def_readwrite("port", &gpt_params::port)
         .def_readwrite("timeout_read", &gpt_params::timeout_read)
         .def_readwrite("timeout_write", &gpt_params::timeout_write)
@@ -398,6 +399,7 @@ PYBIND11_MODULE(pbllama, m) {
         .value("LLAMA_VOCAB_PRE_TYPE_BLOOM", LLAMA_VOCAB_PRE_TYPE_BLOOM)
         .value("LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH", LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH)
         .value("LLAMA_VOCAB_PRE_TYPE_EXAONE", LLAMA_VOCAB_PRE_TYPE_EXAONE)
+        .value("LLAMA_VOCAB_PRE_TYPE_CHAMELEON", LLAMA_VOCAB_PRE_TYPE_CHAMELEON)
         .export_values();
 
     py::enum_<enum llama_rope_type>(m, "llama_rope_type", py::arithmetic(), "")
@@ -483,6 +485,7 @@ PYBIND11_MODULE(pbllama, m) {
         .value("LLAMA_POOLING_TYPE_MEAN", LLAMA_POOLING_TYPE_MEAN)
         .value("LLAMA_POOLING_TYPE_CLS", LLAMA_POOLING_TYPE_CLS)
         .value("LLAMA_POOLING_TYPE_LAST", LLAMA_POOLING_TYPE_LAST)
+        .value("LLAMA_POOLING_TYPE_RANK", LLAMA_POOLING_TYPE_RANK)
         .export_values();
 
     py::enum_<enum llama_attention_type>(m, "llama_attention_type", py::arithmetic(), "")
