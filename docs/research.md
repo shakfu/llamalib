@@ -90,6 +90,9 @@ void free2Darray(int** p) {
 
 - [How to understand numpy strides for layman?](https://stackoverflow.com/questions/53097952/how-to-understand-numpy-strides-for-layman)
 
+## cython
+
+- [cython-notes](https://nicolas-hug.com/blog/cython_notes) - Nick Hug's collection of notes and tips on cython
 
 ## pybind11
 
@@ -214,4 +217,6 @@ see also:
 - [pymupdf/RAG](https://github.com/pymupdf/RAG) - RAG (Retrieval-Augmented Generation) Chatbot Examples Using PyMuPDF
 
 - [MemoryRAG](https://github.com/qhjqhj00/MemoRAG) - Empowering RAG with a memory-based data interface for all-purpose applications!
+
+
 

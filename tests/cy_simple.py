@@ -12,7 +12,9 @@ params = cy.GptParams()
 params.model = str(MODEL)
 params.prompt = "When did the universe begin?"
 params.n_predict = 32
-params.cpuparams.n_threads = 4
+# params.cpuparams.n_threads = 4
+params.n_threads = 4
+
 
 
 # args = []
@@ -92,19 +94,18 @@ print(prompt)
 # create a llama_batch with size 512
 # we use this object to submit token data for decoding
 
-batch = cy.llama_batch_init(512, 0, 1)
+# batch = cy.llama_batch_init(512, 0, 1)
+batch = cy.LlamaBatch(n_tokens=512, embd=0, n_seq_max=1)
 
 # evaluate the initial prompt
 for i, token in enumerate(tokens_list):
     cy.llama_batch_add(batch, token, i, [0], False)
 
 # llama_decode will output logits only for the last token of the prompt
-# logits = batch.get_logits()
-# logits[batch.n_tokens - 1] = True
 # batch.logits[batch.n_tokens - 1] = True
 batch.set_last_logits_to_true()
 
-logits = batch.get_logits()
+# logits = batch.get_logits()
 
 if cy.llama_decode(ctx, batch) != 0:
     raise SystemExit("llama_decode() failed.")
@@ -121,11 +122,11 @@ result: str = ""
 while (n_cur <= n_predict):
     # sample the next token
     if True:
-        new_token_id = cy.llama_sampler_sample(smpl, ctx, batch.n_tokens - 1)
+        new_token_id = cy.llama_sampler_sample(smplr, ctx, batch.n_tokens - 1)
 
         # print("new_token_id: ", new_token_id)
 
-        cy.llama_sampler_accept(smpl, new_token_id);
+        cy.llama_sampler_accept(smplr, new_token_id);
 
         # is it an end of generation?
         if (cy.llama_token_is_eog(model, new_token_id) or n_cur == n_predict):
@@ -159,13 +160,13 @@ print("decoded %d tokens in %.2f s, speed: %.2f t/s",
         n_decode, (t_main_end - t_main_start) / 1000000.0, n_decode / ((t_main_end - t_main_start) / 1000000.0))
 print()
 
-cy.llama_perf_sampler_print(smpl)
+cy.llama_perf_sampler_print(smplr)
 cy.llama_perf_context_print(ctx)
 
 print()
 
 cy.llama_batch_free(batch)
-cy.llama_sampler_free(smpl)
+cy.llama_sampler_free(smplr)
 cy.llama_free(ctx)
 cy.llama_free_model(model)
 

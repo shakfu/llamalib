@@ -63,7 +63,6 @@ cdef class GGMLTensor:
         return GGMLTensor.from_ptr(ptr, owner=True)
 
 
-
 cdef class SamplerChainParams:
     cdef llama_cpp.llama_sampler_chain_params p
 
@@ -84,6 +83,7 @@ cdef class SamplerChainParams:
     @no_perf.setter
     def no_perf(self, value: bool):
         self.p.no_perf = value
+
 
 cdef class Sampler:
     """cython wrapper for llama_cpp.llama_sampler."""
@@ -118,72 +118,83 @@ cdef class Sampler:
     def chain_add_greedy(self):
         self.chain_add(Sampler.init_greedy())
 
-cdef class CpuParams:
-    cdef llama_cpp.cpu_params p
 
-    @staticmethod
-    cdef CpuParams from_instance(llama_cpp.cpu_params params):
-        cdef CpuParams wrapper = CpuParams.__new__(CpuParams)
-        wrapper.p = params
-        return wrapper
+# cdef class CpuParams:
+#     cdef llama_cpp.cpu_params p
 
-    @property
-    def n_threads(self) -> int:
-        """number of threads."""
-        return self.p.n_threads
+#     @staticmethod
+#     cdef CpuParams from_instance(llama_cpp.cpu_params params):
+#         cdef CpuParams wrapper = CpuParams.__new__(CpuParams)
+#         wrapper.p = params
+#         return wrapper
 
-    @n_threads.setter
-    def n_threads(self, value: int):
-        self.p.n_threads = value
+#     @property
+#     def n_threads(self) -> int:
+#         """number of threads."""
+#         return self.p.n_threads
 
-    # @property
-    # def cpumask(self) -> list[bool]:
-    #     """CPU affinity mask."""
-    #     return self.p.cpumask
+#     @n_threads.setter
+#     def n_threads(self, value: int):
+#         self.p.n_threads = value
 
-    # @cpumask.setter
-    # def cpumask(self, value: list[bool]):
-    #     self.p.cpumask = value
+#     # @property
+#     # def cpumask(self) -> list[bool]:
+#     #     """CPU affinity mask."""
+#     #     return self.p.cpumask
 
-    @property
-    def mask_valid(self) -> bool:
-        """Default: any CPU."""
-        return self.p.mask_valid
+#     # @cpumask.setter
+#     # def cpumask(self, value: list[bool]):
+#     #     self.p.cpumask = value
 
-    @mask_valid.setter
-    def mask_valid(self, value: bool):
-        self.p.mask_valid = value
+#     @property
+#     def mask_valid(self) -> bool:
+#         """Default: any CPU."""
+#         return self.p.mask_valid
 
-    @property
-    def priority(self) -> llama_cpp.ggml_sched_priority:
-        """Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)."""
-        return self.p.priority
+#     @mask_valid.setter
+#     def mask_valid(self, value: bool):
+#         self.p.mask_valid = value
 
-    @priority.setter
-    def priority(self, value: llama_cpp.ggml_sched_priority):
-        self.p.priority = value
+#     @property
+#     def priority(self) -> llama_cpp.ggml_sched_priority:
+#         """Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)."""
+#         return self.p.priority
 
-    # @property
-    # def llama_cpp.ggml_sched_strict_cpu strict_cpu(self):
-    #     """Use strict CPU placement."""
-    #     return self.p.strict_cpu
+#     @priority.setter
+#     def priority(self, value: llama_cpp.ggml_sched_priority):
+#         self.p.priority = value
 
-    # @strict_cpu.setter
-    # def strict_cpu(self, llama_cpp.ggml_sched_strict_cpu value):
-    #     self.p.strict_cpu = value
+#     # @property
+#     # def llama_cpp.ggml_sched_strict_cpu strict_cpu(self):
+#     #     """Use strict CPU placement."""
+#     #     return self.p.strict_cpu
 
-    # @property
-    # def poll(self) -> llama_cpp.ggml_sched_poll:
-    #     """Use strict CPU placement"""
-    #     return self.p.poll
+#     # @strict_cpu.setter
+#     # def strict_cpu(self, llama_cpp.ggml_sched_strict_cpu value):
+#     #     self.p.strict_cpu = value
 
-    # @poll.setter
-    # def poll(self, value: llama_cpp.ggml_sched_poll):
-    #     self.p.poll = value
+#     # @property
+#     # def poll(self) -> llama_cpp.ggml_sched_poll:
+#     #     """Use strict CPU placement"""
+#     #     return self.p.poll
+
+#     # @poll.setter
+#     # def poll(self, value: llama_cpp.ggml_sched_poll):
+#     #     self.p.poll = value
+
 
 
 cdef class GptParams: # WIP!
     cdef llama_cpp.gpt_params p
+    
+    @property
+    def n_threads(self) -> int:
+        """number of threads."""
+        return self.p.cpuparams.n_threads
+
+    @n_threads.setter
+    def n_threads(self, value: int):
+        self.p.cpuparams.n_threads = value
 
     @property
     def n_predict(self) -> int:
@@ -388,6 +399,7 @@ cdef class GptParams: # WIP!
     def yarn_beta_slow(self, value: float):
         self.p.yarn_beta_slow = value
 
+
     @property
     def yarn_orig_ctx(self) -> int:
         """YaRN original context length."""
@@ -406,25 +418,25 @@ cdef class GptParams: # WIP!
     def defrag_thold(self, value: float):
         self.p.defrag_thold = value
 
-    @property
-    def cpuparams(self) -> CpuParams:
-        """cpuparams instance."""
-        return CpuParams.from_instance(self.p.cpuparams)
+    # @property
+    # def cpuparams(self) -> CpuParams:
+    #     """cpuparams instance."""
+    #     return CpuParams.from_instance(self.p.cpuparams)
 
-    @property
-    def cpuparams_batch(self) -> CpuParams:
-        """cpuparams_batch instance."""
-        return CpuParams.from_instance(self.p.cpuparams_batch)
+    # @property
+    # def cpuparams_batch(self) -> CpuParams:
+    #     """cpuparams_batch instance."""
+    #     return CpuParams.from_instance(self.p.cpuparams_batch)
 
-    @property
-    def draft_cpuparams(self) -> CpuParams:
-        """draft_cpuparams instance."""
-        return CpuParams.from_instance(self.p.draft_cpuparams)
+    # @property
+    # def draft_cpuparams(self) -> CpuParams:
+    #     """draft_cpuparams instance."""
+    #     return CpuParams.from_instance(self.p.draft_cpuparams)
 
-    @property
-    def draft_cpuparams_batch(self) -> CpuParams:
-        """draft_cpuparams_batch instance."""
-        return CpuParams.from_instance(self.p.draft_cpuparams_batch)
+    # @property
+    # def draft_cpuparams_batch(self) -> CpuParams:
+    #     """draft_cpuparams_batch instance."""
+    #     return CpuParams.from_instance(self.p.draft_cpuparams_batch)
 
     # @property
     # def cb_eval(self) -> llama_cpp.ggml_backend_sched_eval_callback:
@@ -1849,12 +1861,12 @@ cdef class LlamaContext:
 
     # # TODO: llama_save_session_file
 
-    # def decode(self, batch: "_LlamaBatch"):
+    # def decode(self, batch: "LlamaBatch"):
     #     assert self.ptr is not None
-    #     assert batch.batch is not None
+    #     assert batch.ptr is not None
     #     return_code = llama_cpp.llama_decode(
     #         self.ptr,
-    #         batch.batch,
+    #         batch.ptr,
     #     )
     #     if return_code != 0:
     #         raise RuntimeError(f"llama_decode returned {return_code}")
@@ -2017,69 +2029,67 @@ cdef class LlamaContext:
 
 cdef class LlamaBatch:
     """Intermediate Python wrapper for a llama.cpp llama_batch."""
-    cdef llama_cpp.llama_batch * batch
+    cdef llama_cpp.llama_batch p
     cdef int _n_tokens
     cdef public int embd
     cdef public int n_seq_max
     cdef public bint verbose
     cdef bint owner
 
-    def __cinit__(self):
-        self.batch = NULL
-        self.owner = True
-
     def __init__(self, *, n_tokens: int, embd: int, n_seq_max: int, verbose: bool = True):
         self._n_tokens = n_tokens
         self.embd = embd
         self.n_seq_max = n_seq_max
         self.verbose = verbose
+        self.owner = True
 
-        self.batch[0] = llama_cpp.llama_batch_init(
+        self.p = llama_cpp.llama_batch_init(
             self._n_tokens, self.embd, self.n_seq_max
         )
 
     def __dealloc__(self):
-        if self.batch is not NULL and self.owner is True:
-            llama_cpp.llama_batch_free(self.batch[0])
-            self.batch = NULL
+        if self.owner is True:
+            llama_cpp.llama_batch_free(self.p)
 
     def close(self):
         self.__dealloc__()
 
     def n_tokens(self) -> int:
-        assert self.batch is not NULL
-        return self.batch.n_tokens
+        # assert self.p is not NULL
+        return self.p.n_tokens
 
     def reset(self):
-        assert self.batch is not NULL
-        self.batch.n_tokens = 0
+        # assert self.p is not NULL
+        self.p.n_tokens = 0
 
     def set_batch(self, batch: Sequence[int], n_past: int, logits_all: bool):
-        assert self.batch is not NULL
+        # assert self.p is not NULL
         n_tokens = len(batch)
-        self.batch.n_tokens = n_tokens
+        self.p.n_tokens = n_tokens
         for i in range(n_tokens):
-            self.batch.token[i] = batch[i]
-            self.batch.pos[i] = n_past + i
-            self.batch.seq_id[i][0] = 0
-            self.batch.n_seq_id[i] = 1
-            self.batch.logits[i] = logits_all
-        self.batch.logits[n_tokens - 1] = True
+            self.p.token[i] = batch[i]
+            self.p.pos[i] = n_past + i
+            self.p.seq_id[i][0] = 0
+            self.p.n_seq_id[i] = 1
+            self.p.logits[i] = logits_all
+        self.p.logits[n_tokens - 1] = True
 
     def add_sequence(self, batch: Sequence[int], seq_id: int, logits_all: bool):
-        assert self.batch is not NULL
+        # assert self.p is not NULL
         n_tokens = len(batch)
-        n_tokens0 = self.batch.n_tokens
-        self.batch.n_tokens += n_tokens
+        n_tokens0 = self.p.n_tokens
+        self.p.n_tokens += n_tokens
         for i in range(n_tokens):
             j = n_tokens0 + i
-            self.batch.token[j] = batch[i]
-            self.batch.pos[j] = i
-            self.batch.seq_id[j][0] = seq_id
-            self.batch.n_seq_id[j] = 1
-            self.batch.logits[j] = logits_all
-        self.batch.logits[n_tokens - 1] = True
+            self.p.token[j] = batch[i]
+            self.p.pos[j] = i
+            self.p.seq_id[j][0] = seq_id
+            self.p.n_seq_id[j] = 1
+            self.p.logits[j] = logits_all
+        self.p.logits[n_tokens - 1] = True
 
+    def set_last_logits_to_true(self):
+        self.p.logits[self._n_tokens - 1] = 1
 
 
 # FIXME: convert to buffer protocol or memoryview
@@ -2148,9 +2158,13 @@ def llama_tokenize(LlamaContext ctx, str text, bint add_special, bint parse_spec
 def llama_n_ctx(LlamaContext ctx) -> int:
     return llama_cpp.llama_n_ctx(ctx.ptr)
 
-# def llama_token_to_piece(LlamaContext ctx, int token, bint special = True) -> str:
-#     return llama_cpp.llama_token_to_piece(ctx.ptr, token, special).decode()
+def llama_token_to_piece(LlamaContext ctx, int token, bint special = True) -> str:
+    return llama_cpp.llama_token_to_piece2(ctx.ptr, token, special).decode()
 
+def llama_batch_add(LlamaBatch batch, llama_cpp.llama_token id, llama_cpp.llama_pos pos, list[int] seq_ids, bint logits):
+    return llama_cpp.llama_batch_add(batch.p, id, pos, seq_ids, logits)
 
+def llama_decode(LlamaContext ctx, LlamaBatch batch) -> int:
+    return llama_cpp.llama_decode(ctx.ptr, batch.p)
 
 

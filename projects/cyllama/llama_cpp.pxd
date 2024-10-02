@@ -1561,7 +1561,9 @@ cdef extern from "common.h":
     # tokenizes a token into a piece, optionally renders special/control tokens
     # should work similar to Python's `tokenizer.id_to_piece`
 
-    # std_string llama_token_to_piece(const llama_context * ctx, llama_token token, bint special)
+    cdef std_string llama_token_to_piece2 "llama_token_to_piece" (const llama_context * ctx, llama_token token, bint special)
+
+    cdef void llama_batch_add(llama_batch & batch, llama_token id, llama_pos pos, const std_vector[llama_seq_id] & seq_ids, bint logits)
 
 
 #------------------------------------------------------------------------------
