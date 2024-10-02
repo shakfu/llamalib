@@ -11,6 +11,9 @@
 - [mistral-7b-instruct-v0.1.Q4_K_M.gguf](https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF)
 - [qwen2-1_5b-instruct-q5_k_m.gguf](https://huggingface.co/Qwen/Qwen2-1.5B-Instruct-GGUF)
 - [codellama-7b.Q4_K_M.gguf](https://huggingface.co/TheBloke/CodeLlama-7B-GGUF)
+- [Llama-3.2-3B-Instruct-Q8_0.gguf](https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q8_0.gguf?download=true)
+- [Llama-3.2-3B-Instruct-Q6_K.gguf](https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q6_K.gguf?download=true)
+
 
 pending (due to memory errors)
 

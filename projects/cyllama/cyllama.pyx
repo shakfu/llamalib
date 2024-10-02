@@ -2090,7 +2090,7 @@ cdef class LlamaBatch:
         self.p.logits[n_tokens - 1] = True
 
     def set_last_logits_to_true(self):
-        self.p.logits[self._n_tokens - 1] = 1
+        self.p.logits[self.p.n_tokens - 1] = True
 
 
 # FIXME: convert to buffer protocol or memoryview
@@ -2172,5 +2172,16 @@ def ggml_time_us() -> int:
     return llama_cpp.ggml_time_us()
 
 def llama_sampler_sample(LlamaSampler smplr, LlamaContext ctx, int idx) -> int:
-    return <int>llama_cpp.llama_sampler_sample(smplr.ptr, ctx.ptr, idx)
+    return llama_cpp.llama_sampler_sample(smplr.ptr, ctx.ptr, idx)
 
+def llama_sampler_accept(LlamaSampler smplr, llama_cpp.llama_token id):
+    llama_cpp.llama_sampler_accept(smplr.ptr, id)
+
+def llama_token_is_eog(LlamaModel model, llama_cpp.llama_token token) -> bool:
+    return llama_cpp.llama_token_is_eog(model.ptr, token)
+
+def llama_batch_clear(LlamaBatch batch):
+    llama_cpp.llama_batch_clear(batch.p)
+
+def llama_backend_free():
+    llama_cpp.llama_backend_free()

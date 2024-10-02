@@ -157,18 +157,17 @@ print()
 
 t_main_end: int = cy.ggml_time_us()
 
-print("decoded %d tokens in %.2f s, speed: %.2f t/s",
-        n_decode, (t_main_end - t_main_start) / 1000000.0, n_decode / ((t_main_end - t_main_start) / 1000000.0))
+print("decoded %d tokens in %.2f s, speed: %.2f t/s" %
+        (n_decode, (t_main_end - t_main_start) / 1000000.0, n_decode / ((t_main_end - t_main_start) / 1000000.0)))
 print()
 
-cy.llama_perf_sampler_print(smplr)
-cy.llama_perf_context_print(ctx)
+# cy.llama_perf_sampler_print(smplr)
+# cy.llama_perf_context_print(ctx)
 
-print()
-
-cy.llama_batch_free(batch)
-cy.llama_sampler_free(smplr)
-cy.llama_free(ctx)
-cy.llama_free_model(model)
+# auto cleanup will take care of these
+# cy.llama_batch_free(batch)
+# cy.llama_sampler_free(smplr)
+# cy.llama_free(ctx)
+# cy.llama_free_model(model)
 
 cy.llama_backend_free()

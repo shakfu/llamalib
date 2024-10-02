@@ -1565,6 +1565,7 @@ cdef extern from "common.h":
 
     cdef void llama_batch_add(llama_batch & batch, llama_token id, llama_pos pos, const std_vector[llama_seq_id] & seq_ids, bint logits)
 
+    cdef void llama_batch_clear(llama_batch & batch)
 
 #------------------------------------------------------------------------------
 

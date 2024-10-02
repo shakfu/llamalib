@@ -27,7 +27,7 @@ Development only on macOS to keep things simple. The following table provide an 
 | wrapper-type                 | pybind11 	   | nanobind 	   | cython 	   |
 | wrap llama.h         		   | 1 			   | 1 			   | 1 			   |
 | wrap hl simple-cli  		   | 1 			   | 1 			   | 1 			   |
-| wrap ll simple-cli    	   | 1 			   | 1 			   | 0 			   |
+| wrap ll simple-cli    	   | 1 			   | 1 			   | 1 			   |
 | wrap ll llama-cli     	   | 0 			   | 0 			   | 0 			   |
   
 
@@ -69,13 +69,14 @@ This will:
 
 ## Testing
 
-As a first step type:
+As a first step type, you should download a `.gguf` model from [huggingface](https://huggingface.co/models?search=gguf). The following models have been known to work on a 16GB M1 Macbook air. A good start is [Llama-3.2-1B-Instruct-Q6_K.gguf](https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/blob/main/Llama-3.2-1B-Instruct-Q6_K.gguf).
+
+After downloading it, place the model in the `llamalib/models` folder and run:
 
 ```sh
-make test_model
+bin/llama-simple -c 512 -n 512 -m models/Llama-3.2-1B-Instruct-Q6_K.gguf \
+	-p "Is mathematics discovered or invented?"
 ```
-
-This downloads a [test model](https://huggingface.co/bartowski/gemma-2-9b-it-GGUF) from huggingface and places in `llamalib/models`, in this case `gemma-2-9b-it-IQ4_XS.gguf` and runs the `bin/llama-simple` cli with the model and a basic prompt to ensure it works.
 
 If this works ok and you see a reasonable answer, then test high-level pybind11 wrapper:
 
@@ -93,4 +94,15 @@ To run the low-level pybind11 wrapper:
 make test_pb
 ```
 
+To run the low-level nanobind wrapper:
+
+```sh
+make test_nb
+```
+
+To run the low-level cython wrapper:
+
+```sh
+make test_cy
+```
 
