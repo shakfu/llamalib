@@ -59,7 +59,7 @@ sparams = cy.llama_sampler_chain_default_params()
 sparams.no_perf = False
 
 # smplr = cy.llama_sampler_chain_init(sparams)
-smplr = cy.Sampler(sparams)
+smplr = cy.LlamaSampler(sparams)
 
 if not smplr:
     raise SystemExit(f"Unable to init sampler.")
@@ -121,6 +121,7 @@ result: str = ""
 
 while (n_cur <= n_predict):
     # sample the next token
+
     if True:
         new_token_id = cy.llama_sampler_sample(smplr, ctx, batch.n_tokens - 1)
 

@@ -85,7 +85,7 @@ cdef class SamplerChainParams:
         self.p.no_perf = value
 
 
-cdef class Sampler:
+cdef class LlamaSampler:
     """cython wrapper for llama_cpp.llama_sampler."""
     cdef llama_cpp.llama_sampler * ptr
     cdef bint owner
@@ -106,17 +106,17 @@ cdef class Sampler:
             self.ptr = NULL
 
     @staticmethod
-    cdef Sampler init_greedy():
-        cdef Sampler wrapper = Sampler.__new__(Sampler)
+    cdef LlamaSampler init_greedy():
+        cdef LlamaSampler wrapper = LlamaSampler.__new__(LlamaSampler)
         wrapper.ptr = llama_cpp.llama_sampler_init_greedy()
         return wrapper
 
-    def chain_add(self, smplr: Sampler):
+    def chain_add(self, smplr: LlamaSampler):
         smplr.owner = False
         llama_cpp.llama_sampler_chain_add(self.ptr, smplr.ptr)
 
     def chain_add_greedy(self):
-        self.chain_add(Sampler.init_greedy())
+        self.chain_add(LlamaSampler.init_greedy())
 
 
 # cdef class CpuParams:
@@ -2054,6 +2054,7 @@ cdef class LlamaBatch:
     def close(self):
         self.__dealloc__()
 
+    @property
     def n_tokens(self) -> int:
         # assert self.p is not NULL
         return self.p.n_tokens
@@ -2167,4 +2168,9 @@ def llama_batch_add(LlamaBatch batch, llama_cpp.llama_token id, llama_cpp.llama_
 def llama_decode(LlamaContext ctx, LlamaBatch batch) -> int:
     return llama_cpp.llama_decode(ctx.ptr, batch.p)
 
+def ggml_time_us() -> int:
+    return llama_cpp.ggml_time_us()
+
+def llama_sampler_sample(LlamaSampler smplr, LlamaContext ctx, int idx) -> int:
+    return <int>llama_cpp.llama_sampler_sample(smplr.ptr, ctx.ptr, idx)
 
