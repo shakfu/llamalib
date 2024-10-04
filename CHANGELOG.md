@@ -17,11 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
-- Added first working high-level simple wrapper using cyllama
-- Added `llamalib.h`, a single-header library which includes high-level c++ and is used by pbllama and nbllama
-- Added first working low-level simple wrapper using nbllama 
-- Added first working low-level simple wrapper using pbllama 
-- Added first working high-level simple wrapper using pbllama
+- Added low-level simple wrapper using cyllama
+- Added high-level simple wrapper using cyllama
+- Added `llamalib.h`, a single-header library which includes common high-level c++ code
+- Added low-level simple wrapper using nbllama 
+- Added high-level simple wrapper using nbllama
+- Added low-level simple wrapper using pbllama
+- Added high-level simple wrapper using pbllama
 
 - Added `nbllama.cpp` nanobind wrapper.
 - Added `pbllama.cpp` pybind11 wrapper.

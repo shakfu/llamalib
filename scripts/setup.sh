@@ -1,6 +1,6 @@
 CWD=`pwd`
-LIB=${CWD}/lib/
-INCLUDE=${CWD}/include/
+LIB=${CWD}/lib
+INCLUDE=${CWD}/include
 LLAMACPP_VERSION="bdf314f"
 
 get_llamacpp() {
