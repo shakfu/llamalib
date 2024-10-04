@@ -1601,6 +1601,6 @@ cdef extern from "arg.h":
 #------------------------------------------------------------------------------
 
 cdef extern from "llamalib.h":
-    cdef std_string simple_prompt(const std_string model_path, const std_string prompt, const int n_predict, bint disable_log, int n_threads)
+    cdef std_string simple_prompt(const std_string model_path, const std_string prompt, const int n_predict, const int n_ctx, bint disable_log, int n_threads)
 
 

@@ -1,8 +1,9 @@
 # set path so `llama-cli` etc.. be in path
 export PATH := $(PWD)/bin:$(PATH)
 
-MODEL := models/gemma-2-9b-it-IQ4_XS.gguf
+# MODEL := models/gemma-2-9b-it-IQ4_XS.gguf
 # MODEL := models/mistral-7b-instruct-v0.1.Q4_K_M.gguf
+MODEL := models/Llama-3.2-1B-Instruct-Q6_K.gguf
 
 WITH_DYLIB=0
 
@@ -44,8 +45,8 @@ bind: build/include
 	@make -f scripts/bind/bind.mk bind
 
 
-.PHONY: test test_simple test_main test_retrieve tsst_model \
-		test_cy test_pb test_nb prep_tests bench_cy bench_nb bench_pb bump
+.PHONY: test test_simple test_main test_retrieve test_model \
+		test_cy test_pb test_pb_hl test_nb bump clean reset
 
 test:
 	@pytest
@@ -70,8 +71,7 @@ test_main:
 	@./build/main -m $(MODEL) --log-disable \
 		-p "When did the French Revolution start?" -n 512
 
-
-test_retrieve: # not working!
+test_retrieve:
 	@./bin/llama-retrieval --model models/all-MiniLM-L6-v2-Q5_K_S.gguf \
 		--top-k 3 --context-file README.md \
 		--context-file LICENSE \
@@ -83,7 +83,8 @@ $(MODEL):
 		wget https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/resolve/main/gemma-2-9b-it-IQ4_XS.gguf
 
 test_model: $(MODEL)
-	@./bin/llama-simple -m $(MODEL) -p "Number of planets in our solar system" -n 512
+	@./bin/llama-simple -c 512 -n 512 -m $(MODEL) \
+	-p "Number of planets in our solar system"
 
 test_cy: 
 	@cd tests && python3 cy_simple.py
@@ -96,6 +97,12 @@ test_pb_hl:
 
 test_nb:
 	@cd tests && python3 nb_simple.py
+
+test_llava:
+	@./bin/llama-llava-cli -m models/llava-llama-3-8b-v1_1-int4.gguf \
+		--mmproj models/llava-llama-3-8b-v1_1-mmproj-f16.gguf \
+		--image tests/media/flower.jpg -c 4096 -e \
+		-p "<|start_header_id|>user<|end_header_id|>\n\n<image>\nDescribe this image<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
 
 bump:
 	@scripts/bump.sh

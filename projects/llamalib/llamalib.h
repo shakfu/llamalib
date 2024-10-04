@@ -15,6 +15,7 @@ std::string simple_prompt(
     const std::string model_path,
     const std::string prompt,
     const int n_predict = 512,
+    const int n_ctx = 4096,
     bool disable_log = true,
     int n_threads = 4)
 {
@@ -23,6 +24,7 @@ std::string simple_prompt(
     params.prompt = prompt;
     params.model = model_path;
     params.n_predict = n_predict;
+    params.n_ctx = n_ctx;
     params.verbosity = -1;
     params.cpuparams.n_threads = n_threads;
 
@@ -66,14 +68,14 @@ std::string simple_prompt(
     // tokenize the prompt
     std::vector<llama_token> tokens_list;
     tokens_list = ::llama_tokenize(ctx, params.prompt, true);
-    const int n_ctx    = llama_n_ctx(ctx);
+    const int _n_ctx    = llama_n_ctx(ctx);
     const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size());
 
     LOG("\n");
-    LOG_INF("\n%s: n_predict = %d, n_ctx = %d, n_kv_req = %d\n", __func__, n_predict, n_ctx, n_kv_req);
+    LOG_INF("\n%s: n_predict = %d, n_ctx = %d, n_kv_req = %d\n", __func__, n_predict, _n_ctx, n_kv_req);
 
     // make sure the KV cache is big enough to hold all the prompt and generated tokens
-    if (n_kv_req > n_ctx) {
+    if (n_kv_req > _n_ctx) {
         LOG_ERR("%s: error: n_kv_req > n_ctx, the required KV cache size is not big enough\n", __func__);
         LOG_ERR("%s:        either reduce n_predict or increase n_ctx\n", __func__);
         return std::string();

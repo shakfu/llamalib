@@ -7,16 +7,26 @@ PLATFORM = platform.system()
 
 WITH_DYLIB = os.getenv("WITH_DYLIB", False)
 
-INCLUDE_DIRS = []
+INCLUDE_DIRS = [
+    "projects/llamalib",
+]
 LIBRARY_DIRS = []
 EXTRA_OBJECTS = []
 EXTRA_LINK_ARGS = []
 LIBRARIES = ["pthread"]
 
 if WITH_DYLIB:
-    LIBRARIES.extend(['llama', 'ggml'])
+    LIBRARIES.extend([
+        'common',
+        'llama',
+        'ggml',
+    ])
 else:
-    EXTRA_OBJECTS.extend(['lib/libllama.a', 'lib/libggml.a'])
+    EXTRA_OBJECTS.extend([
+        'lib/libcommon.a', 
+        'lib/libllama.a', 
+        'lib/libggml.a',
+    ])
 
 CWD = os.getcwd()
 LIB = os.path.join(CWD, 'lib')
