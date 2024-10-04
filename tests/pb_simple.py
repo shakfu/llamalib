@@ -3,8 +3,7 @@ from pathlib import Path
 ROOT = Path.cwd().parent
 sys.path.insert(0, str(ROOT / 'build'))
 
-MODEL = ROOT / 'models' / 'gemma-2-9b-it-IQ4_XS.gguf'
-# MODEL = ROOT / 'models' / 'mistral-7b-instruct-v0.1.Q4_K_M.gguf'
+MODEL = ROOT / 'models' / 'Llama-3.2-1B-Instruct-Q8_0.gguf'
 
 import pbllama as pb
 
@@ -12,7 +11,7 @@ params = pb.gpt_params()
 params.model = str(MODEL)
 params.prompt = "When did the universe begin?"
 params.n_predict = 32
-
+params.n_ctx = 2048
 
 args = []
 if not pb.gpt_params_parse(args, params, pb.LLAMA_EXAMPLE_COMMON):

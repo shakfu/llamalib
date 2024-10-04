@@ -1,9 +1,9 @@
 # set path so `llama-cli` etc.. be in path
 export PATH := $(PWD)/bin:$(PATH)
 
-# MODEL := models/gemma-2-9b-it-IQ4_XS.gguf
+MODEL := models/gemma-2-9b-it-IQ4_XS.gguf
 # MODEL := models/mistral-7b-instruct-v0.1.Q4_K_M.gguf
-MODEL := models/Llama-3.2-1B-Instruct-Q6_K.gguf
+# MODEL := models/Llama-3.2-1B-Instruct-Q6_K.gguf
 
 WITH_DYLIB=0
 
@@ -57,9 +57,9 @@ test_simple:
 		-framework Foundation -framework Accelerate \
 		-framework Metal -framework MetalKit \
 		lib/libllama.a lib/libggml.a lib/libcommon.a \
-		tests/simple.cpp
+		build/llama.cpp/examples/simple/simple.cpp
 	@./build/simple -m $(MODEL) \
-		-p "When did the French Revolution start?" -n 512
+		-p "When did the French Revolution start?" -c 2048 -n 512
 
 test_main:
 	@g++ -std=c++14 -o build/main \
@@ -69,7 +69,7 @@ test_main:
 		lib/libllama.a lib/libggml.a lib/libcommon.a \
 		tests/main.cpp
 	@./build/main -m $(MODEL) --log-disable \
-		-p "When did the French Revolution start?" -n 512
+		-p "When did the French Revolution start?" -c 2048 -n 512
 
 test_retrieve:
 	@./bin/llama-retrieval --model models/all-MiniLM-L6-v2-Q5_K_S.gguf \
@@ -83,7 +83,7 @@ $(MODEL):
 		wget https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/resolve/main/gemma-2-9b-it-IQ4_XS.gguf
 
 test_model: $(MODEL)
-	@./bin/llama-simple -c 512 -n 512 -m $(MODEL) \
+	@./bin/llama-simple -c 2048 -n 512 -m $(MODEL) \
 	-p "Number of planets in our solar system"
 
 test_cy: 

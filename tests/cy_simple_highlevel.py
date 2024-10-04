@@ -3,8 +3,7 @@ from pathlib import Path
 ROOT = Path.cwd().parent
 sys.path.insert(0, str(ROOT / 'build'))
 
-MODEL = ROOT / 'models' / 'gemma-2-9b-it-IQ4_XS.gguf'
-# MODEL = ROOT / 'models' / 'mistral-7b-instruct-v0.1.Q4_K_M.gguf'
+MODEL = ROOT / 'models' / 'Llama-3.2-1B-Instruct-Q8_0.gguf'
 
 from cyllama import ask
 

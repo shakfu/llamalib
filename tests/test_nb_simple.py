@@ -11,7 +11,7 @@ def test_nb_simple(MODEL):
     params.model = MODEL
     params.prompt = "When did the universe begin?"
     params.n_predict = 32
-
+    params.n_ctx = 2048
 
     args = []
     if not nb.gpt_params_parse(args, params, nb.LLAMA_EXAMPLE_COMMON):

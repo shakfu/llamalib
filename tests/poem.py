@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT / 'build'))
 from tqdm import tqdm
 
 pre_prompt = "Provide a Haiku of three lines with a syllable count of 5-7-5 about "
-subject = "the taste of the first cup of coffee in the morning of a wintry day."
+subject = "waking up with the smell of fresh coffee next to you."
 prompt = pre_prompt + subject
 
 models = [
@@ -34,6 +34,7 @@ models = [
 ]
 
 from cyllama import ask
+
 
 results = {}
 

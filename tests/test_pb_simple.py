@@ -11,6 +11,7 @@ def test_pb_simple(MODEL):
     params.model = MODEL
     params.prompt = "When did the universe begin?"
     params.n_predict = 32
+    params.n_ctx = 2048
 
 
     args = []
