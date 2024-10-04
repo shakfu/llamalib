@@ -10,7 +10,7 @@ import os
 from typing import Optional, Sequence
 
 
-def ask(str prompt, str model, n_predict=512, n_ctx=4096, disable_log=True, n_threads=4) -> str:
+def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_threads=4) -> str:
     """ask/prompt a llama model"""
 
     cdef str result = llama_cpp.simple_prompt(

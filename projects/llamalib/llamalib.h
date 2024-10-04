@@ -15,7 +15,7 @@ std::string simple_prompt(
     const std::string model_path,
     const std::string prompt,
     const int n_predict = 512,
-    const int n_ctx = 4096,
+    const int n_ctx = 2048,
     bool disable_log = true,
     int n_threads = 4)
 {

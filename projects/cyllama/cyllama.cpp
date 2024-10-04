@@ -3813,7 +3813,7 @@ typedef struct {
   PyObject *__pyx_int_4;
   PyObject *__pyx_int_512;
   PyObject *__pyx_int_1024;
-  PyObject *__pyx_int_4096;
+  PyObject *__pyx_int_2048;
   PyObject *__pyx_tuple_;
   PyObject *__pyx_tuple__2;
   PyObject *__pyx_tuple__3;
@@ -4316,7 +4316,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_int_4);
   Py_CLEAR(clear_module_state->__pyx_int_512);
   Py_CLEAR(clear_module_state->__pyx_int_1024);
-  Py_CLEAR(clear_module_state->__pyx_int_4096);
+  Py_CLEAR(clear_module_state->__pyx_int_2048);
   Py_CLEAR(clear_module_state->__pyx_tuple_);
   Py_CLEAR(clear_module_state->__pyx_tuple__2);
   Py_CLEAR(clear_module_state->__pyx_tuple__3);
@@ -4797,7 +4797,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_int_4);
   Py_VISIT(traverse_module_state->__pyx_int_512);
   Py_VISIT(traverse_module_state->__pyx_int_1024);
-  Py_VISIT(traverse_module_state->__pyx_int_4096);
+  Py_VISIT(traverse_module_state->__pyx_int_2048);
   Py_VISIT(traverse_module_state->__pyx_tuple_);
   Py_VISIT(traverse_module_state->__pyx_tuple__2);
   Py_VISIT(traverse_module_state->__pyx_tuple__3);
@@ -5306,7 +5306,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_int_4 __pyx_mstate_global->__pyx_int_4
 #define __pyx_int_512 __pyx_mstate_global->__pyx_int_512
 #define __pyx_int_1024 __pyx_mstate_global->__pyx_int_1024
-#define __pyx_int_4096 __pyx_mstate_global->__pyx_int_4096
+#define __pyx_int_2048 __pyx_mstate_global->__pyx_int_2048
 #define __pyx_tuple_ __pyx_mstate_global->__pyx_tuple_
 #define __pyx_tuple__2 __pyx_mstate_global->__pyx_tuple__2
 #define __pyx_tuple__3 __pyx_mstate_global->__pyx_tuple__3
@@ -9448,7 +9448,7 @@ static std::vector<llama_seq_id>  __pyx_convert_vector_from_py_llama_seq_id(PyOb
 /* "cyllama.pyx":13
  * 
  * 
- * def ask(str prompt, str model, n_predict=512, n_ctx=4096, disable_log=True, n_threads=4) -> str:             # <<<<<<<<<<<<<<
+ * def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_threads=4) -> str:             # <<<<<<<<<<<<<<
  *     """ask/prompt a llama model"""
  * 
  */
@@ -9498,7 +9498,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject **__pyx_pyargnames[] = {&__pyx_n_s_prompt,&__pyx_n_s_model,&__pyx_n_s_n_predict,&__pyx_n_s_n_ctx,&__pyx_n_s_disable_log,&__pyx_n_s_n_threads,0};
     values[2] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject *)__pyx_int_512)));
-    values[3] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject *)__pyx_int_4096)));
+    values[3] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject *)__pyx_int_2048)));
     values[4] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject *)Py_True)));
     values[5] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject *)__pyx_int_4)));
     if (__pyx_kwds) {
@@ -9743,7 +9743,7 @@ static PyObject *__pyx_pf_7cyllama_ask(CYTHON_UNUSED PyObject *__pyx_self, PyObj
   /* "cyllama.pyx":13
  * 
  * 
- * def ask(str prompt, str model, n_predict=512, n_ctx=4096, disable_log=True, n_threads=4) -> str:             # <<<<<<<<<<<<<<
+ * def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_threads=4) -> str:             # <<<<<<<<<<<<<<
  *     """ask/prompt a llama model"""
  * 
  */
@@ -44437,7 +44437,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   /* "cyllama.pyx":13
  * 
  * 
- * def ask(str prompt, str model, n_predict=512, n_ctx=4096, disable_log=True, n_threads=4) -> str:             # <<<<<<<<<<<<<<
+ * def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_threads=4) -> str:             # <<<<<<<<<<<<<<
  *     """ask/prompt a llama model"""
  * 
  */
@@ -44445,7 +44445,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__34);
   __Pyx_GIVEREF(__pyx_tuple__34);
   __pyx_codeobj__35 = (PyObject*)__Pyx_PyCode_New(6, 0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__34, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cyllama_pyx, __pyx_n_s_ask, 13, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__35)) __PYX_ERR(0, 13, __pyx_L1_error)
-  __pyx_tuple__36 = PyTuple_Pack(4, ((PyObject *)__pyx_int_512), ((PyObject *)__pyx_int_4096), ((PyObject *)Py_True), ((PyObject *)__pyx_int_4)); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(0, 13, __pyx_L1_error)
+  __pyx_tuple__36 = PyTuple_Pack(4, ((PyObject *)__pyx_int_512), ((PyObject *)__pyx_int_2048), ((PyObject *)Py_True), ((PyObject *)__pyx_int_4)); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__36);
   __Pyx_GIVEREF(__pyx_tuple__36);
 
@@ -45220,7 +45220,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitConstants(void) {
   __pyx_int_4 = PyInt_FromLong(4); if (unlikely(!__pyx_int_4)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_512 = PyInt_FromLong(512); if (unlikely(!__pyx_int_512)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_1024 = PyInt_FromLong(1024); if (unlikely(!__pyx_int_1024)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __pyx_int_4096 = PyInt_FromLong(4096); if (unlikely(!__pyx_int_4096)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __pyx_int_2048 = PyInt_FromLong(2048); if (unlikely(!__pyx_int_2048)) __PYX_ERR(0, 1, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -45870,7 +45870,7 @@ if (!__Pyx_RefNanny) {
   /* "cyllama.pyx":13
  * 
  * 
- * def ask(str prompt, str model, n_predict=512, n_ctx=4096, disable_log=True, n_threads=4) -> str:             # <<<<<<<<<<<<<<
+ * def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_threads=4) -> str:             # <<<<<<<<<<<<<<
  *     """ask/prompt a llama model"""
  * 
  */

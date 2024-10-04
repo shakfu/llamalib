@@ -32,7 +32,7 @@ NB_MODULE(nbllama, m) {
         nb::arg("model"),
         nb::arg("prompt"),
         nb::arg("n_predict") = 512,
-        nb::arg("n_ctx") = 4096,
+        nb::arg("n_ctx") = 2048,
         nb::arg("disable_log") = true,
         nb::arg("n_threads") = 4
     );

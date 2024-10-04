@@ -44,7 +44,7 @@ PYBIND11_MODULE(pbllama, m) {
         py::arg("model"),
         py::arg("prompt"),
         py::arg("n_predict") = 512,
-        py::arg("n_ctx") = 4096,
+        py::arg("n_ctx") = 2048,
         py::arg("disable_log") = true,
         py::arg("n_threads") = 4
     );
