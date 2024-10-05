@@ -592,6 +592,9 @@ cdef extern from "llama.h":
     # to the decoder to start generating output sequence. For other models, it returns -1.
     cdef llama_token llama_model_decoder_start_token(const llama_model * model)
 
+    # Returns true if the model is recurrent (like Mamba, RWKV, etc.)
+    cdef bint llama_model_is_recurrent(const llama_model * model)
+
     # Returns 0 on success
     cdef uint32_t llama_model_quantize(
             const char * fname_inp,
