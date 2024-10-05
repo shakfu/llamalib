@@ -111,6 +111,6 @@ clean:
 	@rm -rf build dist *.egg-info
 
 reset:
-	@rm -rf build bin lib include
+	@rm -rf build bin lib include thirdparty/llama_cpp
 
 

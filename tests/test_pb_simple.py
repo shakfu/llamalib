@@ -5,10 +5,10 @@ sys.path.insert(0, str(ROOT / 'build'))
 
 import pbllama as pb
 
-def test_pb_simple(MODEL):
+def test_pb_simple(model_path):
 
     params = pb.gpt_params()
-    params.model = MODEL
+    params.model = model_path
     params.prompt = "When did the universe begin?"
     params.n_predict = 32
     params.n_ctx = 2048
@@ -31,7 +31,7 @@ def test_pb_simple(MODEL):
     model_params = pb.llama_model_params_from_gpt_params(params)
 
     # set local test model
-    params.model = MODEL
+    params.model = model_path
 
     model = pb.llama_load_model_from_file(params.model, model_params)
 

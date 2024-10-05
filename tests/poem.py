@@ -8,7 +8,13 @@ from pathlib import Path
 ROOT = Path.cwd().parent
 sys.path.insert(0, str(ROOT / 'build'))
 
-from tqdm import tqdm
+HAVE_TQDM = False
+try:
+    from tqdm import tqdm
+    HAVE_TQDM = True
+except ImportError:
+    tqdm = lambda x: x
+
 
 pre_prompt = "Provide a Haiku of three lines with a syllable count of 5-7-5 about "
 subject = "waking up with the smell of fresh coffee next to you."
@@ -29,7 +35,6 @@ models = [
     'gemma-2-9b-it-IQ4_XS.gguf',
     'llama-3.2-1b-instruct-q4_k_m.gguf',
     'mistral-7b-instruct-v0.1.Q4_K_M.gguf',
-    'open-hermes-sd-finetune-erot-story.i1-Q5_K_S.gguf',
     'vicuna-7b-cot.Q5_K_M.gguf',
 ]
 

@@ -22,7 +22,8 @@ get_llamacpp() {
 		cmake --build . --config Release && \
 		cmake --install . --prefix ${CWD} && \
 		cp common/libcommon.a ${LIB} && \
-		cp examples/llava/libllava_static.a ${LIB}/libllava.a
+		cp examples/llava/libllava_static.a ${LIB}/libllava.a && \
+		cd ${CWD}
 }
 
 get_llamacpp_python() {
@@ -33,7 +34,8 @@ get_llamacpp_python() {
 			git clone --depth 1 https://github.com/abetlen/llama-cpp-python.git
 		fi && \
 		rm -rf ../thirdparty/llama_cpp && \
-		cp -rf llama-cpp-python/llama_cpp ../thirdparty/llama_cpp
+		cp -rf llama-cpp-python/llama_cpp ../thirdparty/llama_cpp && \
+		cd ${CWD}
 }
 
 
@@ -41,12 +43,13 @@ remove_current() {
 	echo "remove current"
 	rm -rf build/llama.cpp
 	rm -rf bin include lib 
+	rm -rf thirdparty/llama_cpp
 }
 
 
 main() {
-	remove_current && \
-	get_llamacpp && \
+	remove_current
+	get_llamacpp
 	get_llamacpp_python
 }
 

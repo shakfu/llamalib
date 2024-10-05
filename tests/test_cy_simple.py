@@ -5,10 +5,11 @@ sys.path.insert(0, str(ROOT / 'build'))
 
 import cyllama as cy
 
-def test_cy_simple(MODEL):
+
+def test_cy_simple(model_path):
 
     params = cy.GptParams()
-    params.model = str(MODEL)
+    params.model = model_path
     params.prompt = "When did the universe begin?"
     params.n_predict = 32
     params.n_ctx = 2048
@@ -32,7 +33,7 @@ def test_cy_simple(MODEL):
     model_params = cy.llama_model_params_from_gpt_params(params)
 
     # set local test model
-    params.model = str(MODEL)
+    params.model = model_path
 
     # model = cy.llama_load_model_from_file(params.model, model_params)
     model = cy.LlamaModel(path_model=params.model, params=model_params)

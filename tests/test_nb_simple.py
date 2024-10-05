@@ -5,10 +5,10 @@ sys.path.insert(0, str(ROOT / 'build'))
 
 import nbllama as nb
 
-def test_nb_simple(MODEL):
+def test_nb_simple(model_path):
 
     params = nb.gpt_params()
-    params.model = MODEL
+    params.model = model_path
     params.prompt = "When did the universe begin?"
     params.n_predict = 32
     params.n_ctx = 2048
@@ -30,7 +30,7 @@ def test_nb_simple(MODEL):
     model_params = nb.llama_model_params_from_gpt_params(params)
 
     # set local test model
-    params.model = MODEL
+    params.model = model_path
 
     model = nb.llama_load_model_from_file(params.model, model_params)
 

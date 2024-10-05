@@ -1,150 +1,44 @@
 from __future__ import annotations
 
-import sys
 import os
 import ctypes
-import functools
 import pathlib
 
 from typing import (
-    Any,
     Callable,
-    List,
     Union,
     NewType,
     Optional,
     TYPE_CHECKING,
-    TypeVar,
-    Generic,
 )
-from typing_extensions import TypeAlias
 
+from llama_cpp._ctypes_extensions import (
+    load_shared_library,
+    byref,
+    ctypes_function_for_shared_library,
+)
 
-# Load the library
-def _load_shared_library(lib_base_name: str):
-    # Construct the paths to the possible shared library names
-    _base_path = pathlib.Path(os.path.abspath(os.path.dirname(__file__))) / "lib"
-    # Searching for the library in the current directory under the name "libllama" (default name
-    # for llamacpp) and "llama" (default name for this repo)
-    _lib_paths: List[pathlib.Path] = []
-    # Determine the file extension based on the platform
-    if sys.platform.startswith("linux") or sys.platform.startswith("freebsd"):
-        _lib_paths += [
-            _base_path / f"lib{lib_base_name}.so",
-        ]
-    elif sys.platform == "darwin":
-        _lib_paths += [
-            _base_path / f"lib{lib_base_name}.so",
-            _base_path / f"lib{lib_base_name}.dylib",
-        ]
-    elif sys.platform == "win32":
-        _lib_paths += [
-            _base_path / f"{lib_base_name}.dll",
-            _base_path / f"lib{lib_base_name}.dll",
-        ]
-    else:
-        raise RuntimeError("Unsupported platform")
-
-    if "LLAMA_CPP_LIB" in os.environ:
-        lib_base_name = os.environ["LLAMA_CPP_LIB"]
-        _lib = pathlib.Path(lib_base_name)
-        _base_path = _lib.parent.resolve()
-        _lib_paths = [_lib.resolve()]
-
-    cdll_args = dict()  # type: ignore
-
-    # Add the library directory to the DLL search path on Windows (if needed)
-    if sys.platform == "win32":
-        os.add_dll_directory(str(_base_path))
-        os.environ["PATH"] = str(_base_path) + os.pathsep + os.environ["PATH"]
-
-    if sys.platform == "win32" and sys.version_info >= (3, 8):
-        os.add_dll_directory(str(_base_path))
-        if "CUDA_PATH" in os.environ:
-            os.add_dll_directory(os.path.join(os.environ["CUDA_PATH"], "bin"))
-            os.add_dll_directory(os.path.join(os.environ["CUDA_PATH"], "lib"))
-        if "HIP_PATH" in os.environ:
-            os.add_dll_directory(os.path.join(os.environ["HIP_PATH"], "bin"))
-            os.add_dll_directory(os.path.join(os.environ["HIP_PATH"], "lib"))
-        cdll_args["winmode"] = ctypes.RTLD_GLOBAL
-
-    # Try to load the shared library, handling potential errors
-    for _lib_path in _lib_paths:
-        if _lib_path.exists():
-            try:
-                return ctypes.CDLL(str(_lib_path), **cdll_args)  # type: ignore
-            except Exception as e:
-                raise RuntimeError(f"Failed to load shared library '{_lib_path}': {e}")
-
-    raise FileNotFoundError(
-        f"Shared library with base name '{lib_base_name}' not found"
+if TYPE_CHECKING:
+    from llama_cpp._ctypes_extensions import (
+        CtypesCData,
+        CtypesArray,
+        CtypesPointer,
+        CtypesVoidPointer,
+        CtypesRef,
+        CtypesPointerOrRef,
+        CtypesFuncPointer,
     )
 
 
 # Specify the base name of the shared library to load
 _lib_base_name = "llama"
-
+_override_base_path = os.environ.get("LLAMA_CPP_LIB_PATH")
+_base_path = pathlib.Path(os.path.abspath(os.path.dirname(__file__))) / "lib" if _override_base_path is None else pathlib.Path(_override_base_path)
 # Load the library
-_lib = _load_shared_library(_lib_base_name)
-
-
-# ctypes sane type hint helpers
-#
-# - Generic Pointer and Array types
-# - PointerOrRef type with a type hinted byref function
-#
-# NOTE: Only use these for static type checking not for runtime checks
-# no good will come of that
-
-if TYPE_CHECKING:
-    CtypesCData = TypeVar("CtypesCData", bound=ctypes._CData)  # type: ignore
-
-    CtypesArray: TypeAlias = ctypes.Array[CtypesCData]  # type: ignore
-
-    CtypesPointer: TypeAlias = ctypes._Pointer[CtypesCData]  # type: ignore
-
-    CtypesVoidPointer: TypeAlias = ctypes.c_void_p
-
-    class CtypesRef(Generic[CtypesCData]):
-        pass
-
-    CtypesPointerOrRef: TypeAlias = Union[
-        CtypesPointer[CtypesCData], CtypesRef[CtypesCData]
-    ]
-
-    CtypesFuncPointer: TypeAlias = ctypes._FuncPointer  # type: ignore
-
-F = TypeVar("F", bound=Callable[..., Any])
-
-
-def ctypes_function_for_shared_library(lib: ctypes.CDLL):
-    def ctypes_function(
-        name: str, argtypes: List[Any], restype: Any, enabled: bool = True
-    ):
-        def decorator(f: F) -> F:
-            if enabled:
-                func = getattr(lib, name)
-                func.argtypes = argtypes
-                func.restype = restype
-                functools.wraps(f)(func)
-                return func
-            else:
-                return f
-
-        return decorator
-
-    return ctypes_function
-
+_lib = load_shared_library(_lib_base_name, _base_path)
 
 ctypes_function = ctypes_function_for_shared_library(_lib)
 
-
-def byref(obj: CtypesCData, offset: Optional[int] = None) -> CtypesRef[CtypesCData]:
-    """Type-annotated version of ctypes.byref"""
-    ...
-
-
-byref = ctypes.byref  # type: ignore
 
 # from ggml.h
 # // NOTE: always add types at the end of the enum to keep backward compatibility
@@ -326,6 +220,7 @@ LLAMA_VOCAB_TYPE_RWKV = 5
 #     LLAMA_VOCAB_PRE_TYPE_BLOOM          = 23,
 #     LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH   = 24,
 #     LLAMA_VOCAB_PRE_TYPE_EXAONE         = 25,
+#     LLAMA_VOCAB_PRE_TYPE_CHAMELEON      = 26,
 # };
 LLAMA_VOCAB_PRE_TYPE_DEFAULT = 0
 LLAMA_VOCAB_PRE_TYPE_LLAMA3 = 1
@@ -353,6 +248,7 @@ LLAMA_VOCAB_PRE_TYPE_CODESHELL = 22
 LLAMA_VOCAB_PRE_TYPE_BLOOM = 23
 LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH = 24
 LLAMA_VOCAB_PRE_TYPE_EXAONE = 25
+LLAMA_VOCAB_PRE_TYPE_CHAMELEON = 26
 
 
 # // note: these values should be synchronized with ggml_rope
@@ -510,12 +406,14 @@ LLAMA_ROPE_SCALING_TYPE_MAX_VALUE = LLAMA_ROPE_SCALING_TYPE_YARN
 #     LLAMA_POOLING_TYPE_MEAN = 1,
 #     LLAMA_POOLING_TYPE_CLS  = 2,
 #     LLAMA_POOLING_TYPE_LAST = 3,
+#     LLAMA_POOLING_TYPE_RANK = 4, // used by reranking models to attach the classification head to the graph
 # };
 LLAMA_POOLING_TYPE_UNSPECIFIED = -1
 LLAMA_POOLING_TYPE_NONE = 0
 LLAMA_POOLING_TYPE_MEAN = 1
 LLAMA_POOLING_TYPE_CLS = 2
 LLAMA_POOLING_TYPE_LAST = 3
+LLAMA_POOLING_TYPE_RANK = 4
 
 # enum llama_attention_type {
 #     LLAMA_ATTENTION_TYPE_UNSPECIFIED = -1,
@@ -526,10 +424,11 @@ LLAMA_ATTENTION_TYPE_UNSPECIFIED = -1
 LLAMA_ATTENTION_TYPE_CAUSAL = 0
 LLAMA_ATTENTION_TYPE_NON_CAUSAL = 1
 
+
 # enum llama_split_mode {
-#     LLAMA_SPLIT_MODE_NONE    = 0, // single GPU
-#     LLAMA_SPLIT_MODE_LAYER   = 1, // split layers and KV across GPUs
-#     LLAMA_SPLIT_MODE_ROW     = 2, // split rows across GPUs
+#     LLAMA_SPLIT_MODE_NONE  = 0, // single GPU
+#     LLAMA_SPLIT_MODE_LAYER = 1, // split layers and KV across GPUs
+#     LLAMA_SPLIT_MODE_ROW   = 2, // split rows across GPUs
 # };
 LLAMA_SPLIT_MODE_NONE = 0
 LLAMA_SPLIT_MODE_LAYER = 1
@@ -2626,7 +2525,8 @@ def llama_get_embeddings_ith(
 
 # // Get the embeddings for a sequence id
 # // Returns NULL if pooling_type is LLAMA_POOLING_TYPE_NONE
-# // shape: [n_embd] (1-dimensional)
+# // when pooling_type == LLAMA_POOLING_TYPE_RANK, returns float[1] with the rank of the sequence
+# // otherwise: float[n_embd] (1-dimensional)
 # LLAMA_API float * llama_get_embeddings_seq(struct llama_context * ctx, llama_seq_id seq_id);
 @ctypes_function(
     "llama_get_embeddings_seq",
@@ -2777,6 +2677,8 @@ def llama_token_eot(model: llama_model_p, /) -> int:
 
 # //
 # // Tokenization
+# //
+# // The API is thread-safe.
 # //
 
 
