@@ -5,6 +5,15 @@ sys.path.insert(0, str(ROOT / 'build'))
 
 import pbllama as pb
 
+def ask(prompt, model, n_predict=512, disable_log=True, n_threads=4) -> str:
+    """ask/prompt a llama model"""
+    return pb.simple_prompt(model=model, n_predict=n_predict, prompt=prompt, disable_log=disable_log,  n_threads=n_threads).strip()
+
+def test_nb_highlevel_simple(model_path):
+    ask("When did the universe begin?", model=model_path)
+    assert True
+
+
 def test_pb_simple(model_path):
 
     params = pb.gpt_params()

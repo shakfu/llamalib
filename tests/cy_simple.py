@@ -12,8 +12,8 @@ params.model = str(MODEL)
 params.prompt = "When did the universe begin?"
 params.n_predict = 32
 params.n_ctx = 2048
-# params.cpuparams.n_threads = 4
-params.n_threads = 4
+params.cpuparams.n_threads = 4
+# params.n_threads = 4
 
 
 

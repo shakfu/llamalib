@@ -1,12 +1,10 @@
-# llamalib - a set of compiled python llama.cpp wrappers
+# llamalib - compiled python llama.cpp wrappers
 
 The project includes three different experimental python wrappers of @ggerganov's [llama.cpp](https://github.com/ggerganov/llama.cpp) which is likely "at the frontier of open-source compiled LLM inference". The purpose is to learn about the internals of this popular c++/c LLM inference engine while wrapping it for use by python code. It tries to keep up with the latest changes in the `llama.cpp` main branch.
 
 A project goal is that each of the python wrapper variants should programmatically support the core feature-set of `llama.cpp` with respect to supported `.gguf`-format models.
 
-Given that there is a fairly mature and well-maintained ctypes based wrapper provided by @abetlen's [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) project and that llm inference is gpu-driven rather than cpu-driven, this all may see quite redundant.
-
-Nonetheless, there are some benefits to developing alternative python wrappers to `llama.cpp`:
+Given that there is a fairly mature and well-maintained ctypes based wrapper provided by @abetlen's [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) project and that llm inference is gpu-driven rather than cpu-driven, this all may see quite redundant. Irrespective, there are some benefits to developing alternative python wrappers to `llama.cpp`:
 
 - There may be some incidental performance benefits to the use of compiled wrappers over the use of ctypes.
 
@@ -78,31 +76,15 @@ bin/llama-simple -c 512 -n 512 -m models/Llama-3.2-1B-Instruct-Q6_K.gguf \
 	-p "Is mathematics discovered or invented?"
 ```
 
-If this works ok and you see a reasonable answer, then test high-level pybind11 wrapper:
-
+Now, you will need `pytest` installed to run tests:
 
 ```sh
-make test_pb_hl
+pytest
 ```
 
-which is equivalent to: `cd tests && python3 pb_simple_highlevel.py`
-
-
-To run the low-level pybind11 wrapper:
+If all tests pass, feel free to cd in the `tests` directory and run some examples directly
 
 ```sh
-make test_pb
-```
-
-To run the low-level nanobind wrapper:
-
-```sh
-make test_nb
-```
-
-To run the low-level cython wrapper:
-
-```sh
-make test_cy
+cd tests && python3 pb_simple_highlevel.py`
 ```
 

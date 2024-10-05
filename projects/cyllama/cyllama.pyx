@@ -120,82 +120,95 @@ cdef class LlamaSampler:
         self.chain_add(LlamaSampler.init_greedy())
 
 
-# cdef class CpuParams:
-#     cdef llama_cpp.cpu_params p
+cdef class CpuParams:
+    cdef llama_cpp.cpu_params *ptr
 
-#     @staticmethod
-#     cdef CpuParams from_instance(llama_cpp.cpu_params params):
-#         cdef CpuParams wrapper = CpuParams.__new__(CpuParams)
-#         wrapper.p = params
-#         return wrapper
+    @staticmethod
+    cdef CpuParams from_ptr(llama_cpp.cpu_params *p):
+        cdef CpuParams wrapper = CpuParams.__new__(CpuParams)
+        wrapper.ptr = p
+        return wrapper
 
-#     @property
-#     def n_threads(self) -> int:
-#         """number of threads."""
-#         return self.p.n_threads
+    @property
+    def n_threads(self) -> int:
+        """number of threads."""
+        return self.ptr.n_threads
 
-#     @n_threads.setter
-#     def n_threads(self, value: int):
-#         self.p.n_threads = value
+    @n_threads.setter
+    def n_threads(self, value: int):
+        self.ptr.n_threads = value
 
-#     # @property
-#     # def cpumask(self) -> list[bool]:
-#     #     """CPU affinity mask."""
-#     #     return self.p.cpumask
+    # @property
+    # def cpumask(self) -> list[bool]:
+    #     """CPU affinity mask."""
+    #     return self.ptr.cpumask
 
-#     # @cpumask.setter
-#     # def cpumask(self, value: list[bool]):
-#     #     self.p.cpumask = value
+    # @cpumask.setter
+    # def cpumask(self, value: list[bool]):
+    #     self.ptr.cpumask = value
 
-#     @property
-#     def mask_valid(self) -> bool:
-#         """Default: any CPU."""
-#         return self.p.mask_valid
+    @property
+    def mask_valid(self) -> bool:
+        """Default: any CPU."""
+        return self.ptr.mask_valid
 
-#     @mask_valid.setter
-#     def mask_valid(self, value: bool):
-#         self.p.mask_valid = value
+    @mask_valid.setter
+    def mask_valid(self, value: bool):
+        self.ptr.mask_valid = value
 
-#     @property
-#     def priority(self) -> llama_cpp.ggml_sched_priority:
-#         """Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)."""
-#         return self.p.priority
+    @property
+    def priority(self) -> llama_cpp.ggml_sched_priority:
+        """Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)."""
+        return self.ptr.priority
 
-#     @priority.setter
-#     def priority(self, value: llama_cpp.ggml_sched_priority):
-#         self.p.priority = value
+    @priority.setter
+    def priority(self, value: llama_cpp.ggml_sched_priority):
+        self.ptr.priority = value
 
-#     # @property
-#     # def llama_cpp.ggml_sched_strict_cpu strict_cpu(self):
-#     #     """Use strict CPU placement."""
-#     #     return self.p.strict_cpu
+    # @property
+    # def llama_cpp.ggml_sched_strict_cpu strict_cpu(self):
+    #     """Use strict CPU placement."""
+    #     return self.ptr.strict_cpu
 
-#     # @strict_cpu.setter
-#     # def strict_cpu(self, llama_cpp.ggml_sched_strict_cpu value):
-#     #     self.p.strict_cpu = value
+    # @strict_cpu.setter
+    # def strict_cpu(self, llama_cpp.ggml_sched_strict_cpu value):
+    #     self.ptr.strict_cpu = value
 
-#     # @property
-#     # def poll(self) -> llama_cpp.ggml_sched_poll:
-#     #     """Use strict CPU placement"""
-#     #     return self.p.poll
+    # @property
+    # def poll(self) -> llama_cpp.ggml_sched_poll:
+    #     """Use strict CPU placement"""
+    #     return self.ptr.poll
 
-#     # @poll.setter
-#     # def poll(self, value: llama_cpp.ggml_sched_poll):
-#     #     self.p.poll = value
+    # @poll.setter
+    # def poll(self, value: llama_cpp.ggml_sched_poll):
+    #     self.ptr.poll = value
+
+
 
 
 
 cdef class GptParams: # WIP!
     cdef llama_cpp.gpt_params p
-    
-    @property
-    def n_threads(self) -> int:
-        """number of threads."""
-        return self.p.cpuparams.n_threads
+    cdef public CpuParams cpuparams
+    cdef public CpuParams cpuparams_batch
+    cdef public CpuParams draft_cpuparams
+    cdef public CpuParams draft_cpuparams_batch
 
-    @n_threads.setter
-    def n_threads(self, value: int):
-        self.p.cpuparams.n_threads = value
+    @staticmethod
+    cdef GptParams from_instance(llama_cpp.gpt_params p):
+        cdef GptParams wrapper = GptParams.__new__(GptParams)
+        wrapper.p = p
+        wrapper.cpuparams = CpuParams.from_ptr(&wrapper.p.cpuparams)
+        wrapper.cpuparams_batch = CpuParams.from_ptr(&wrapper.p.cpuparams_batch)
+        wrapper.draft_cpuparams = CpuParams.from_ptr(&wrapper.p.draft_cpuparams)
+        wrapper.draft_cpuparams_batch = CpuParams.from_ptr(&wrapper.p.draft_cpuparams_batch)
+        return wrapper
+
+    def __cinit__(self):
+        self.cpuparams = CpuParams.from_ptr(&self.p.cpuparams)
+        self.cpuparams_batch = CpuParams.from_ptr(&self.p.cpuparams_batch)
+        self.draft_cpuparams = CpuParams.from_ptr(&self.p.draft_cpuparams)
+        self.draft_cpuparams_batch = CpuParams.from_ptr(&self.p.draft_cpuparams_batch)
 
     @property
     def n_predict(self) -> int:
@@ -1427,6 +1440,7 @@ cdef class ModelParams:
     @check_tensors.setter
     def check_tensors(self, value: bool):
         self.p.check_tensors = value
+
 
 
 cdef class LlamaModel:

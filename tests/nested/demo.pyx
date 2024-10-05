@@ -91,12 +91,6 @@ cdef class AppParams:
         return wrapper
 
     def __cinit__(self):
-        cdef app_params _ap
-        cdef cpu_params _cp
-        _cp.n_threads = 4
-        _ap.param1 = 20
-        _ap.cpuparams = _cp
-        self.params = _ap
         self.cpuparams = CpuParams.from_ptr(&self.params.cpuparams)
 
     @property

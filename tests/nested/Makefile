@@ -1,7 +1,7 @@
 
-.PHONY: all build clean
+.PHONY: all build clean reset
 
-all: build clean reset
+all: build clean
 
 build:
 	@python3 setup.py build_ext --inplace

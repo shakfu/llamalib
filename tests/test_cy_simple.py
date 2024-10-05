@@ -5,16 +5,19 @@ sys.path.insert(0, str(ROOT / 'build'))
 
 import cyllama as cy
 
+def test_cy_highlevel_simple(model_path):
+    cy.ask("When did the universe begin?", model=model_path)
+    assert True
 
-def test_cy_simple(model_path):
+def test_cy_lowlevel_simple(model_path):
 
     params = cy.GptParams()
     params.model = model_path
     params.prompt = "When did the universe begin?"
     params.n_predict = 32
     params.n_ctx = 2048
-    # params.cpuparams.n_threads = 4
-    params.n_threads = 4
+    params.cpuparams.n_threads = 4
+    # params.n_threads = 4
 
     # args = []
     # if not cy.gpt_params_parse(args, params, cy.LLAMA_EXAMPLE_COMMON):

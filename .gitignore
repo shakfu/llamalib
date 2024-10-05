@@ -2,6 +2,7 @@
 bind/
 binder/
 models/
+#projects/cyllama/cyllama.cpp
 
 
 # editors

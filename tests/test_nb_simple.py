@@ -5,7 +5,17 @@ sys.path.insert(0, str(ROOT / 'build'))
 
 import nbllama as nb
 
-def test_nb_simple(model_path):
+
+def ask(prompt, model, n_predict=512, disable_log=True, n_threads=4) -> str:
+    """ask/prompt a llama model"""
+    return nb.simple_prompt(model=model, n_predict=n_predict, prompt=prompt, disable_log=disable_log,  n_threads=n_threads).strip()
+
+def test_nb_highlevel_simple(model_path):
+    ask("When did the universe begin?", model=model_path)
+    assert True
+
+
+def test_nb_lowlevel_simple(model_path):
 
     params = nb.gpt_params()
     params.model = model_path
