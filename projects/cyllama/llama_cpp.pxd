@@ -209,12 +209,14 @@ cdef extern from "ggml.h":
     cdef int64_t ggml_cycles()
     cdef int64_t ggml_cycles_per_ms()
 
+    # typedef struct ggml_threadpool * ggml_threadpool_t;
+    ctypedef ggml_threadpool_t
+
+
 #------------------------------------------------------------------------------
 
 cdef extern from "ggml-backend.h":
     ctypedef bint (*ggml_backend_sched_eval_callback)(ggml_tensor * t, bint ask, void * user_data)
-
-
 
 #------------------------------------------------------------------------------
 
@@ -236,7 +238,9 @@ cdef extern from "llama.h":
         LLAMA_VOCAB_TYPE_BPE
         LLAMA_VOCAB_TYPE_WPM
         LLAMA_VOCAB_TYPE_UGM
+        LLAMA_VOCAB_TYPE_RWKV
 
+    # pre-tokenization types
     ctypedef enum llama_vocab_pre_type:
         LLAMA_VOCAB_PRE_TYPE_DEFAULT
         LLAMA_VOCAB_PRE_TYPE_LLAMA3
@@ -270,7 +274,6 @@ cdef extern from "llama.h":
         LLAMA_ROPE_TYPE_NONE = -1
         LLAMA_ROPE_TYPE_NORM =  0
         LLAMA_ROPE_TYPE_NEOX =  2
-        LLAMA_ROPE_TYPE_GLM  =  4
 
     ctypedef enum llama_token_type:
         LLAMA_TOKEN_TYPE_UNDEFINED    = 0
@@ -493,7 +496,6 @@ cdef extern from "llama.h":
     cdef llama_model_quantize_params llama_model_quantize_default_params()
 
 
-
     # Initialize the llama + ggml backend
     # If numa is true, use NUMA optimizations
     # Call once at the start of the program
@@ -501,6 +503,10 @@ cdef extern from "llama.h":
 
     #optional:
     cdef void llama_numa_init(ggml_numa_strategy numa)
+
+    # Optional: an auto threadpool gets created in ggml if not passed explicitly
+    cdef void llama_attach_threadpool(llama_context * ctx, ggml_threadpool_t threadpool, ggml_threadpool_t threadpool_batch)
+    cdef void llama_detach_threadpool(llama_context * ctx)
 
     # Call once at the end of the program - currently only used for MPI
     cdef void llama_backend_free()
@@ -579,6 +585,9 @@ cdef extern from "llama.h":
     # Returns true if the model contains an encoder that requires llama_encode() call
     cdef bint llama_model_has_encoder(const llama_model * model)
 
+    # Returns true if the model contains a decoder that requires llama_decode() call
+    cdef bint llama_model_has_decoder(const llama_model * model)
+
     # For encoder-decoder models, this function returns id of the token that must be provided
     # to the decoder to start generating output sequence. For other models, it returns -1.
     cdef llama_token llama_model_decoder_start_token(const llama_model * model)
@@ -626,6 +635,9 @@ cdef extern from "llama.h":
                          int32_t   n_embd,
                          int32_t   il_start,
                          int32_t   il_end)
+
+
+    # KV cache
 
     ctypedef struct llama_kv_cache_view_cell:
         # The position for this cell. Takes KV cache shifts into account.
@@ -749,8 +761,6 @@ cdef extern from "llama.h":
 
     # Apply the KV cache updates (such as K-shifts, defragmentation, etc.)
     cdef void llama_kv_cache_update(llama_context * ctx)
-
-
 
     #
     # State / sessions
@@ -897,7 +907,7 @@ cdef extern from "llama.h":
     # Wait until all computations are finished
     # This is automatically done when using one of the functions below to obtain the computation results
     # and is not necessary to call it explicitly in most cases
-    cdef void llama_synchronize( llama_context * ctx)
+    cdef void llama_synchronize(llama_context * ctx)
 
     # Token logits obtained from the last call to llama_decode()
     # The logits for which llama_batch.logits[i] != 0 are stored contiguously
@@ -957,10 +967,7 @@ cdef extern from "llama.h":
     cdef llama_token llama_token_nl (const  llama_model * model) # next-line
     cdef llama_token llama_token_pad(const  llama_model * model) # padding
 
-    # Returns -1 if unknown, 1 for true or 0 for false.
     cdef int32_t llama_add_bos_token(const  llama_model * model)
-
-    # Returns -1 if unknown, 1 for true or 0 for false.
     cdef int32_t llama_add_eos_token(const  llama_model * model)
 
     # Codellama infill tokens
@@ -1113,6 +1120,9 @@ cdef extern from "llama.h":
     cdef llama_sampler *        llama_sampler_chain_get(const  llama_sampler * chain, int32_t i)
     cdef int                    llama_sampler_chain_n  (const  llama_sampler * chain)
 
+    # after removing a sampler, the chain will no longer own it, and it will not be freed when the chain is freed
+    cdef llama_sampler * llama_sampler_chain_remove( llama_sampler * chain, int32_t i)
+
     # available samplers:
 
     cdef llama_sampler * llama_sampler_init_greedy()
@@ -1159,8 +1169,6 @@ cdef extern from "llama.h":
     # @param tau  The target cross-entropy (or surprise) value you want to achieve for the generated text. A higher value corresponds to more surprising or less predictable text, while a lower value corresponds to less surprising or more predictable text.
     # @param eta The learning rate used to update `mu` based on the error between the target and observed surprisal of the sampled word. A larger learning rate will cause `mu` to be updated more quickly, while a smaller learning rate will result in slower updates.
     # @param mu Maximum cross-entropy. This value is initialized to be twice the target cross-entropy (`2 * tau`) and is updated in the algorithm based on the error between the target and observed surprisal.
-
-
     cdef llama_sampler * llama_sampler_init_mirostat_v2(
                                 uint32_t   seed,
                                    float   tau,
@@ -1187,6 +1195,12 @@ cdef extern from "llama.h":
                              int32_t   n_logit_bias,
               const llama_logit_bias * logit_bias)
 
+
+    # Returns the seed used by the sampler if applicable, LLAMA_DEFAULT_SEED otherwise
+    cdef uint32_t llama_sampler_get_seed(const llama_sampler * smpl)
+
+    # Sample and accept a token from the idx-th output of the last evaluation
+    #
     # Shorthand for:
     #
     #    const auto * logits = llama_get_logits_ith(ctx, idx)
@@ -1253,7 +1267,6 @@ cdef extern from "llama.h":
 
 
     cdef void llama_perf_dump_yaml(FILE * stream, const llama_context * ctx)
-
 
 
 #------------------------------------------------------------------------------
@@ -1649,7 +1662,6 @@ cdef extern from "common.h":
     cdef llama_control_vector_data llama_control_vector_load(const std_vector[llama_control_vector_load_info] & load_infos)
 
 
-
 #------------------------------------------------------------------------------
 
 cdef extern from "sampling.h": # optional llama_sampler extensions
@@ -1657,7 +1669,6 @@ cdef extern from "sampling.h": # optional llama_sampler extensions
 
     cdef gpt_sampler * gpt_sampler_init(const llama_model * model, const gpt_sampler_params & params)
     # ..
-
 
 #------------------------------------------------------------------------------
 
