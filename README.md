@@ -17,16 +17,16 @@ Given that there is a fairly mature and well-maintained ctypes based wrapper pro
 
 ## Status
 
-Development only on macOS to keep things simple. The following table provide an overview of the current wrapping/dev status, note that `hl` relates to `high-level` and `ll` relates to `low-level`:
+Development only on macOS to keep things simple. The following table provide an overview of the current wrapping/dev status:
 
 
 | status                       | pbllama       | nbllama       | cyllama       |
 | :--------------------------- | :-----------: | :-----------: | :-----------: |
 | wrapper-type                 | pybind11 	   | nanobind 	   | cython 	   |
 | wrap llama.h         		   | 1 			   | 1 			   | 1 			   |
-| wrap hl simple-cli  		   | 1 			   | 1 			   | 1 			   |
-| wrap ll simple-cli    	   | 1 			   | 1 			   | 1 			   |
-| wrap ll llama-cli     	   | 0 			   | 0 			   | 0 			   |
+| wrap high-level simple-cli   | 1 			   | 1 			   | 1 			   |
+| wrap low-level simple-cli    | 1 			   | 1 			   | 1 			   |
+| wrap low-level llama-cli     | 0 			   | 0 			   | 0 			   |
   
 
 The initial milestone for each wrapper type was to create a high-level wrapper of the `simple.cpp` llama.cpp example, following by a low-level one. The high-level wrapper c++ code is placed in `llamalib.h` single-header library, and wrapping is complete for all three frameworks. The final object is to fully wrap the functionality of `llama-cli` for all three wrapper-types.
@@ -82,7 +82,7 @@ Now, you will need `pytest` installed to run tests:
 pytest
 ```
 
-If all tests pass, feel free to cd in the `tests` directory and run some examples directly
+If all tests pass, feel free to `cd` into the `tests` directory and run some examples directly:
 
 ```sh
 cd tests && python3 pb_simple_highlevel.py`

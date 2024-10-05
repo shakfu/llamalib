@@ -280,7 +280,7 @@ cdef extern from "llama.h":
     ctypedef int32_t llama_token
     ctypedef int32_t llama_seq_id
 
-    ctypedef enum llama_vocab_type:
+    cdef enum llama_vocab_type:
         LLAMA_VOCAB_TYPE_NONE
         LLAMA_VOCAB_TYPE_SPM
         LLAMA_VOCAB_TYPE_BPE
@@ -316,7 +316,7 @@ cdef extern from "llama.h":
         LLAMA_VOCAB_PRE_TYPE_EXAONE
         LLAMA_VOCAB_PRE_TYPE_CHAMELEON
 
-    ctypedef enum llama_rope_type:
+    cdef enum llama_rope_type:
         LLAMA_ROPE_TYPE_NONE = -1
         LLAMA_ROPE_TYPE_NORM =  0
         LLAMA_ROPE_TYPE_NEOX =  2
@@ -392,7 +392,7 @@ cdef extern from "llama.h":
         LLAMA_ROPE_SCALING_TYPE_YARN        = 2
         LLAMA_ROPE_SCALING_TYPE_MAX_VALUE   = 2
 
-    ctypedef enum llama_pooling_type:
+    cdef enum llama_pooling_type:
         LLAMA_POOLING_TYPE_UNSPECIFIED = -1
         LLAMA_POOLING_TYPE_NONE = 0
         LLAMA_POOLING_TYPE_MEAN = 1
@@ -591,7 +591,7 @@ cdef extern from "llama.h":
     cdef const llama_model * llama_get_model(const llama_context * ctx)
 
     cdef llama_pooling_type get_llama_pooling_type "llama_pooling_type" (const llama_context * ctx)
-    cdef llama_vocab_type   get_llama_vocab_type "llama_vocab_type" (const llama_model * model)
+    cdef llama_vocab_type get_llama_vocab_type "llama_vocab_type" (const llama_model * model)
     cdef llama_rope_type    get_llama_rope_type  "llama_rope_type" (const llama_model * model)
 
     # Get the model's RoPE frequency scaling factor

@@ -16,7 +16,7 @@
 - [llava-llama-3-8b-v1_1-gguf](https://huggingface.co/xtuner/llava-llama-3-8b-v1_1-gguf)
 
 
-pending (due to memory errors)
+pending (due to memory errors, probably need to specify n_ctx)
 
 - LongWriter-llama3.1-8b-Q3_K_L.gguf
 - LongWriter-llama3.1-8b-Q5_K_S.gguf

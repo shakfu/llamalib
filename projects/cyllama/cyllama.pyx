@@ -184,10 +184,7 @@ cdef class CpuParams:
     #     self.ptr.poll = value
 
 
-
-
-
-cdef class GptParams: # WIP!
+cdef class GptParams:
     cdef llama_cpp.gpt_params p
     cdef public CpuParams cpuparams
     cdef public CpuParams cpuparams_batch
@@ -1442,7 +1439,6 @@ cdef class ModelParams:
         self.p.check_tensors = value
 
 
-
 cdef class LlamaModel:
     """cython wrapper for llama_cpp.cpp llama_model."""
     cdef llama_cpp.llama_model * ptr
@@ -1477,152 +1473,89 @@ cdef class LlamaModel:
             llama_cpp.llama_free_model(self.ptr)
             self.ptr = NULL
 
-    # FIXME: name collision
-    # def vocab_type(self) -> llama_cpp.llama_vocab_type:
-    #     # assert self.model is not None
-    #     return llama_cpp.get_llama_vocab_type(self.model)
+    def vocab_type(self) -> int:
+        return llama_cpp.get_llama_vocab_type(self.ptr)
 
     def n_vocab(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_n_vocab(self.ptr)
 
     def n_ctx_train(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_n_ctx_train(self.ptr)
 
     def n_embd(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_n_embd(self.ptr)
 
     def rope_freq_scale_train(self) -> float:
-        assert self.ptr is not NULL
         return llama_cpp.llama_rope_freq_scale_train(self.ptr)
 
     def desc(self) -> str:
         cdef char buf[1024]
-        assert self.ptr is not NULL
         llama_cpp.llama_model_desc(self.ptr, buf, 1024)
         return buf.decode("utf-8")
 
     def size(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_model_size(self.ptr)
 
     def n_params(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_model_n_params(self.ptr)
 
     def get_tensor(self, name: str) -> GGMLTensor:
-        assert self.ptr is not NULL
-        cdef llama_cpp.ggml_tensor * tensor = llama_cpp.llama_get_model_tensor(self.ptr, name.encode("utf-8"))
+        cdef llama_cpp.ggml_tensor * tensor = llama_cpp.llama_get_model_tensor(
+            self.ptr, name.encode("utf-8"))
         return GGMLTensor.from_ptr(tensor)
 
     # def get_tensor(self, name: str) -> ctypes.c_void_p:
     #     return llama_cpp.llama_get_model_tensor(self.ptr, name.encode("utf-8"))
 
-    # def apply_lora_from_file(
-    #     self,
-    #     lora_path: str,
-    #     scale: float,
-    #     path_base_model: Optional[str],
-    #     n_threads: int,
-    # ):
-    #     return llama_cpp.llama_model_apply_lora_from_file(
-    #         self.ptr,
-    #         lora_path.encode("utf-8"),
-    #         scale,
-    #         (
-    #             path_base_model.encode("utf-8")
-    #             if path_base_model is not None
-    #             else ctypes.c_char_p(0)
-    #         ),
-    #         n_threads,
-    #     )
-
-    # def apply_lora_from_file(
-    #     self,
-    #     lora_path: str,
-    #     scale: float,
-    #     path_base_model: Optional[str],
-    #     n_threads: int,
-    # ):
-    #     assert self.ptr is not None
-    #     return llama_cpp.llama_model_apply_lora_from_file(
-    #         self.ptr,
-    #         lora_path.encode("utf-8"),
-    #         scale,
-    #         (
-    #             path_base_model.encode("utf-8")
-    #             if path_base_model is not None
-    #             else ctypes.c_char_p(0)
-    #         ),
-    #         n_threads,
-    #     )
-
     # Vocab
 
     def token_get_text(self, token: int) -> str:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_get_text(self.ptr, token).decode("utf-8")
 
     def token_get_score(self, token: int) -> float:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_get_score(self.ptr, token)
 
     def token_get_attr(self, token: int) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_get_attr(self.ptr, token)
 
     # Special tokens
 
     def token_bos(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_bos(self.ptr)
 
     def token_eos(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_eos(self.ptr)
 
     def token_cls(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_cls(self.ptr)
 
     def token_sep(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_sep(self.ptr)
 
     def token_nl(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_nl(self.ptr)
 
     def token_prefix(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_prefix(self.ptr)
 
     def token_middle(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_middle(self.ptr)
 
     def token_suffix(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_suffix(self.ptr)
 
     def token_eot(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_token_eot(self.ptr)
 
     def add_bos_token(self) -> bool:
-        assert self.ptr is not NULL
         return llama_cpp.llama_add_bos_token(self.ptr)
 
     def add_eos_token(self) -> bool:
-        assert self.ptr is not NULL
         return llama_cpp.llama_add_eos_token(self.ptr)
 
     # Tokenization
 
     def tokenize(self, text: bytes, add_bos: bool, special: bool) -> list[int]:
-        assert self.ptr is not NULL
         cdef int n_ctx = self.n_ctx_train()
         cdef vector[llama_cpp.llama_token] tokens
         tokens.reserve(n_ctx)
@@ -1836,70 +1769,55 @@ cdef class LlamaContext:
         self.__dealloc__()
 
     def n_ctx(self) -> int:
-        assert self.ptr is not NULL
         return llama_cpp.llama_n_ctx(self.ptr)
 
-    # FIXME: name collision
-    # def pooling_type(self) -> int:
-    #     assert self.ptr is not NULL
-    #     return llama_cpp.llama_pooling_type(self.ptr)
+    def pooling_type(self) -> int:
+        return llama_cpp.get_llama_pooling_type(self.ptr)
 
     def kv_cache_clear(self):
-        assert self.ptr is not NULL
         llama_cpp.llama_kv_cache_clear(self.ptr)
 
     def kv_cache_seq_rm(self, seq_id: int, p0: int, p1: int):
-        assert self.ptr is not NULL
         llama_cpp.llama_kv_cache_seq_rm(self.ptr, seq_id, p0, p1)
 
     def kv_cache_seq_cp(self, seq_id_src: int, seq_id_dst: int, p0: int, p1: int):
-        assert self.ptr is not NULL
         llama_cpp.llama_kv_cache_seq_cp(self.ptr, seq_id_src, seq_id_dst, p0, p1)
 
     def kv_cache_seq_keep(self, seq_id: int):
-        assert self.ptr is not NULL
         llama_cpp.llama_kv_cache_seq_keep(self.ptr, seq_id)
 
     def kv_cache_seq_shift(self, seq_id: int, p0: int, p1: int, shift: int):
-        assert self.ptr is not NULL
         llama_cpp.llama_kv_cache_seq_add(self.ptr, seq_id, p0, p1, shift)
 
-    # def get_state_size(self) -> int:
-    #     assert self.ptr is not NULL
-    #     return llama_cpp.llama_get_state_size(self.ptr)
+    def get_state_size(self) -> int:
+        return llama_cpp.llama_state_get_size(self.ptr)
 
-    # # TODO: copy_state_data
+    # TODO: copy_state_data
 
-    # # TODO: set_state_data
+    # TODO: set_state_data
 
-    # # TODO: llama_load_session_file
+    # TODO: llama_load_session_file
 
-    # # TODO: llama_save_session_file
+    # TODO: llama_save_session_file
 
-    # def decode(self, batch: "LlamaBatch"):
-    #     assert self.ptr is not None
-    #     assert batch.ptr is not None
-    #     return_code = llama_cpp.llama_decode(
-    #         self.ptr,
-    #         batch.ptr,
-    #     )
-    #     if return_code != 0:
-    #         raise RuntimeError(f"llama_decode returned {return_code}")
+    def decode(self, LlamaBatch batch):
+        return_code = llama_cpp.llama_decode(
+            self.ptr,
+            batch.p,
+        )
+        if return_code != 0:
+            raise RuntimeError(f"llama_decode returned {return_code}")
 
     def set_n_threads(self, n_threads: int, n_threads_batch: int):
-        assert self.ptr is not NULL
         llama_cpp.llama_set_n_threads(self.ptr, n_threads, n_threads_batch)
 
     # def get_logits(self):
-    #     assert self.ptr is not NULL
     #     return llama_cpp.llama_get_logits(self.ptr)
 
     # def get_logits_ith(self, i: int):
-    #     assert self.ptr is not NULL
     #     return llama_cpp.llama_get_logits_ith(self.ptr, i)
 
     # def get_embeddings(self):
-    #     assert self.ptr is not NULL
     #     return llama_cpp.llama_get_embeddings(self.ptr)
 
     # Sampling functions
@@ -2109,7 +2027,7 @@ cdef class LlamaBatch:
 
 
 # FIXME: convert to buffer protocol or memoryview
-# class LlamaTokenDataArray:
+# cdef class LlamaTokenDataArray:
 #     """Intermediate Python wrapper for a llama.cpp llama_batch."""
 #     cdef llama_cpp.llama_token_data_array * candidates
 #     cdef public int n_vocab
@@ -2167,9 +2085,6 @@ def llama_sampler_chain_default_params() -> SamplerChainParams:
 
 def llama_tokenize(LlamaContext ctx, str text, bint add_special, bint parse_special = False):
     return llama_cpp.llama_tokenize(ctx.ptr, text.encode(), add_special, parse_special)
-
-# def llama_tokenize(LlamaModel model, str text, bint add_special, bint parse_special = False):
-#     return llama_cpp.llama_tokenize(model.ptr, text.encode(), add_special, parse_special)
 
 def llama_n_ctx(LlamaContext ctx) -> int:
     return llama_cpp.llama_n_ctx(ctx.ptr)
