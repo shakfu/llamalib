@@ -1,3 +1,5 @@
+# distutils: language = c++
+
 cdef extern from *:
     """
     typedef struct _cpu_params {
@@ -9,6 +11,14 @@ cdef extern from *:
         cpu_params cpuparams;
     } app_params;
 
+    float add(float x, float y) {
+        return x + y;
+    }
+
+    int add(int x, int y) {
+        return x + y;
+    }
+
     """
 
     ctypedef struct cpu_params:
@@ -17,6 +27,9 @@ cdef extern from *:
     ctypedef struct app_params:
         int param1
         cpu_params cpuparams
+
+    cdef float add(float x, float y)
+    cdef int add(int x, int y)
 
 
 # --------------------------------------------------
@@ -104,6 +117,14 @@ cdef class AppParams:
 
     def get_n_threads(self): # test that it works
         return self.params.cpuparams.n_threads
+
+
+def plus_float(float x, float y) -> float:
+    return add(<float>x, <float>y)
+
+def plus_int(int x, int y) -> int:
+    return add(<int>x, <int>y)
+
 
 def factory():
     cdef app_params _ap

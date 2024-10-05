@@ -2084,12 +2084,17 @@ def llama_sampler_chain_default_params() -> SamplerChainParams:
     return SamplerChainParams()
 
 def llama_tokenize(LlamaContext ctx, str text, bint add_special, bint parse_special = False):
-    return llama_cpp.llama_tokenize(ctx.ptr, text.encode(), add_special, parse_special)
+    return llama_cpp.llama_tokenize(<const llama_cpp.llama_context *>ctx.ptr, <string>text.encode(), add_special, parse_special)
+
+def llama_tokenize_from_model(LlamaModel model, str text, bint add_special, bint parse_special = False):
+    return llama_cpp.llama_tokenize(<const llama_cpp.llama_model *>model.ptr, <string>text.encode(), add_special, parse_special)
 
 def llama_n_ctx(LlamaContext ctx) -> int:
     return llama_cpp.llama_n_ctx(ctx.ptr)
 
+# FIXME: fix llama_token_to_piece overload ambiguity
 def llama_token_to_piece(LlamaContext ctx, int token, bint special = True) -> str:
+    # return llama_cpp.llama_token_to_piece(<const llama_cpp.llama_context *>ctx.ptr, <llama_cpp.llama_token>token, <bint>special).decode()
     return llama_cpp.llama_token_to_piece2(ctx.ptr, token, special).decode()
 
 def llama_batch_add(LlamaBatch batch, llama_cpp.llama_token id, llama_cpp.llama_pos pos, list[int] seq_ids, bint logits):

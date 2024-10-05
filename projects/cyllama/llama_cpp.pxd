@@ -1584,12 +1584,70 @@ cdef extern from "common.h":
 
     cdef std_vector[llama_token] llama_tokenize(const llama_context * ctx, const std_string & text, bint add_special, bint parse_special)
 
-    # cdef std_vector[llama_token] llama_tokenize(const llama_model * model, const std_string & text, bint add_special, bint parse_special)
+    cdef std_vector[llama_token] llama_tokenize(const llama_model * model, const std_string & text, bint add_special, bint parse_special)
 
     # tokenizes a token into a piece, optionally renders special/control tokens
     # should work similar to Python's `tokenizer.id_to_piece`
 
+    # tokenizes a token into a piece, optionally renders special/control tokens
+    # should work similar to Python's `tokenizer.id_to_piece`
+    # cdef std_string llama_token_to_piece(const llama_context * ctx, llama_token token, bint special)
     cdef std_string llama_token_to_piece2 "llama_token_to_piece" (const llama_context * ctx, llama_token token, bint special)
+
+    # detokenizes a vector of tokens into a string
+    # should work similar to Python's `tokenizer.decode`
+    # optionally renders special/control tokens
+    cdef std_string llama_detokenize(llama_context * ctx, const std_vector[llama_token] & tokens, bint special)
+
+    # Chat template utils
+
+    # same with llama_chat_message, but uses std::string
+    ctypedef struct llama_chat_msg:
+        std_string role
+        std_string content
+
+    # Check if the template supplied via "--chat-template" is supported or not. Returns true if it's valid
+    cdef bint llama_chat_verify_template(const std_string & tmpl)
+
+    # CPP wrapper for llama_chat_apply_template
+    # If the built-in template is not supported, we default to chatml
+    # If the custom "tmpl" is not supported, we throw an error
+    cdef std_string llama_chat_apply_template(const llama_model * model, const std_string & tmpl, const std_vector[llama_chat_msg] & chat, bint add_ass)
+
+    # Format single message, while taking into account the position of that message in chat history
+    cdef std_string llama_chat_format_single(const llama_model * model, const std_string & tmpl, const std_vector[llama_chat_msg] & past_msg, const llama_chat_msg & new_msg, bint add_ass)
+
+    # # Returns an example of formatted chat
+    cdef std_string llama_chat_format_example(const llama_model * model, const std_string & tmpl)
+
+    # KV cache utils
+
+    # # Dump the KV cache view with the number of sequences per cell.
+    cdef void llama_kv_cache_dump_view(const llama_kv_cache_view & view, int row_size)
+
+    # # Dump the KV cache view showing individual sequences in each cell (long output).
+    cdef void llama_kv_cache_dump_view_seqs(const llama_kv_cache_view & view, int row_size)
+
+    # Embedding utils
+
+    cdef void llama_embd_normalize(const float * inp, float * out, int n, int embd_norm)
+    cdef float llama_embd_similarity_cos(const float * embd1, const float * embd2, int n)
+
+    # Control vector utils
+
+    ctypedef struct llama_control_vector_data:
+        int n_embd
+        # stores data for layers [1, n_layer] where n_layer = data.size() / n_embd
+        std_vector[float] data
+
+    ctypedef struct llama_control_vector_load_info:
+        float strength
+        std_string fname
+
+    # Load control vectors, scale each by strength, and add them together.
+    # On error, returns {-1, empty}
+    cdef llama_control_vector_data llama_control_vector_load(const std_vector[llama_control_vector_load_info] & load_infos)
+
 
 
 #------------------------------------------------------------------------------

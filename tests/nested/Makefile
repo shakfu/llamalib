@@ -7,7 +7,7 @@ build:
 	@python3 setup.py build_ext --inplace
 
 clean:
-	@rm -rf build demo.c
+	@rm -rf build demo.cpp
 
 reset: clean
 	@rm -f *.so
