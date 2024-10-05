@@ -215,56 +215,6 @@ cdef extern from "ggml-backend.h":
     ctypedef bint (*ggml_backend_sched_eval_callback)(ggml_tensor * t, bint ask, void * user_data)
 
 
-#------------------------------------------------------------------------------
-
-cdef extern from "sampling.h":
-
-    ctypedef enum gpt_sampler_type:
-        GPT_SAMPLER_TYPE_NONE        = 0
-        GPT_SAMPLER_TYPE_TOP_K       = 1
-        GPT_SAMPLER_TYPE_TOP_P       = 2
-        GPT_SAMPLER_TYPE_MIN_P       = 3
-        GPT_SAMPLER_TYPE_TFS_Z       = 4
-        GPT_SAMPLER_TYPE_TYPICAL_P   = 5
-        GPT_SAMPLER_TYPE_TEMPERATURE = 6
-
-
-    # sampling parameters
-    ctypedef struct gpt_sampler_params:
-        uint32_t seed   ; # the seed used to initialize llama_sampler
-
-        int32_t n_prev                 # number of previous tokens to remember
-        int32_t n_probs                # if greater than 0, output the probabilities of top n_probs tokens.
-        int32_t min_keep               # 0 = disabled, otherwise samplers should return at least min_keep tokens
-        int32_t top_k                  # <= 0 to use vocab size
-        float   top_p                  # 1.0 = disabled
-        float   min_p                  # 0.0 = disabled
-        float   tfs_z                  # 1.0 = disabled
-        float   typ_p                  # typical_p, 1.0 = disabled
-        float   temp                   # <= 0.0 to sample greedily, 0.0 to not output probabilities
-        float   dynatemp_range         # 0.0 = disabled
-        float   dynatemp_exponent      # controls how entropy maps to temperature in dynamic temperature sampler
-        int32_t penalty_last_n         # last n tokens to penalize (0 = disable penalty, -1 = context size)
-        float   penalty_repeat         # 1.0 = disabled
-        float   penalty_freq           # 0.0 = disabled
-        float   penalty_present        # 0.0 = disabled
-        int32_t mirostat               # 0 = disabled, 1 = mirostat, 2 = mirostat 2.0
-        float   mirostat_tau           # target entropy
-        float   mirostat_eta           # learning rate
-        bint    penalize_nl             # consider newlines as a repeatable token
-        bint    ignore_eos
-
-        std_vector[gpt_sampler_type] samplers
-
-        std_string grammar # optional BNF-like grammar to constrain sampling
-
-        std_vector[llama_logit_bias] logit_bias # logit biases to apply
-
-        # print the parameters into a string
-        # std_string print() const
-
-
-
 
 #------------------------------------------------------------------------------
 
@@ -1310,6 +1260,24 @@ cdef extern from "llama.h":
 
 cdef extern from "common.h":
 
+    ctypedef struct llama_lora_adapter_info:
+        std_string path
+        float scale
+
+    ctypedef struct llama_lora_adapter_container: #llama_lora_adapter_info {
+        llama_lora_adapter * adapter
+
+    # cdef int GGML_MAX_N_THREADS = 512
+    DEF GGML_MAX_N_THREADS = 512
+
+    ctypedef struct cpu_params:
+        int      n_threads
+        bint     cpumask[512] # CPU affinity mask.
+        bint     mask_valid                  # Default: any CPU
+        ggml_sched_priority  priority        # Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)
+        bint     strict_cpu                  # Use strict CPU placement
+        uint32_t poll                        # Polling (busywait) level (0 - no polling, 100 - mostly polling)
+
     ctypedef enum llama_example:
         LLAMA_EXAMPLE_COMMON
         LLAMA_EXAMPLE_SPECULATIVE
@@ -1327,15 +1295,51 @@ cdef extern from "common.h":
         LLAMA_EXAMPLE_LLAVA
         LLAMA_EXAMPLE_COUNT
 
-    cdef int GGML_MAX_N_THREADS = 512
+    ctypedef enum gpt_sampler_type:
+        GPT_SAMPLER_TYPE_NONE
+        GPT_SAMPLER_TYPE_TOP_K
+        GPT_SAMPLER_TYPE_TOP_P
+        GPT_SAMPLER_TYPE_MIN_P
+        GPT_SAMPLER_TYPE_TFS_Z
+        GPT_SAMPLER_TYPE_TYPICAL_P
+        GPT_SAMPLER_TYPE_TEMPERATURE
 
-    ctypedef struct cpu_params:
-        int      n_threads
-        bint     cpumask[512] # CPU affinity mask.
-        bint     mask_valid                  # Default: any CPU
-        ggml_sched_priority  priority        # Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)
-        bint     strict_cpu                  # Use strict CPU placement
-        uint32_t poll                        # Polling (busywait) level (0 - no polling, 100 - mostly polling)
+    ctypedef enum dimre_method:
+        DIMRE_METHOD_PCA
+        DIMRE_METHOD_MEAN
+
+    ctypedef struct gpt_sampler_params:
+        uint32_t seed   ; # the seed used to initialize llama_sampler
+
+        int32_t n_prev                 # number of previous tokens to remember
+        int32_t n_probs                # if greater than 0, output the probabilities of top n_probs tokens.
+        int32_t min_keep               # 0 = disabled, otherwise samplers should return at least min_keep tokens
+        int32_t top_k                  # <= 0 to use vocab size
+        float   top_p                  # 1.0 = disabled
+        float   min_p                  # 0.0 = disabled
+        float   tfs_z                  # 1.0 = disabled
+        float   typ_p                  # typical_p, 1.0 = disabled
+        float   temp                   # <= 0.0 to sample greedily, 0.0 to not output probabilities
+        float   dynatemp_range         # 0.0 = disabled
+        float   dynatemp_exponent      # controls how entropy maps to temperature in dynamic temperature sampler
+        int32_t penalty_last_n         # last n tokens to penalize (0 = disable penalty, -1 = context size)
+        float   penalty_repeat         # 1.0 = disabled
+        float   penalty_freq           # 0.0 = disabled
+        float   penalty_present        # 0.0 = disabled
+        int32_t mirostat               # 0 = disabled, 1 = mirostat, 2 = mirostat 2.0
+        float   mirostat_tau           # target entropy
+        float   mirostat_eta           # learning rate
+        bint    penalize_nl             # consider newlines as a repeatable token
+        bint    ignore_eos
+
+        std_vector[gpt_sampler_type] samplers
+
+        std_string grammar # optional BNF-like grammar to constrain sampling
+
+        std_vector[llama_logit_bias] logit_bias # logit biases to apply
+
+        # print the parameters into a string
+        # std_string print() const
 
     ctypedef struct gpt_params:
         llama_example curr_ex
@@ -1541,18 +1545,42 @@ cdef extern from "common.h":
         # batched-bench params
         bint batched_bench_output_jsonl
 
-    ctypedef struct llama_arg:
-        std_set[llama_example] examples
-        std_vector[const char *] args
-        const char * value_hint   # help text or example for arg value
-        const char * value_hint_2 # for second arg value
-        const char * env         
+    cdef void gpt_init()
 
-    cdef std_vector[llama_arg] gpt_params_parser_init(gpt_params & params, llama_example ex)
+    cdef std_string gpt_params_get_system_info(const gpt_params & params)
+
+    cdef bint parse_cpu_range(const std_string& range, bint(&bintmask)[GGML_MAX_N_THREADS])
+    cdef bint parse_cpu_mask(const std_string& mask, bint(&bintmask)[GGML_MAX_N_THREADS])
+    cdef void postprocess_cpu_params(cpu_params& cpuparams, const cpu_params* role_model)
+    cdef bint set_process_priority(ggml_sched_priority prio)
+
+    # Model utils
+
+    ctypedef struct llama_init_result:
+        llama_model   * model
+        llama_context * context
+        std_vector[llama_lora_adapter_container] lora_adapters
+
+
+    cdef llama_init_result llama_init_from_gpt_params(gpt_params & params)
 
     cdef llama_model_params llama_model_params_from_gpt_params(const gpt_params & params)
-
     cdef llama_context_params llama_context_params_from_gpt_params(const gpt_params & params)
+    # struct ggml_threadpool_params ggml_threadpool_params_from_cpu_params(const cpu_params & params);
+    
+    # struct llama_model * llama_load_model_from_url(const char * model_url, const char * path_model, const char * hf_token, const struct llama_model_params & params);
+    # struct llama_model * llama_load_model_from_hf(const char * repo, const char * file, const char * path_model, const char * hf_token, const struct llama_model_params & params);
+
+    # clear LoRA adapters from context, then apply new list of adapters
+    # void llama_lora_adapters_apply(struct llama_context * ctx, std::vector<llama_lora_adapter_container> & lora_adapters);
+
+    # Batch utils
+
+    cdef void llama_batch_add(llama_batch & batch, llama_token id, llama_pos pos, const std_vector[llama_seq_id] & seq_ids, bint logits)
+
+    cdef void llama_batch_clear(llama_batch & batch)
+
+    # Vocab utils
 
     cdef std_vector[llama_token] llama_tokenize(const llama_context * ctx, const std_string & text, bint add_special, bint parse_special)
 
@@ -1563,13 +1591,19 @@ cdef extern from "common.h":
 
     cdef std_string llama_token_to_piece2 "llama_token_to_piece" (const llama_context * ctx, llama_token token, bint special)
 
-    cdef void llama_batch_add(llama_batch & batch, llama_token id, llama_pos pos, const std_vector[llama_seq_id] & seq_ids, bint logits)
-
-    cdef void llama_batch_clear(llama_batch & batch)
 
 #------------------------------------------------------------------------------
 
-cdef extern from "arg.h":
+cdef extern from "sampling.h": # optional llama_sampler extensions
+    ctypedef struct gpt_sampler # opaque
+
+    cdef gpt_sampler * gpt_sampler_init(const llama_model * model, const gpt_sampler_params & params)
+    # ..
+
+
+#------------------------------------------------------------------------------
+
+cdef extern from "arg.h":      
 
     ctypedef struct llama_arg:
         std_set[llama_example] examples
@@ -1596,7 +1630,6 @@ cdef extern from "arg.h":
 
     # function to be used by test-arg-parser
     cdef gpt_params_context gpt_params_parser_init(gpt_params & params, llama_example ex, void(*print_usage)(int, char **))
-
 
 #------------------------------------------------------------------------------
 
