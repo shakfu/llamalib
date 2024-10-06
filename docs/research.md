@@ -177,6 +177,8 @@ see also:
 
 ## Inference Engines
 
+- [llama.cpp](https://github.com/ggerganov/llama.cpp?tab=readme-ov-file) - LLM inference in C/C++
+
 - [vllm](https://github.com/vllm-project/vllm) - A high-throughput and memory-efficient inference and serving engine for LLMs (python + c++)
 
 - [text-generation-inference](https://github.com/huggingface/text-generation-inference) - Large Language Model Text Generation Inference by Huggingface (python + rust) for a comparison between vllm and tgi see [this article](https://medium.com/@rohit.k/tgi-vs-vllm-making-informed-choices-for-llm-deployment-37c56d7ff705)
@@ -184,6 +186,14 @@ see also:
 - [localAI](https://github.com/mudler/LocalAI) - The free, Open Source alternative to OpenAI, Claude and others. Self-hosted and local-first. Drop-in replacement for OpenAI, running on consumer-grade hardware. No GPU required. Runs gguf, transformers, diffusers and many more models architectures. Features: Generate Text, Audio, Video, Images, Voice Cloning, Distributed inference
 
 - [mlx](https://github.com/ml-explore/mlx) and [mlx-lm](https://github.com/ml-explore/mlx-examples/tree/main/llms) - Apple Silicon friendly tensor library and llm inference engine respectively.
+
+- [exllama](https://github.com/turboderp/exllama) - A more memory-efficient rewrite of the HF transformers implementation of Llama for use with quantized weights.
+
+- [exllamav2](https://github.com/turboderp/exllamav2) - A fast inference library for running LLMs locally on modern consumer-class GPUs
+
+- [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp) - Stable Diffusion and Flux in pure C/C++
+
+- [stable-diffusion-cpp-python](https://github.com/william-murray1204/stable-diffusion-cpp-python) - ctypes-based stable-diffusion.cpp bindings for python
 
 ## Prompt Engineering
 
