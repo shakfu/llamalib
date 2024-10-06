@@ -9,9 +9,13 @@
 
 namespace nb = nanobind;
 
+// forward declarations
 struct llama_model {};
 struct llama_context {};
 struct llama_lora_adapter {};
+struct ggml_threadpool {};
+
+// ggml > ggml-backend > llama > common > sampling > arg > llamalib
 
 
 NB_MODULE(nbllama, m) {
@@ -50,9 +54,530 @@ NB_MODULE(nbllama, m) {
 
     m.def("ggml_time_us", (int64_t (*)(void)) &ggml_time_us);
 
-    // -----------------------------------------------------------------------
-    // sampling.h
 
+    // -----------------------------------------------------------------------
+    // llama.h
+    
+    nb::class_<llama_model> (m, "llama_model", "")
+        .def(nb::init<>());
+
+    nb::class_<llama_context> (m, "llama_context", "")
+        .def(nb::init<>());
+
+    nb::class_<llama_lora_adapter> (m, "llama_lora_adapter", "")
+        .def(nb::init<>());
+
+
+    nb::enum_<enum llama_vocab_type>(m, "llama_vocab_type")
+        .value("LLAMA_VOCAB_TYPE_NONE", LLAMA_VOCAB_TYPE_NONE)
+        .value("LLAMA_VOCAB_TYPE_SPM", LLAMA_VOCAB_TYPE_SPM)
+        .value("LLAMA_VOCAB_TYPE_BPE", LLAMA_VOCAB_TYPE_BPE)
+        .value("LLAMA_VOCAB_TYPE_WPM", LLAMA_VOCAB_TYPE_WPM)
+        .value("LLAMA_VOCAB_TYPE_UGM", LLAMA_VOCAB_TYPE_UGM)
+        .value("LLAMA_VOCAB_TYPE_RWKV", LLAMA_VOCAB_TYPE_RWKV)
+        .export_values();
+
+    nb::enum_<enum llama_vocab_pre_type>(m, "llama_vocab_pre_type")
+        .value("LLAMA_VOCAB_PRE_TYPE_DEFAULT", LLAMA_VOCAB_PRE_TYPE_DEFAULT)
+        .value("LLAMA_VOCAB_PRE_TYPE_LLAMA3", LLAMA_VOCAB_PRE_TYPE_LLAMA3)
+        .value("LLAMA_VOCAB_PRE_TYPE_DEEPSEEK_LLM", LLAMA_VOCAB_PRE_TYPE_DEEPSEEK_LLM)
+        .value("LLAMA_VOCAB_PRE_TYPE_DEEPSEEK_CODER", LLAMA_VOCAB_PRE_TYPE_DEEPSEEK_CODER)
+        .value("LLAMA_VOCAB_PRE_TYPE_FALCON", LLAMA_VOCAB_PRE_TYPE_FALCON)
+        .value("LLAMA_VOCAB_PRE_TYPE_MPT", LLAMA_VOCAB_PRE_TYPE_MPT)
+        .value("LLAMA_VOCAB_PRE_TYPE_STARCODER", LLAMA_VOCAB_PRE_TYPE_STARCODER)
+        .value("LLAMA_VOCAB_PRE_TYPE_GPT2", LLAMA_VOCAB_PRE_TYPE_GPT2)
+        .value("LLAMA_VOCAB_PRE_TYPE_REFACT", LLAMA_VOCAB_PRE_TYPE_REFACT)
+        .value("LLAMA_VOCAB_PRE_TYPE_COMMAND_R", LLAMA_VOCAB_PRE_TYPE_COMMAND_R)
+        .value("LLAMA_VOCAB_PRE_TYPE_STABLELM2", LLAMA_VOCAB_PRE_TYPE_STABLELM2)
+        .value("LLAMA_VOCAB_PRE_TYPE_QWEN2", LLAMA_VOCAB_PRE_TYPE_QWEN2)
+        .value("LLAMA_VOCAB_PRE_TYPE_OLMO", LLAMA_VOCAB_PRE_TYPE_OLMO)
+        .value("LLAMA_VOCAB_PRE_TYPE_DBRX", LLAMA_VOCAB_PRE_TYPE_DBRX)
+        .value("LLAMA_VOCAB_PRE_TYPE_SMAUG", LLAMA_VOCAB_PRE_TYPE_SMAUG)
+        .value("LLAMA_VOCAB_PRE_TYPE_PORO", LLAMA_VOCAB_PRE_TYPE_PORO)
+        .value("LLAMA_VOCAB_PRE_TYPE_CHATGLM3", LLAMA_VOCAB_PRE_TYPE_CHATGLM3)
+        .value("LLAMA_VOCAB_PRE_TYPE_CHATGLM4", LLAMA_VOCAB_PRE_TYPE_CHATGLM4)
+        .value("LLAMA_VOCAB_PRE_TYPE_VIKING", LLAMA_VOCAB_PRE_TYPE_VIKING)
+        .value("LLAMA_VOCAB_PRE_TYPE_JAIS", LLAMA_VOCAB_PRE_TYPE_JAIS)
+        .value("LLAMA_VOCAB_PRE_TYPE_TEKKEN", LLAMA_VOCAB_PRE_TYPE_TEKKEN)
+        .value("LLAMA_VOCAB_PRE_TYPE_SMOLLM", LLAMA_VOCAB_PRE_TYPE_SMOLLM)
+        .value("LLAMA_VOCAB_PRE_TYPE_CODESHELL", LLAMA_VOCAB_PRE_TYPE_CODESHELL)
+        .value("LLAMA_VOCAB_PRE_TYPE_BLOOM", LLAMA_VOCAB_PRE_TYPE_BLOOM)
+        .value("LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH", LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH)
+        .value("LLAMA_VOCAB_PRE_TYPE_EXAONE", LLAMA_VOCAB_PRE_TYPE_EXAONE)
+        .value("LLAMA_VOCAB_PRE_TYPE_CHAMELEON", LLAMA_VOCAB_PRE_TYPE_CHAMELEON)
+        .export_values();
+
+    nb::enum_<enum llama_rope_type>(m, "llama_rope_type")
+        .value("LLAMA_ROPE_TYPE_NONE", LLAMA_ROPE_TYPE_NONE)
+        .value("LLAMA_ROPE_TYPE_NORM", LLAMA_ROPE_TYPE_NORM)
+        .value("LLAMA_ROPE_TYPE_NEOX", LLAMA_ROPE_TYPE_NEOX)
+        .export_values();
+
+    nb::enum_<enum llama_token_type>(m, "llama_token_type")
+        .value("LLAMA_TOKEN_TYPE_UNDEFINED", LLAMA_TOKEN_TYPE_UNDEFINED)
+        .value("LLAMA_TOKEN_TYPE_NORMAL", LLAMA_TOKEN_TYPE_NORMAL)
+        .value("LLAMA_TOKEN_TYPE_UNKNOWN", LLAMA_TOKEN_TYPE_UNKNOWN)
+        .value("LLAMA_TOKEN_TYPE_CONTROL", LLAMA_TOKEN_TYPE_CONTROL)
+        .value("LLAMA_TOKEN_TYPE_USER_DEFINED", LLAMA_TOKEN_TYPE_USER_DEFINED)
+        .value("LLAMA_TOKEN_TYPE_UNUSED", LLAMA_TOKEN_TYPE_UNUSED)
+        .value("LLAMA_TOKEN_TYPE_BYTE", LLAMA_TOKEN_TYPE_BYTE)
+        .export_values();
+
+    nb::enum_<enum llama_token_attr>(m, "llama_token_attr")
+        .value("LLAMA_TOKEN_ATTR_UNDEFINED", LLAMA_TOKEN_ATTR_UNDEFINED)
+        .value("LLAMA_TOKEN_ATTR_UNKNOWN", LLAMA_TOKEN_ATTR_UNKNOWN)
+        .value("LLAMA_TOKEN_ATTR_UNUSED", LLAMA_TOKEN_ATTR_UNUSED)
+        .value("LLAMA_TOKEN_ATTR_NORMAL", LLAMA_TOKEN_ATTR_NORMAL)
+        .value("LLAMA_TOKEN_ATTR_CONTROL", LLAMA_TOKEN_ATTR_CONTROL)
+        .value("LLAMA_TOKEN_ATTR_USER_DEFINED", LLAMA_TOKEN_ATTR_USER_DEFINED)
+        .value("LLAMA_TOKEN_ATTR_BYTE", LLAMA_TOKEN_ATTR_BYTE)
+        .value("LLAMA_TOKEN_ATTR_NORMALIZED", LLAMA_TOKEN_ATTR_NORMALIZED)
+        .value("LLAMA_TOKEN_ATTR_LSTRIP", LLAMA_TOKEN_ATTR_LSTRIP)
+        .value("LLAMA_TOKEN_ATTR_RSTRIP", LLAMA_TOKEN_ATTR_RSTRIP)
+        .value("LLAMA_TOKEN_ATTR_SINGLE_WORD", LLAMA_TOKEN_ATTR_SINGLE_WORD)
+        .export_values();
+
+    nb::enum_<enum llama_ftype>(m, "llama_ftype")
+        .value("LLAMA_FTYPE_ALL_F32", LLAMA_FTYPE_ALL_F32)
+        .value("LLAMA_FTYPE_MOSTLY_F16", LLAMA_FTYPE_MOSTLY_F16)
+        .value("LLAMA_FTYPE_MOSTLY_Q4_0", LLAMA_FTYPE_MOSTLY_Q4_0)
+        .value("LLAMA_FTYPE_MOSTLY_Q4_1", LLAMA_FTYPE_MOSTLY_Q4_1)
+        .value("LLAMA_FTYPE_MOSTLY_Q8_0", LLAMA_FTYPE_MOSTLY_Q8_0)
+        .value("LLAMA_FTYPE_MOSTLY_Q5_0", LLAMA_FTYPE_MOSTLY_Q5_0)
+        .value("LLAMA_FTYPE_MOSTLY_Q5_1", LLAMA_FTYPE_MOSTLY_Q5_1)
+        .value("LLAMA_FTYPE_MOSTLY_Q2_K", LLAMA_FTYPE_MOSTLY_Q2_K)
+        .value("LLAMA_FTYPE_MOSTLY_Q3_K_S", LLAMA_FTYPE_MOSTLY_Q3_K_S)
+        .value("LLAMA_FTYPE_MOSTLY_Q3_K_M", LLAMA_FTYPE_MOSTLY_Q3_K_M)
+        .value("LLAMA_FTYPE_MOSTLY_Q3_K_L", LLAMA_FTYPE_MOSTLY_Q3_K_L)
+        .value("LLAMA_FTYPE_MOSTLY_Q4_K_S", LLAMA_FTYPE_MOSTLY_Q4_K_S)
+        .value("LLAMA_FTYPE_MOSTLY_Q4_K_M", LLAMA_FTYPE_MOSTLY_Q4_K_M)
+        .value("LLAMA_FTYPE_MOSTLY_Q5_K_S", LLAMA_FTYPE_MOSTLY_Q5_K_S)
+        .value("LLAMA_FTYPE_MOSTLY_Q5_K_M", LLAMA_FTYPE_MOSTLY_Q5_K_M)
+        .value("LLAMA_FTYPE_MOSTLY_Q6_K", LLAMA_FTYPE_MOSTLY_Q6_K)
+        .value("LLAMA_FTYPE_MOSTLY_IQ2_XXS", LLAMA_FTYPE_MOSTLY_IQ2_XXS)
+        .value("LLAMA_FTYPE_MOSTLY_IQ2_XS", LLAMA_FTYPE_MOSTLY_IQ2_XS)
+        .value("LLAMA_FTYPE_MOSTLY_Q2_K_S", LLAMA_FTYPE_MOSTLY_Q2_K_S)
+        .value("LLAMA_FTYPE_MOSTLY_IQ3_XS", LLAMA_FTYPE_MOSTLY_IQ3_XS)
+        .value("LLAMA_FTYPE_MOSTLY_IQ3_XXS", LLAMA_FTYPE_MOSTLY_IQ3_XXS)
+        .value("LLAMA_FTYPE_MOSTLY_IQ1_S", LLAMA_FTYPE_MOSTLY_IQ1_S)
+        .value("LLAMA_FTYPE_MOSTLY_IQ4_NL", LLAMA_FTYPE_MOSTLY_IQ4_NL)
+        .value("LLAMA_FTYPE_MOSTLY_IQ3_S", LLAMA_FTYPE_MOSTLY_IQ3_S)
+        .value("LLAMA_FTYPE_MOSTLY_IQ3_M", LLAMA_FTYPE_MOSTLY_IQ3_M)
+        .value("LLAMA_FTYPE_MOSTLY_IQ2_S", LLAMA_FTYPE_MOSTLY_IQ2_S)
+        .value("LLAMA_FTYPE_MOSTLY_IQ2_M", LLAMA_FTYPE_MOSTLY_IQ2_M)
+        .value("LLAMA_FTYPE_MOSTLY_IQ4_XS", LLAMA_FTYPE_MOSTLY_IQ4_XS)
+        .value("LLAMA_FTYPE_MOSTLY_IQ1_M", LLAMA_FTYPE_MOSTLY_IQ1_M)
+        .value("LLAMA_FTYPE_MOSTLY_BF16", LLAMA_FTYPE_MOSTLY_BF16)
+        .value("LLAMA_FTYPE_MOSTLY_Q4_0_4_4", LLAMA_FTYPE_MOSTLY_Q4_0_4_4)
+        .value("LLAMA_FTYPE_MOSTLY_Q4_0_4_8", LLAMA_FTYPE_MOSTLY_Q4_0_4_8)
+        .value("LLAMA_FTYPE_MOSTLY_Q4_0_8_8", LLAMA_FTYPE_MOSTLY_Q4_0_8_8)
+        .value("LLAMA_FTYPE_MOSTLY_TQ1_0", LLAMA_FTYPE_MOSTLY_TQ1_0)
+        .value("LLAMA_FTYPE_MOSTLY_TQ2_0", LLAMA_FTYPE_MOSTLY_TQ2_0)
+        .value("LLAMA_FTYPE_GUESSED", LLAMA_FTYPE_GUESSED)
+        .export_values();
+
+    nb::enum_<enum llama_rope_scaling_type>(m, "llama_rope_scaling_type")
+        .value("LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED", LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED)
+        .value("LLAMA_ROPE_SCALING_TYPE_NONE", LLAMA_ROPE_SCALING_TYPE_NONE)
+        .value("LLAMA_ROPE_SCALING_TYPE_LINEAR", LLAMA_ROPE_SCALING_TYPE_LINEAR)
+        .value("LLAMA_ROPE_SCALING_TYPE_YARN", LLAMA_ROPE_SCALING_TYPE_YARN)
+        .value("LLAMA_ROPE_SCALING_TYPE_MAX_VALUE", LLAMA_ROPE_SCALING_TYPE_MAX_VALUE)
+        .export_values();
+
+    nb::enum_<enum llama_pooling_type>(m, "llama_pooling_type")
+        .value("LLAMA_POOLING_TYPE_UNSPECIFIED", LLAMA_POOLING_TYPE_UNSPECIFIED)
+        .value("LLAMA_POOLING_TYPE_NONE", LLAMA_POOLING_TYPE_NONE)
+        .value("LLAMA_POOLING_TYPE_MEAN", LLAMA_POOLING_TYPE_MEAN)
+        .value("LLAMA_POOLING_TYPE_CLS", LLAMA_POOLING_TYPE_CLS)
+        .value("LLAMA_POOLING_TYPE_LAST", LLAMA_POOLING_TYPE_LAST)
+        .value("LLAMA_POOLING_TYPE_RANK", LLAMA_POOLING_TYPE_RANK)
+        .export_values();
+
+    nb::enum_<enum llama_attention_type>(m, "llama_attention_type")
+        .value("LLAMA_ATTENTION_TYPE_UNSPECIFIED", LLAMA_ATTENTION_TYPE_UNSPECIFIED)
+        .value("LLAMA_ATTENTION_TYPE_CAUSAL", LLAMA_ATTENTION_TYPE_CAUSAL)
+        .value("LLAMA_ATTENTION_TYPE_NON_CAUSAL", LLAMA_ATTENTION_TYPE_NON_CAUSAL)
+        .export_values();
+
+    nb::enum_<enum llama_split_mode>(m, "llama_split_mode")
+        .value("LLAMA_SPLIT_MODE_NONE", LLAMA_SPLIT_MODE_NONE)
+        .value("LLAMA_SPLIT_MODE_LAYER", LLAMA_SPLIT_MODE_LAYER)
+        .value("LLAMA_SPLIT_MODE_ROW", LLAMA_SPLIT_MODE_ROW)
+        .export_values();
+
+    nb::class_<llama_token_data>(m, "llama_token_data")
+        .def(nb::init<>())
+        .def(nb::init<llama_token,float,float>())
+        .def_rw("id", &llama_token_data::id)         // token id
+        .def_rw("logit", &llama_token_data::logit)   // log-odds of the token
+        .def_rw("p", &llama_token_data::p);          // probability of the token
+
+    nb::class_<llama_token_data_array> (m, "llama_token_data_array")
+        .def(nb::init<>())
+        .def_rw("size", &llama_token_data_array::size)
+        .def_rw("selected", &llama_token_data_array::selected)
+        .def_rw("sorted", &llama_token_data_array::sorted);
+        // llama_token  *  token;
+        // float        *  embd;
+        // llama_pos    *  pos;
+        // int32_t      *  n_seq_id;
+        // llama_seq_id ** seq_id;
+        // int8_t       *  logits; // TODO: rename this to "output"
+
+
+    nb::class_<llama_batch> (m, "llama_batch")
+        .def(nb::init<>())
+        .def_rw("n_tokens", &llama_batch::n_tokens)
+        // .def_rw("token", &llama_batch::token)
+        // .def_rw("embd", &llama_batch::embd)
+        // .def_rw("pos", &llama_batch::pos)
+        // .def_rw("n_seq_id", &llama_batch::n_seq_id)
+        // .def_rw("seq_id", &llama_batch::seq_id)
+        // FIXME: this is WRONG!!
+        .def("set_last_logits_to_true", [](llama_batch& self) {
+            self.logits[self.n_tokens - 1] = true;
+        })
+        // .def("get_logits", [](llama_batch& self) -> nb::ndarray<int8_t> {
+        //     return to_array<int8_t>(self.logits, self.n_tokens);
+        // })
+        .def_rw("all_pos_0", &llama_batch::all_pos_0)
+        .def_rw("all_pos_1", &llama_batch::all_pos_1)
+        .def_rw("all_seq_id", &llama_batch::all_seq_id);
+    
+    nb::enum_<enum llama_model_kv_override_type>(m, "llama_model_kv_override_type")
+        .value("LLAMA_KV_OVERRIDE_TYPE_INT", LLAMA_KV_OVERRIDE_TYPE_INT)
+        .value("LLAMA_KV_OVERRIDE_TYPE_FLOAT", LLAMA_KV_OVERRIDE_TYPE_FLOAT)
+        .value("LLAMA_KV_OVERRIDE_TYPE_BOOL", LLAMA_KV_OVERRIDE_TYPE_BOOL)
+        .value("LLAMA_KV_OVERRIDE_TYPE_STR", LLAMA_KV_OVERRIDE_TYPE_STR)
+        .export_values();
+
+    nb::class_<llama_model_kv_override> (m, "llama_model_kv_override")
+        .def(nb::init<>())
+        .def_rw("tag", &llama_model_kv_override::tag);
+        // ..
+    
+    nb::class_<llama_model_params> (m, "llama_model_params")
+        .def(nb::init<>())
+        .def_rw("n_gpu_layers", &llama_model_params::n_gpu_layers)
+        .def_rw("split_mode", &llama_model_params::split_mode)
+        .def_rw("main_gpu", &llama_model_params::main_gpu)
+        .def_rw("vocab_only", &llama_model_params::vocab_only)
+        .def_rw("use_mmap", &llama_model_params::use_mmap)
+        .def_rw("use_mlock", &llama_model_params::use_mlock)
+        .def_rw("check_tensors", &llama_model_params::check_tensors);
+    
+    nb::class_<llama_context_params> (m, "llama_context_params")
+        .def(nb::init<>())
+        .def_rw("n_ctx", &llama_context_params::n_ctx)
+        .def_rw("n_batch", &llama_context_params::n_batch)
+        .def_rw("n_ubatch", &llama_context_params::n_ubatch)
+        .def_rw("n_seq_max", &llama_context_params::n_seq_max)
+        .def_rw("n_threads", &llama_context_params::n_threads)
+        .def_rw("n_threads_batch", &llama_context_params::n_threads_batch)
+        .def_rw("rope_scaling_type", &llama_context_params::rope_scaling_type)
+        .def_rw("pooling_type", &llama_context_params::pooling_type)
+        .def_rw("attention_type", &llama_context_params::attention_type)
+        .def_rw("rope_freq_base", &llama_context_params::rope_freq_base)
+        .def_rw("rope_freq_scale", &llama_context_params::rope_freq_scale)
+        .def_rw("yarn_ext_factor", &llama_context_params::yarn_ext_factor)
+        .def_rw("yarn_attn_factor", &llama_context_params::yarn_attn_factor)
+        .def_rw("yarn_beta_fast", &llama_context_params::yarn_beta_fast)
+        .def_rw("yarn_beta_slow", &llama_context_params::yarn_beta_slow)
+        .def_rw("yarn_orig_ctx", &llama_context_params::yarn_orig_ctx)
+        .def_rw("defrag_thold", &llama_context_params::defrag_thold)
+        .def_rw("type_k", &llama_context_params::type_k)
+        .def_rw("type_v", &llama_context_params::type_v)
+        .def_rw("logits_all", &llama_context_params::logits_all)
+        .def_rw("embeddings", &llama_context_params::embeddings)
+        .def_rw("offload_kqv", &llama_context_params::offload_kqv)
+        .def_rw("flash_attn", &llama_context_params::flash_attn)
+        .def_rw("no_perf", &llama_context_params::no_perf);
+
+    nb::class_<llama_model_quantize_params> (m, "llama_model_quantize_params")
+        .def(nb::init<>())
+        .def_rw("nthread", &llama_model_quantize_params::nthread)
+        .def_rw("ftype", &llama_model_quantize_params::ftype)
+        .def_rw("output_tensor_type", &llama_model_quantize_params::output_tensor_type)
+        .def_rw("token_embedding_type", &llama_model_quantize_params::token_embedding_type)
+        .def_rw("allow_requantize", &llama_model_quantize_params::allow_requantize)
+        .def_rw("quantize_output_tensor", &llama_model_quantize_params::quantize_output_tensor)
+        .def_rw("only_copy", &llama_model_quantize_params::only_copy)
+        .def_rw("pure", &llama_model_quantize_params::pure);
+        // ..
+
+    nb::class_<llama_logit_bias> (m, "llama_logit_bias", "")
+        .def(nb::init<>());
+        // .def_rw("token", &llama_model_quantize_params::token)
+        // .def_rw("bias", &llama_model_quantize_params::bias);
+
+    nb::class_<llama_sampler_chain_params> (m, "llama_sampler_chain_params", "")
+        .def(nb::init<>())
+        .def_rw("no_perf", &llama_sampler_chain_params::no_perf);
+
+    nb::class_<llama_chat_message> (m, "llama_chat_message")
+        .def(nb::init<>())
+        .def_rw("role", &llama_chat_message::role)
+        .def_rw("content", &llama_chat_message::content);
+
+    m.def("llama_model_default_params", (struct llama_model_params (*)()) &llama_model_default_params, "C++: llama_model_default_params() --> struct llama_model_params");
+    m.def("llama_context_default_params", (struct llama_context_params (*)()) &llama_context_default_params, "C++: llama_context_default_params() --> struct llama_context_params");
+    m.def("llama_sampler_chain_default_params", (struct llama_sampler_chain_params (*)()) &llama_sampler_chain_default_params);
+    m.def("llama_model_quantize_default_params", (struct llama_model_quantize_params (*)()) &llama_model_quantize_default_params, "C++: llama_model_quantize_default_params() --> struct llama_model_quantize_params");
+    
+    m.def("llama_backend_init", (void (*)()) &llama_backend_init, "C++: llama_backend_init() --> void");
+    m.def("llama_numa_init", (void (*)(enum ggml_numa_strategy)) &llama_numa_init, "C++: llama_numa_init(enum ggml_numa_strategy) --> void", nb::arg("numa"));
+    
+    m.def("llama_attach_threadpool", (void (*)(struct llama_context *, ggml_threadpool_t, ggml_threadpool_t)) &llama_attach_threadpool, "", nb::arg("ctx"), nb::arg("threadpool"), nb::arg("threadpool_batch"));
+    m.def("llama_detach_threadpool", (void (*)(struct llama_context *)) &llama_detach_threadpool, "", nb::arg("ctx"));
+
+    m.def("llama_backend_free", (void (*)()) &llama_backend_free, "C++: llama_backend_free() --> void");
+    m.def("llama_load_model_from_file", (struct llama_model * (*)(const char *, struct llama_model_params *)) &llama_load_model_from_file, "Load a model from file", nb::arg("path_model"), nb::arg("params"), nb::rv_policy::reference);
+    m.def("llama_free_model", (void (*)(struct llama_model *)) &llama_free_model, "Free a model", nb::arg("model"));
+   
+    m.def("llama_new_context_with_model", (struct llama_context * (*)(struct llama_model *, struct llama_context_params)) &llama_new_context_with_model, "New context with model", nb::arg("model"), nb::arg("params"), nb::rv_policy::reference);
+   
+    m.def("llama_free", (void (*)(struct llama_context *)) &llama_free, "Free context", nb::arg("ctx"));
+    m.def("llama_time_us", (int64_t (*)()) &llama_time_us, "C++: llama_time_us() --> int");
+    m.def("llama_max_devices", (size_t (*)()) &llama_max_devices, "C++: llama_max_devices() --> int");
+    m.def("llama_supports_mmap", (bool (*)()) &llama_supports_mmap, "C++: llama_supports_mmap() --> bool");
+    m.def("llama_supports_mlock", (bool (*)()) &llama_supports_mlock, "C++: llama_supports_mlock() --> bool");
+    m.def("llama_supports_gpu_offload", (bool (*)()) &llama_supports_gpu_offload, "C++: llama_supports_gpu_offload() --> bool");
+
+    m.def("llama_n_ctx", (uint32_t (*)(const struct llama_context *)) &llama_n_ctx, "get n_ctx from context", nb::arg("ctx"));
+    m.def("llama_n_batch", (uint32_t (*)(const struct llama_context *)) &llama_n_batch, "get n_batch from context", nb::arg("ctx"));
+    m.def("llama_n_ubatch", (uint32_t (*)(const struct llama_context *)) &llama_n_ubatch, "get n_ubatch from context", nb::arg("ctx"));
+    m.def("llama_n_seq_max", (uint32_t (*)(const struct llama_context *)) &llama_n_seq_max, "get n_seq_max from context", nb::arg("ctx"));
+
+    m.def("llama_n_vocab", (int32_t (*)(const struct llama_model *)) &llama_n_vocab, "get n_vocab from model", nb::arg("model"));
+    m.def("llama_n_ctx_train", (int32_t (*)(const struct llama_model *)) &llama_n_ctx_train, "get n_ctx_train from model", nb::arg("model"));
+    m.def("llama_n_embd", (int32_t (*)(const struct llama_model *)) &llama_n_embd, "get n_embed from model", nb::arg("model"));
+    m.def("llama_n_layer", (int32_t (*)(const struct llama_model *)) &llama_n_layer, "get n_layer from model", nb::arg("model"));
+    m.def("llama_n_head", (int32_t (*)(const struct llama_model *)) &llama_n_head, "get n_head from model", nb::arg("model"));
+
+    m.def("llama_get_model", (const struct llama_model * (*)(const struct llama_context *)) &llama_get_model, "get model from context", nb::arg("ctx"));
+    m.def("get_llama_pooling_type", (enum llama_pooling_type (*)(const struct llama_context *)) &llama_pooling_type, "get pooling_type from context", nb::arg("ctx"));
+    m.def("get_llama_vocab_type", (enum llama_vocab_type (*)(const struct llama_model *)) &llama_vocab_type, "get vocab_type from model", nb::arg("model"));
+    m.def("get_llama_rope_type", (enum llama_rope_type (*)(const struct llama_model *)) &llama_rope_type, "get rope_type from model", nb::arg("model"));
+
+    m.def("llama_rope_freq_scale_train", (float (*)(const struct llama_model *)) &llama_rope_freq_scale_train, "get rope_freq_scale_train from model", nb::arg("model"));
+
+    m.def("llama_model_meta_val_str", (int32_t (*)(const struct llama_model *, const char *, const char *, size_t)) &llama_model_meta_val_str, "get meta_val_str from model", nb::arg("model"), nb::arg("key"), nb::arg("buf"), nb::arg("buf_size"));
+    m.def("llama_model_meta_count", (int32_t (*)(const struct llama_model *)) &llama_model_meta_count, "get meta_count from model", nb::arg("model"));
+    m.def("llama_model_meta_key_by_index", (int32_t (*)(const struct llama_model *, int32_t, const char *, size_t)) &llama_model_meta_key_by_index, "get meta_key_by_index from model", nb::arg("model"), nb::arg("i"), nb::arg("buf"), nb::arg("buf_size"));
+    m.def("llama_model_meta_val_str_by_index", (int32_t (*)(const struct llama_model *, int32_t, const char *, size_t)) &llama_model_meta_val_str_by_index, "get meta_val_str_by_index from model", nb::arg("model"), nb::arg("i"), nb::arg("buf"), nb::arg("buf_size"));
+    m.def("llama_model_desc", (int32_t (*)(const struct llama_model *, const char *, size_t)) &llama_model_desc, "get model_desc from model", nb::arg("model"), nb::arg("buf"), nb::arg("buf_size"));
+
+    m.def("llama_model_size", (uint64_t (*)(const struct llama_model *)) &llama_model_size, "get model_size from model", nb::arg("model"));
+    m.def("llama_model_n_params", (uint64_t (*)(const struct llama_model *)) &llama_model_n_params, "get model_n_params from model", nb::arg("model"));
+
+    m.def("llama_get_model_tensor", (struct ggml_tensor* (*)(struct llama_model *)) &llama_get_model_tensor, "get model tensor from model", nb::arg("model"));
+    // m.def("llama_get_model_tensor", (struct ggml_tensor* (*)(struct llama_model *, const char *)) &llama_get_model_tensor, "get named model tensor from model", nb::arg("model"), nb::arg("name"));
+
+    m.def("llama_model_has_encoder", (bool (*)(const struct llama_model *)) &llama_model_has_encoder, "model has encoder?", nb::arg("model"));
+    m.def("llama_model_has_decoder", (bool (*)(const struct llama_model *)) &llama_model_has_decoder, "model has decoder?", nb::arg("model"));
+
+    m.def("llama_model_decoder_start_token", (llama_token (*)(const struct llama_model *)) &llama_model_decoder_start_token, "get decoder_start_token from model", nb::arg("model"));
+
+    m.def("llama_model_is_recurrent", (bool (*)(const struct llama_model *)) &llama_model_is_recurrent, "check if model is recurrent", nb::arg("model"));
+
+    m.def("llama_model_quantize", (int (*)(const char *, const char *, const struct llama_model_quantize_params *)) &llama_model_quantize, "C++: llama_model_quantize(const char *, const char *, const struct llama_model_quantize_params *) --> int", nb::arg("fname_inp"), nb::arg("fname_out"), nb::arg("params"));
+
+    m.def("llama_lora_adapter_init", (struct llama_lora_adapter (*)(const struct llama_model *, const char *)) &llama_lora_adapter_init, "", nb::arg("model"), nb::arg("path_lora"));
+    m.def("llama_lora_adapter_set", (int32_t (*)(struct llama_context*, struct llama_lora_adapter*, float)) &llama_lora_adapter_set, "", nb::arg("ctx"), nb::arg("adapter"), nb::arg("scale"));
+    m.def("llama_lora_adapter_remove", (int32_t (*)(struct llama_context*, struct llama_lora_adapter*)) &llama_lora_adapter_remove, "", nb::arg("ctx"), nb::arg("adapter"));
+    m.def("llama_lora_adapter_clear", (void (*)(struct llama_context*)) &llama_lora_adapter_clear, "", nb::arg("ctx"));
+    m.def("llama_lora_adapter_free", (void (*)(struct llama_lora_adapter*)) &llama_lora_adapter_free, "", nb::arg("adapter"));
+
+    m.def("llama_control_vector_apply", (int32_t (*)(struct llama_context * , const float*, size_t, int32_t, int32_t, int32_t)) &llama_model_quantize, "", nb::arg("lctx"), nb::arg("data"), nb::arg("len"), nb::arg("n_embd"), nb::arg("il_start"), nb::arg("il_end"));
+
+    // KV cache
+    
+    nb::class_<llama_kv_cache_view_cell>(m, "llama_kv_cache_view_cell")
+        .def(nb::init<>())
+        .def_rw("pos", &llama_kv_cache_view_cell::pos);
+
+    nb::class_<llama_kv_cache_view>(m, "llama_kv_cache_view", "")
+        .def(nb::init<>())
+        .def_rw("n_cells", &llama_kv_cache_view::n_cells)
+        .def_rw("n_seq_max", &llama_kv_cache_view::n_seq_max)
+        .def_rw("token_count", &llama_kv_cache_view::token_count)
+        .def_rw("used_cells", &llama_kv_cache_view::used_cells)
+        .def_rw("max_contiguous", &llama_kv_cache_view::max_contiguous)
+        .def_rw("max_contiguous_idx", &llama_kv_cache_view::max_contiguous_idx);
+
+    m.def("llama_kv_cache_view_init", (struct llama_kv_cache_view (*)(const struct llama_context *, int32_t)) &llama_kv_cache_view_init, "", nb::arg("ctx"), nb::arg("n_seq_max"));
+    m.def("llama_kv_cache_view_free", (void (*)(struct llama_kv_cache_view *)) &llama_kv_cache_view_free, "", nb::arg("view"));
+    m.def("llama_kv_cache_view_update", (void (*)(const struct llama_context *, struct llama_kv_cache_view *)) &llama_kv_cache_view_update, "", nb::arg("ctx"), nb::arg("view"));
+    m.def("llama_get_kv_cache_token_count", (int32_t (*)(const struct llama_context *)) &llama_get_kv_cache_token_count, "", nb::arg("ctx"));
+    m.def("llama_get_kv_cache_used_cells", (int32_t (*)(const struct llama_context *)) &llama_get_kv_cache_used_cells, "", nb::arg("ctx"));
+    m.def("llama_kv_cache_clear", (void (*)(const struct llama_context *)) &llama_kv_cache_clear, "", nb::arg("ctx"));
+    m.def("llama_kv_cache_seq_rm", (bool (*)(const struct llama_context *, llama_seq_id, llama_pos, llama_pos)) &llama_kv_cache_seq_rm, "", nb::arg("ctx"), nb::arg("seq_id"), nb::arg("p0"), nb::arg("p1"));
+    m.def("llama_kv_cache_seq_cp", (void (*)(const struct llama_context *, llama_seq_id, llama_seq_id, llama_pos, llama_pos)) &llama_kv_cache_seq_cp, "", nb::arg("ctx"), nb::arg("seq_id_src"), nb::arg("seq_id_dst"), nb::arg("p0"), nb::arg("p1"));
+    m.def("llama_kv_cache_seq_keep", (void (*)(const struct llama_context *, llama_seq_id)) &llama_kv_cache_seq_keep, "", nb::arg("ctx"), nb::arg("seq_id"));
+    m.def("llama_kv_cache_seq_add", (void (*)(const struct llama_context *, llama_seq_id, llama_pos, llama_pos, llama_pos)) &llama_kv_cache_seq_add, "", nb::arg("ctx"), nb::arg("seq_id"), nb::arg("p0"), nb::arg("p1"), nb::arg("delta"));
+    m.def("llama_kv_cache_seq_div", (void (*)(const struct llama_context *, llama_seq_id, llama_pos, llama_pos, int)) &llama_kv_cache_seq_div, "", nb::arg("ctx"), nb::arg("seq_id"), nb::arg("p0"), nb::arg("p1"), nb::arg("d"));
+    m.def("llama_kv_cache_seq_pos_max", (llama_pos (*)(const struct llama_context *, llama_seq_id)) &llama_kv_cache_seq_pos_max, "", nb::arg("ctx"), nb::arg("seq_id"));
+    m.def("llama_kv_cache_defrag", (void (*)(const struct llama_context *)) &llama_kv_cache_defrag, "", nb::arg("ctx"));
+    m.def("llama_kv_cache_update", (void (*)(const struct llama_context *)) &llama_kv_cache_update, "", nb::arg("ctx"));
+
+    // State / sessions
+
+    m.def("llama_state_get_size", (size_t (*)(const struct llama_context *)) &llama_state_get_size, "", nb::arg("ctx"));
+    m.def("llama_state_get_data", (size_t (*)(const struct llama_context *, uint8_t *, size_t)) &llama_state_get_data, "", nb::arg("ctx"), nb::arg("dst"), nb::arg("size"));
+    m.def("llama_state_set_data", (size_t (*)(const struct llama_context *, const uint8_t *, size_t)) &llama_state_set_data, "", nb::arg("ctx"), nb::arg("dst"), nb::arg("size"));
+    m.def("llama_state_load_file", (size_t (*)(const struct llama_context *, const char *, llama_token *, size_t, size_t *)) &llama_state_load_file, "", nb::arg("ctx"), nb::arg("path_session"), nb::arg("tokens_out"), nb::arg("n_token_capacity"), nb::arg("n_token_count_out"));
+    m.def("llama_state_save_file", (size_t (*)(const struct llama_context *, const char *, const llama_token *, size_t)) &llama_state_save_file, "", nb::arg("ctx"), nb::arg("path_session"), nb::arg("tokens"), nb::arg("n_token_count"));
+    m.def("llama_state_seq_get_size", (size_t (*)(const struct llama_context *, llama_seq_id)) &llama_state_seq_get_size, "", nb::arg("ctx"), nb::arg("seq_id"));
+    m.def("llama_state_seq_get_data", (size_t (*)(const struct llama_context *, uint8_t *, size_t, llama_seq_id)) &llama_state_seq_get_data, "", nb::arg("ctx"), nb::arg("dst"), nb::arg("size"), nb::arg("seq_id"));
+    m.def("llama_state_seq_set_data", (size_t (*)(const struct llama_context *, const uint8_t *, size_t, llama_seq_id)) &llama_state_seq_set_data, "", nb::arg("ctx"), nb::arg("src"), nb::arg("size"), nb::arg("dest_seq_id"));
+    m.def("llama_state_seq_save_file", (size_t (*)(const struct llama_context *, const char *, llama_seq_id, const llama_token *, size_t)) &llama_state_seq_save_file, "", nb::arg("ctx"), nb::arg("filepath"), nb::arg("seq_id"), nb::arg("tokens"), nb::arg("n_token_count"));
+    m.def("llama_state_seq_load_file", (size_t (*)(const struct llama_context *, const char *, llama_seq_id, llama_token *, size_t, size_t *)) &llama_state_seq_load_file, "", nb::arg("ctx"), nb::arg("filepath"), nb::arg("dest_seq_id"), nb::arg("tokens_out"), nb::arg("n_token_capacity"), nb::arg("n_token_count_out"));
+
+    // decoding
+
+    m.def("llama_batch_get_one", (struct llama_batch (*)(int *, int, int, int)) &llama_batch_get_one, "C++: llama_batch_get_one(int *, int, int, int) --> struct llama_batch", nb::arg("tokens"), nb::arg("n_tokens"), nb::arg("pos_0"), nb::arg("seq_id"));
+    m.def("llama_batch_init", (struct llama_batch (*)(int, int, int)) &llama_batch_init, "C++: llama_batch_init(int, int, int) --> struct llama_batch", nb::arg("n_tokens"), nb::arg("embd"), nb::arg("n_seq_max"));
+    m.def("llama_batch_free", (void (*)(struct llama_batch)) &llama_batch_free, "C++: llama_batch_free(struct llama_batch) --> void", nb::arg("batch"));
+
+    m.def("llama_encode", (int32_t (*)(const struct llama_context *, struct llama_batch)) &llama_encode, "", nb::arg("ctx"), nb::arg("batch"));
+    m.def("llama_decode", (int32_t (*)(const struct llama_context *, struct llama_batch)) &llama_decode, "", nb::arg("ctx"), nb::arg("batch"));
+
+    m.def("llama_set_n_threads", (void (*)(const struct llama_context *, uint32_t, uint32_t)) &llama_set_n_threads, "", nb::arg("ctx"), nb::arg("n_threads"), nb::arg("n_threads_batch"));
+    m.def("llama_n_threads", (uint32_t (*)(const struct llama_context *)) &llama_n_threads, "", nb::arg("ctx"));
+    m.def("llama_n_threads_batch", (uint32_t (*)(const struct llama_context *)) &llama_n_threads_batch, "", nb::arg("ctx"));
+
+    m.def("llama_set_embeddings", (void (*)(const struct llama_context *, bool)) &llama_set_embeddings, "", nb::arg("ctx"), nb::arg("embeddings"));
+
+    m.def("llama_set_causal_attn", (void (*)(const struct llama_context *, bool)) &llama_set_causal_attn, "", nb::arg("ctx"), nb::arg("causal_attn"));
+
+    void llama_set_abort_callback(struct llama_context * ctx, ggml_abort_callback abort_callback, void * abort_callback_data);    
+
+    m.def("llama_synchronize", (void (*)(const struct llama_context *)) &llama_synchronize, "", nb::arg("ctx"));
+    
+    m.def("llama_get_logits", (float* (*)(const struct llama_context *)) &llama_get_logits, "", nb::arg("ctx"));
+    m.def("llama_get_logits_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_logits_ith, "", nb::arg("ctx"), nb::arg("i"));
+
+    m.def("llama_get_embeddings", (float* (*)(const struct llama_context *)) &llama_get_embeddings, "", nb::arg("ctx"));
+    m.def("llama_get_embeddings_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_embeddings_ith, "", nb::arg("ctx"), nb::arg("i"));
+    m.def("llama_get_embeddings_seq", (float* (*)(const struct llama_context *, llama_seq_id)) &llama_get_embeddings_seq, "", nb::arg("ctx"), nb::arg("seq_id"));
+
+    m.def("llama_token_get_text", (const char* (*)(const struct llama_model *, llama_token)) &llama_token_get_text, "", nb::arg("model"), nb::arg("token"));
+    m.def("llama_token_get_score", (float (*)(const struct llama_model *, llama_token)) &llama_token_get_score, "", nb::arg("model"), nb::arg("token"));
+
+    m.def("llama_token_get_attr", (enum llama_token_attr (*)(const struct llama_model *, llama_token)) &llama_token_get_attr, "", nb::arg("model"), nb::arg("token"));
+    m.def("llama_token_is_eog", (bool (*)(const struct llama_model *, llama_token)) &llama_token_is_eog, "", nb::arg("model"), nb::arg("token"));
+    m.def("llama_token_is_control", (bool (*)(const struct llama_model *, llama_token)) &llama_token_is_control, "", nb::arg("model"), nb::arg("token"));
+
+    m.def("llama_token_bos", (llama_token (*)(const struct llama_model *)) &llama_token_bos, "", nb::arg("model"));
+    m.def("llama_token_eos", (llama_token (*)(const struct llama_model *)) &llama_token_eos, "", nb::arg("model"));
+    m.def("llama_token_cls", (llama_token (*)(const struct llama_model *)) &llama_token_cls, "", nb::arg("model"));
+    m.def("llama_token_sep", (llama_token (*)(const struct llama_model *)) &llama_token_sep, "", nb::arg("model"));
+    m.def("llama_token_nl",  (llama_token (*)(const struct llama_model *)) &llama_token_nl,  "", nb::arg("model"));
+    m.def("llama_token_pad", (llama_token (*)(const struct llama_model *)) &llama_token_pad, "", nb::arg("model"));
+
+    m.def("llama_add_bos_token", (int32_t (*)(const struct llama_model *)) &llama_add_bos_token, "", nb::arg("model"));
+    m.def("llama_add_eos_token", (int32_t (*)(const struct llama_model *)) &llama_add_eos_token, "", nb::arg("model"));
+
+    m.def("llama_token_prefix", (llama_token (*)(const struct llama_model *)) &llama_token_prefix, "", nb::arg("model"));
+    m.def("llama_token_middle", (llama_token (*)(const struct llama_model *)) &llama_token_middle, "", nb::arg("model"));
+    m.def("llama_token_suffix", (llama_token (*)(const struct llama_model *)) &llama_token_suffix, "", nb::arg("model"));
+    m.def("llama_token_eot", (llama_token (*)(const struct llama_model *)) &llama_token_eot, "", nb::arg("model"));
+
+    m.def("llama_tokenize", (int32_t (*)(const struct llama_model *, const char*, int32_t, llama_token*, int32_t, bool, bool)) &llama_tokenize, "", nb::arg("model"), nb::arg("text"), nb::arg("text_len"), nb::arg("tokens"), nb::arg("n_tokens_max"), nb::arg("add_special"), nb::arg("parse_special"));
+    // m.def("llama_token_to_piece", (int32_t (*)(const struct llama_model *, llama_token, char*, int32_t, int32_t, bool)) &llama_token_to_piece, "", nb::arg("model"), nb::arg("token"), nb::arg("buf"), nb::arg("length"), nb::arg("lstrip"), nb::arg("special"));
+    // m.def("llama_detokenize", (int32_t (*)(const struct llama_model *, const llama_token*, int32_t, char*, int32_t, bool, bool)) &llama_detokenize, "", nb::arg("model"), nb::arg("tokens"), nb::arg("n_tokens"), nb::arg("text"), nb::arg("text_len_max"), nb::arg("remove_special"), nb::arg("unparse_special"));
+    
+    // Chat templates
+
+    // m.def("llama_chat_apply_template", (int32_t (*)(const struct llama_model *, const char*, const struct llama_chat_message*, size_t, bool, char*, int32_t)) &llama_chat_apply_template, "", nb::arg("model"), nb::arg("tmpl"), nb::arg("chat"), nb::arg("n_msg"), nb::arg("add_ass"), nb::arg("buf"), nb::arg("length"));
+
+    nb::class_<llama_sampler_i> (m, "llama_sampler_i", "")
+        .def(nb::init<>());
+        // .def_readwrite("name", &llama_sampler_i::name)
+        // .def_readwrite("accept", &llama_sampler_i::accept);
+        // const char *           (*name)  (const struct llama_sampler * smpl);                                 // can be NULL
+        // void                   (*accept)(      struct llama_sampler * smpl, llama_token token);              // can be NULL
+        // void                   (*apply) (      struct llama_sampler * smpl, llama_token_data_array * cur_p); // required
+        // void                   (*reset) (      struct llama_sampler * smpl);                                 // can be NULL
+        // struct llama_sampler * (*clone) (const struct llama_sampler * smpl);                                 // can be NULL if ctx is NULL
+        // void                   (*free)  (      struct llama_sampler * smpl);                                 // can be NULL if ctx is NULL
+
+    nb::class_<llama_sampler> (m, "llama_sampler", "")
+        .def(nb::init<>())
+        .def_rw("iface", &llama_sampler::iface)
+        .def_rw("ctx", &llama_sampler::ctx);
+
+
+    m.def("llama_sampler_name", (const char * (*)(const struct llama_sampler *)) &llama_sampler_name, "", nb::arg("smpl"));
+    m.def("llama_sampler_accept", (void (*)(struct llama_sampler *, llama_token)) &llama_sampler_accept, "", nb::arg("smpl"),  nb::arg("token"));
+    m.def("llama_sampler_apply", (void (*)(struct llama_sampler *, llama_token_data_array *)) &llama_sampler_apply, "", nb::arg("smpl"),  nb::arg("cur_p"));
+    m.def("llama_sampler_reset", (void (*)(struct llama_sampler *)) &llama_sampler_apply, "", nb::arg("smpl"));
+    m.def("llama_sampler_clone", (struct llama_sampler * (*)(const struct llama_sampler *)) &llama_sampler_clone, "", nb::arg("smpl"), nb::rv_policy::reference);
+    m.def("llama_sampler_free", (void (*)(const struct llama_sampler *)) &llama_sampler_free, "", nb::arg("smpl"));
+    
+    m.def("llama_sampler_chain_init", (struct llama_sampler *  (*)(struct llama_sampler_chain_params)) &llama_sampler_chain_init, "", nb::arg("params"), nb::rv_policy::reference);
+    
+    m.def("llama_sampler_chain_add", (void (*)(struct llama_sampler *, struct llama_sampler *)) &llama_sampler_chain_add, "", nb::arg("chain"), nb::arg("smpl"));
+    m.def("llama_sampler_chain_get", (struct llama_sampler * (*)(const struct llama_sampler *, int32_t)) &llama_sampler_chain_get, "", nb::arg("chain"), nb::arg("i"), nb::rv_policy::reference);
+    m.def("llama_sampler_chain_n", (int (*)(const struct llama_sampler *)) &llama_sampler_chain_n, "", nb::arg("chain"));
+    
+    m.def("llama_sampler_chain_remove", (struct llama_sampler * (*)(const struct llama_sampler *, int32_t)) &llama_sampler_chain_remove, "", nb::arg("chain"), nb::arg("i"), nb::rv_policy::reference);    
+    
+    m.def("llama_sampler_init_greedy", (struct llama_sampler * (*)(void)) &llama_sampler_init_greedy, nb::rv_policy::reference);
+    m.def("llama_sampler_init_dist", (struct llama_sampler * (*)(uint32_t)) &llama_sampler_init_dist, "", nb::arg("seed"), nb::rv_policy::reference);
+
+    m.def("llama_sampler_init_softmax", (struct llama_sampler * (*)(void)) &llama_sampler_init_softmax);
+    m.def("llama_sampler_init_top_k", (struct llama_sampler * (*)(uint32_t)) &llama_sampler_init_top_k, "", nb::arg("k"));
+    m.def("llama_sampler_init_top_p", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_top_p, "", nb::arg("p"), nb::arg("min_keep"));
+    m.def("llama_sampler_init_min_p", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_min_p, "", nb::arg("p"), nb::arg("min_keep"));
+    m.def("llama_sampler_init_tail_free", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_tail_free, "", nb::arg("z"), nb::arg("min_keep"));
+
+    m.def("llama_sampler_init_typical", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_typical, "", nb::arg("p"), nb::arg("min_keep"));
+    m.def("llama_sampler_init_temp", (struct llama_sampler * (*)(float)) &llama_sampler_init_temp, "", nb::arg("t"));
+    m.def("llama_sampler_init_temp_ext", (struct llama_sampler * (*)(float, float, float)) &llama_sampler_init_temp_ext, "", nb::arg("t"), nb::arg("delta"), nb::arg("exponent"));
+    m.def("llama_sampler_init_mirostat", (struct llama_sampler * (*)(int32_t, uint32_t, float, float, int32_t)) &llama_sampler_init_mirostat, "", nb::arg("n_vocab"), nb::arg("seed"), nb::arg("tau"), nb::arg("eta"), nb::arg("m"));
+    m.def("llama_sampler_init_mirostat_v2", (struct llama_sampler * (*)(uint32_t, float, float)) &llama_sampler_init_mirostat_v2, "", nb::arg("seed"), nb::arg("tau"), nb::arg("eta"));
+    m.def("llama_sampler_init_grammar", (struct llama_sampler * (*)(const struct llama_model *, const char *, const char *)) &llama_sampler_init_grammar, "", nb::arg("model"), nb::arg("grammar_str"), nb::arg("grammar_root"));
+    m.def("llama_sampler_init_penalties", (struct llama_sampler * (*)(int32_t, llama_token, llama_token, int32_t, float, float, float, bool, bool)) &llama_sampler_init_penalties, "", nb::arg("n_vocab"), nb::arg("special_eos_id"), nb::arg("linefeed_id"), nb::arg("penalty_last_n"), nb::arg("penalty_repeat"), nb::arg("epenalty_freq"), nb::arg("penalty_present"), nb::arg("penalize_nl"), nb::arg("ignore_eos"));
+    m.def("llama_sampler_init_logit_bias", (struct llama_sampler * (*)(int32_t, int32_t, const llama_logit_bias *)) &llama_sampler_init_logit_bias, "", nb::arg("n_vocab"), nb::arg("n_logit_bias"), nb::arg("logit_bias"));
+
+    m.def("llama_sampler_sample", (llama_token (*)(struct llama_sampler *, struct llama_context *, int32_t)) &llama_sampler_sample, "", nb::arg("smpl"), nb::arg("ctx"), nb::arg("idx"));
+
+    // m.def("llama_split_path", (int (*)(char *, int, const char *, int, int)) &llama_split_path, "Build a split GGUF final path for this chunk.", nb::arg("split_path"), nb::arg("maxlen"), nb::arg("path_prefix"), nb::arg("split_no"), nb::arg("split_count"));
+    // m.def("llama_split_prefix", (int (*)(char *, int, const char *, int, int)) &llama_split_prefix, "Extract the path prefix from the split_path if and only if the split_no and split_count match.", nb::arg("split_prefix"), nb::arg("maxlen"), nb::arg("split_path"), nb::arg("split_no"), nb::arg("split_count"));
+
+    // Print system information
+    m.def("llama_print_system_info", (const char * (*)(void)) &llama_print_system_info, "");
+
+    // Set callback for all future logging events.
+    // If this is not called, or NULL is supplied, everything is output on stderr.
+    m.def("llama_log_set", (void (*)(ggml_log_callback log_callback, void * user_data)) &llama_log_set, "", nb::arg("log_callback"), nb::arg("user_data"));
+
+    // Performance utils
+
+    nb::class_<llama_perf_context_data> (m, "llama_perf_context_data", "")
+        .def(nb::init<>())
+        .def_rw("t_start_ms", &llama_perf_context_data::t_start_ms)
+        .def_rw("t_load_ms", &llama_perf_context_data::t_load_ms)
+        .def_rw("t_p_eval_ms", &llama_perf_context_data::t_p_eval_ms)
+        .def_rw("t_eval_ms", &llama_perf_context_data::t_eval_ms)
+        .def_rw("n_p_eval", &llama_perf_context_data::n_p_eval)
+        .def_rw("n_eval", &llama_perf_context_data::n_eval);
+
+    nb::class_<llama_perf_sampler_data> (m, "llama_perf_sampler_data", "")
+        .def(nb::init<>())
+        .def_rw("t_sample_ms", &llama_perf_sampler_data::t_sample_ms)
+        .def_rw("n_sample", &llama_perf_sampler_data::n_sample);
+
+    m.def("llama_perf_context", (struct llama_perf_context_data (*)(const struct llama_context *)) &llama_perf_context, "", nb::arg("ctx"));
+    m.def("llama_perf_context_print", (void (*)(const struct llama_context *)) &llama_perf_context_print, "", nb::arg("ctx"));
+    m.def("llama_perf_context_reset", (void (*)(struct llama_context *)) &llama_perf_context_reset, "", nb::arg("ctx"));
+
+    m.def("llama_perf_sampler", (struct llama_perf_sampler_data (*)(const struct llama_sampler *)) &llama_perf_sampler, "", nb::arg("chain"));
+    m.def("llama_perf_sampler_print", (void (*)(const struct llama_sampler *)) &llama_perf_sampler_print, "", nb::arg("chain"));
+    m.def("llama_perf_sampler_reset", (void (*)(struct llama_sampler *)) &llama_perf_sampler_reset, "", nb::arg("chain"));
+
+    m.def("llama_perf_dump_yaml", (const char * (*)(FILE *, const struct llama_context *)) &llama_perf_dump_yaml, "", nb::arg("stream"), nb::arg("ctx"));
 
     // -----------------------------------------------------------------------
     // common.h
@@ -265,6 +790,9 @@ NB_MODULE(nbllama, m) {
     m.def("yaml_dump_vector_int", (void (*)(struct __sFILE *, const char *, const class std::vector<int> &)) &yaml_dump_vector_int, "C++: yaml_dump_vector_int(struct __sFILE *, const char *, const class std::vector<int> &) --> void", nb::arg("stream"), nb::arg("prop_name"), nb::arg("data"));
     m.def("yaml_dump_string_multiline", (void (*)(struct __sFILE *, const char *, const char *)) &yaml_dump_string_multiline, "C++: yaml_dump_string_multiline(struct __sFILE *, const char *, const char *) --> void", nb::arg("stream"), nb::arg("prop_name"), nb::arg("data"));
 
+    // -----------------------------------------------------------------------
+    // sampling.h
+
 
     // -----------------------------------------------------------------------
     // arg.h
@@ -327,500 +855,5 @@ NB_MODULE(nbllama, m) {
     }, "",  nb::arg("args"), nb::arg("params"), nb::arg("example"));
 
     m.def("gpt_params_parser_init", (std::vector<llama_arg> (*)(gpt_params &, llama_example)) &gpt_params_parser_init, "", nb::arg("params"), nb::arg("ex"));
-
-    // -----------------------------------------------------------------------
-    // llama.h
-    
-    nb::class_<llama_model> (m, "llama_model", "")
-        .def(nb::init<>());
-
-    nb::class_<llama_context> (m, "llama_context", "")
-        .def(nb::init<>());
-
-    nb::class_<llama_lora_adapter> (m, "llama_lora_adapter", "")
-        .def(nb::init<>());
-
-
-    nb::enum_<enum llama_vocab_type>(m, "llama_vocab_type")
-        .value("LLAMA_VOCAB_TYPE_NONE", LLAMA_VOCAB_TYPE_NONE)
-        .value("LLAMA_VOCAB_TYPE_SPM", LLAMA_VOCAB_TYPE_SPM)
-        .value("LLAMA_VOCAB_TYPE_BPE", LLAMA_VOCAB_TYPE_BPE)
-        .value("LLAMA_VOCAB_TYPE_WPM", LLAMA_VOCAB_TYPE_WPM)
-        .value("LLAMA_VOCAB_TYPE_UGM", LLAMA_VOCAB_TYPE_UGM)
-        .export_values();
-
-    nb::enum_<enum llama_vocab_pre_type>(m, "llama_vocab_pre_type")
-        .value("LLAMA_VOCAB_PRE_TYPE_DEFAULT", LLAMA_VOCAB_PRE_TYPE_DEFAULT)
-        .value("LLAMA_VOCAB_PRE_TYPE_LLAMA3", LLAMA_VOCAB_PRE_TYPE_LLAMA3)
-        .value("LLAMA_VOCAB_PRE_TYPE_DEEPSEEK_LLM", LLAMA_VOCAB_PRE_TYPE_DEEPSEEK_LLM)
-        .value("LLAMA_VOCAB_PRE_TYPE_DEEPSEEK_CODER", LLAMA_VOCAB_PRE_TYPE_DEEPSEEK_CODER)
-        .value("LLAMA_VOCAB_PRE_TYPE_FALCON", LLAMA_VOCAB_PRE_TYPE_FALCON)
-        .value("LLAMA_VOCAB_PRE_TYPE_MPT", LLAMA_VOCAB_PRE_TYPE_MPT)
-        .value("LLAMA_VOCAB_PRE_TYPE_STARCODER", LLAMA_VOCAB_PRE_TYPE_STARCODER)
-        .value("LLAMA_VOCAB_PRE_TYPE_GPT2", LLAMA_VOCAB_PRE_TYPE_GPT2)
-        .value("LLAMA_VOCAB_PRE_TYPE_REFACT", LLAMA_VOCAB_PRE_TYPE_REFACT)
-        .value("LLAMA_VOCAB_PRE_TYPE_COMMAND_R", LLAMA_VOCAB_PRE_TYPE_COMMAND_R)
-        .value("LLAMA_VOCAB_PRE_TYPE_STABLELM2", LLAMA_VOCAB_PRE_TYPE_STABLELM2)
-        .value("LLAMA_VOCAB_PRE_TYPE_QWEN2", LLAMA_VOCAB_PRE_TYPE_QWEN2)
-        .value("LLAMA_VOCAB_PRE_TYPE_OLMO", LLAMA_VOCAB_PRE_TYPE_OLMO)
-        .value("LLAMA_VOCAB_PRE_TYPE_DBRX", LLAMA_VOCAB_PRE_TYPE_DBRX)
-        .value("LLAMA_VOCAB_PRE_TYPE_SMAUG", LLAMA_VOCAB_PRE_TYPE_SMAUG)
-        .value("LLAMA_VOCAB_PRE_TYPE_PORO", LLAMA_VOCAB_PRE_TYPE_PORO)
-        .value("LLAMA_VOCAB_PRE_TYPE_CHATGLM3", LLAMA_VOCAB_PRE_TYPE_CHATGLM3)
-        .value("LLAMA_VOCAB_PRE_TYPE_CHATGLM4", LLAMA_VOCAB_PRE_TYPE_CHATGLM4)
-        .value("LLAMA_VOCAB_PRE_TYPE_VIKING", LLAMA_VOCAB_PRE_TYPE_VIKING)
-        .value("LLAMA_VOCAB_PRE_TYPE_JAIS", LLAMA_VOCAB_PRE_TYPE_JAIS)
-        .value("LLAMA_VOCAB_PRE_TYPE_TEKKEN", LLAMA_VOCAB_PRE_TYPE_TEKKEN)
-        .value("LLAMA_VOCAB_PRE_TYPE_SMOLLM", LLAMA_VOCAB_PRE_TYPE_SMOLLM)
-        .value("LLAMA_VOCAB_PRE_TYPE_CODESHELL", LLAMA_VOCAB_PRE_TYPE_CODESHELL)
-        .value("LLAMA_VOCAB_PRE_TYPE_BLOOM", LLAMA_VOCAB_PRE_TYPE_BLOOM)
-        .value("LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH", LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH)
-        .value("LLAMA_VOCAB_PRE_TYPE_EXAONE", LLAMA_VOCAB_PRE_TYPE_EXAONE)
-        .value("LLAMA_VOCAB_PRE_TYPE_CHAMELEON", LLAMA_VOCAB_PRE_TYPE_CHAMELEON)
-        .export_values();
-
-    nb::enum_<enum llama_rope_type>(m, "llama_rope_type")
-        .value("LLAMA_ROPE_TYPE_NONE", LLAMA_ROPE_TYPE_NONE)
-        .value("LLAMA_ROPE_TYPE_NORM", LLAMA_ROPE_TYPE_NORM)
-        .value("LLAMA_ROPE_TYPE_NEOX", LLAMA_ROPE_TYPE_NEOX)
-        .export_values();
-
-    nb::enum_<enum llama_token_type>(m, "llama_token_type")
-        .value("LLAMA_TOKEN_TYPE_UNDEFINED", LLAMA_TOKEN_TYPE_UNDEFINED)
-        .value("LLAMA_TOKEN_TYPE_NORMAL", LLAMA_TOKEN_TYPE_NORMAL)
-        .value("LLAMA_TOKEN_TYPE_UNKNOWN", LLAMA_TOKEN_TYPE_UNKNOWN)
-        .value("LLAMA_TOKEN_TYPE_CONTROL", LLAMA_TOKEN_TYPE_CONTROL)
-        .value("LLAMA_TOKEN_TYPE_USER_DEFINED", LLAMA_TOKEN_TYPE_USER_DEFINED)
-        .value("LLAMA_TOKEN_TYPE_UNUSED", LLAMA_TOKEN_TYPE_UNUSED)
-        .value("LLAMA_TOKEN_TYPE_BYTE", LLAMA_TOKEN_TYPE_BYTE)
-        .export_values();
-
-    nb::enum_<enum llama_token_attr>(m, "llama_token_attr")
-        .value("LLAMA_TOKEN_ATTR_UNDEFINED", LLAMA_TOKEN_ATTR_UNDEFINED)
-        .value("LLAMA_TOKEN_ATTR_UNKNOWN", LLAMA_TOKEN_ATTR_UNKNOWN)
-        .value("LLAMA_TOKEN_ATTR_UNUSED", LLAMA_TOKEN_ATTR_UNUSED)
-        .value("LLAMA_TOKEN_ATTR_NORMAL", LLAMA_TOKEN_ATTR_NORMAL)
-        .value("LLAMA_TOKEN_ATTR_CONTROL", LLAMA_TOKEN_ATTR_CONTROL)
-        .value("LLAMA_TOKEN_ATTR_USER_DEFINED", LLAMA_TOKEN_ATTR_USER_DEFINED)
-        .value("LLAMA_TOKEN_ATTR_BYTE", LLAMA_TOKEN_ATTR_BYTE)
-        .value("LLAMA_TOKEN_ATTR_NORMALIZED", LLAMA_TOKEN_ATTR_NORMALIZED)
-        .value("LLAMA_TOKEN_ATTR_LSTRIP", LLAMA_TOKEN_ATTR_LSTRIP)
-        .value("LLAMA_TOKEN_ATTR_RSTRIP", LLAMA_TOKEN_ATTR_RSTRIP)
-        .value("LLAMA_TOKEN_ATTR_SINGLE_WORD", LLAMA_TOKEN_ATTR_SINGLE_WORD)
-        .export_values();
-
-    nb::enum_<enum llama_ftype>(m, "llama_ftype")
-        .value("LLAMA_FTYPE_ALL_F32", LLAMA_FTYPE_ALL_F32)
-        .value("LLAMA_FTYPE_MOSTLY_F16", LLAMA_FTYPE_MOSTLY_F16)
-        .value("LLAMA_FTYPE_MOSTLY_Q4_0", LLAMA_FTYPE_MOSTLY_Q4_0)
-        .value("LLAMA_FTYPE_MOSTLY_Q4_1", LLAMA_FTYPE_MOSTLY_Q4_1)
-        .value("LLAMA_FTYPE_MOSTLY_Q8_0", LLAMA_FTYPE_MOSTLY_Q8_0)
-        .value("LLAMA_FTYPE_MOSTLY_Q5_0", LLAMA_FTYPE_MOSTLY_Q5_0)
-        .value("LLAMA_FTYPE_MOSTLY_Q5_1", LLAMA_FTYPE_MOSTLY_Q5_1)
-        .value("LLAMA_FTYPE_MOSTLY_Q2_K", LLAMA_FTYPE_MOSTLY_Q2_K)
-        .value("LLAMA_FTYPE_MOSTLY_Q3_K_S", LLAMA_FTYPE_MOSTLY_Q3_K_S)
-        .value("LLAMA_FTYPE_MOSTLY_Q3_K_M", LLAMA_FTYPE_MOSTLY_Q3_K_M)
-        .value("LLAMA_FTYPE_MOSTLY_Q3_K_L", LLAMA_FTYPE_MOSTLY_Q3_K_L)
-        .value("LLAMA_FTYPE_MOSTLY_Q4_K_S", LLAMA_FTYPE_MOSTLY_Q4_K_S)
-        .value("LLAMA_FTYPE_MOSTLY_Q4_K_M", LLAMA_FTYPE_MOSTLY_Q4_K_M)
-        .value("LLAMA_FTYPE_MOSTLY_Q5_K_S", LLAMA_FTYPE_MOSTLY_Q5_K_S)
-        .value("LLAMA_FTYPE_MOSTLY_Q5_K_M", LLAMA_FTYPE_MOSTLY_Q5_K_M)
-        .value("LLAMA_FTYPE_MOSTLY_Q6_K", LLAMA_FTYPE_MOSTLY_Q6_K)
-        .value("LLAMA_FTYPE_MOSTLY_IQ2_XXS", LLAMA_FTYPE_MOSTLY_IQ2_XXS)
-        .value("LLAMA_FTYPE_MOSTLY_IQ2_XS", LLAMA_FTYPE_MOSTLY_IQ2_XS)
-        .value("LLAMA_FTYPE_MOSTLY_Q2_K_S", LLAMA_FTYPE_MOSTLY_Q2_K_S)
-        .value("LLAMA_FTYPE_MOSTLY_IQ3_XS", LLAMA_FTYPE_MOSTLY_IQ3_XS)
-        .value("LLAMA_FTYPE_MOSTLY_IQ3_XXS", LLAMA_FTYPE_MOSTLY_IQ3_XXS)
-        .value("LLAMA_FTYPE_MOSTLY_IQ1_S", LLAMA_FTYPE_MOSTLY_IQ1_S)
-        .value("LLAMA_FTYPE_MOSTLY_IQ4_NL", LLAMA_FTYPE_MOSTLY_IQ4_NL)
-        .value("LLAMA_FTYPE_MOSTLY_IQ3_S", LLAMA_FTYPE_MOSTLY_IQ3_S)
-        .value("LLAMA_FTYPE_MOSTLY_IQ3_M", LLAMA_FTYPE_MOSTLY_IQ3_M)
-        .value("LLAMA_FTYPE_MOSTLY_IQ2_S", LLAMA_FTYPE_MOSTLY_IQ2_S)
-        .value("LLAMA_FTYPE_MOSTLY_IQ2_M", LLAMA_FTYPE_MOSTLY_IQ2_M)
-        .value("LLAMA_FTYPE_MOSTLY_IQ4_XS", LLAMA_FTYPE_MOSTLY_IQ4_XS)
-        .value("LLAMA_FTYPE_MOSTLY_IQ1_M", LLAMA_FTYPE_MOSTLY_IQ1_M)
-        .value("LLAMA_FTYPE_MOSTLY_BF16", LLAMA_FTYPE_MOSTLY_BF16)
-        .value("LLAMA_FTYPE_MOSTLY_Q4_0_4_4", LLAMA_FTYPE_MOSTLY_Q4_0_4_4)
-        .value("LLAMA_FTYPE_MOSTLY_Q4_0_4_8", LLAMA_FTYPE_MOSTLY_Q4_0_4_8)
-        .value("LLAMA_FTYPE_MOSTLY_Q4_0_8_8", LLAMA_FTYPE_MOSTLY_Q4_0_8_8)
-        .value("LLAMA_FTYPE_MOSTLY_TQ1_0", LLAMA_FTYPE_MOSTLY_TQ1_0)
-        .value("LLAMA_FTYPE_MOSTLY_TQ2_0", LLAMA_FTYPE_MOSTLY_TQ2_0)
-        .value("LLAMA_FTYPE_GUESSED", LLAMA_FTYPE_GUESSED)
-        .export_values();
-
-    nb::enum_<enum llama_rope_scaling_type>(m, "llama_rope_scaling_type")
-        .value("LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED", LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED)
-        .value("LLAMA_ROPE_SCALING_TYPE_NONE", LLAMA_ROPE_SCALING_TYPE_NONE)
-        .value("LLAMA_ROPE_SCALING_TYPE_LINEAR", LLAMA_ROPE_SCALING_TYPE_LINEAR)
-        .value("LLAMA_ROPE_SCALING_TYPE_YARN", LLAMA_ROPE_SCALING_TYPE_YARN)
-        .value("LLAMA_ROPE_SCALING_TYPE_MAX_VALUE", LLAMA_ROPE_SCALING_TYPE_MAX_VALUE)
-        .export_values();
-
-    nb::enum_<enum llama_pooling_type>(m, "llama_pooling_type")
-        .value("LLAMA_POOLING_TYPE_UNSPECIFIED", LLAMA_POOLING_TYPE_UNSPECIFIED)
-        .value("LLAMA_POOLING_TYPE_NONE", LLAMA_POOLING_TYPE_NONE)
-        .value("LLAMA_POOLING_TYPE_MEAN", LLAMA_POOLING_TYPE_MEAN)
-        .value("LLAMA_POOLING_TYPE_CLS", LLAMA_POOLING_TYPE_CLS)
-        .value("LLAMA_POOLING_TYPE_LAST", LLAMA_POOLING_TYPE_LAST)
-        .value("LLAMA_POOLING_TYPE_RANK", LLAMA_POOLING_TYPE_RANK)
-        .export_values();
-
-    nb::enum_<enum llama_attention_type>(m, "llama_attention_type")
-        .value("LLAMA_ATTENTION_TYPE_UNSPECIFIED", LLAMA_ATTENTION_TYPE_UNSPECIFIED)
-        .value("LLAMA_ATTENTION_TYPE_CAUSAL", LLAMA_ATTENTION_TYPE_CAUSAL)
-        .value("LLAMA_ATTENTION_TYPE_NON_CAUSAL", LLAMA_ATTENTION_TYPE_NON_CAUSAL)
-        .export_values();
-
-    nb::enum_<enum llama_split_mode>(m, "llama_split_mode")
-        .value("LLAMA_SPLIT_MODE_NONE", LLAMA_SPLIT_MODE_NONE)
-        .value("LLAMA_SPLIT_MODE_LAYER", LLAMA_SPLIT_MODE_LAYER)
-        .value("LLAMA_SPLIT_MODE_ROW", LLAMA_SPLIT_MODE_ROW)
-        .export_values();
-
-    nb::class_<llama_token_data>(m, "llama_token_data")
-        .def(nb::init<>())
-        .def(nb::init<llama_token,float,float>())
-        .def_rw("id", &llama_token_data::id)         // token id
-        .def_rw("logit", &llama_token_data::logit)   // log-odds of the token
-        .def_rw("p", &llama_token_data::p);          // probability of the token
-
-    nb::class_<llama_token_data_array> (m, "llama_token_data_array")
-        .def(nb::init<>())
-        .def_rw("size", &llama_token_data_array::size)
-        .def_rw("selected", &llama_token_data_array::selected)
-        .def_rw("sorted", &llama_token_data_array::sorted);
-        // llama_token  *  token;
-        // float        *  embd;
-        // llama_pos    *  pos;
-        // int32_t      *  n_seq_id;
-        // llama_seq_id ** seq_id;
-        // int8_t       *  logits; // TODO: rename this to "output"
-
-
-    nb::class_<llama_batch> (m, "llama_batch")
-        .def(nb::init<>())
-        .def_rw("n_tokens", &llama_batch::n_tokens)
-        // .def_rw("token", &llama_batch::token)
-        // .def_rw("embd", &llama_batch::embd)
-        // .def_rw("pos", &llama_batch::pos)
-        // .def_rw("n_seq_id", &llama_batch::n_seq_id)
-        // .def_rw("seq_id", &llama_batch::seq_id)
-        // FIXME: this is WRONG!!
-        .def("set_last_logits_to_true", [](llama_batch& self) {
-            self.logits[self.n_tokens - 1] = true;
-        })
-        // .def("get_logits", [](llama_batch& self) -> nb::ndarray<int8_t> {
-        //     return to_array<int8_t>(self.logits, self.n_tokens);
-        // })
-        .def_rw("all_pos_0", &llama_batch::all_pos_0)
-        .def_rw("all_pos_1", &llama_batch::all_pos_1)
-        .def_rw("all_seq_id", &llama_batch::all_seq_id);
-    
-    nb::enum_<enum llama_model_kv_override_type>(m, "llama_model_kv_override_type")
-        .value("LLAMA_KV_OVERRIDE_TYPE_INT", LLAMA_KV_OVERRIDE_TYPE_INT)
-        .value("LLAMA_KV_OVERRIDE_TYPE_FLOAT", LLAMA_KV_OVERRIDE_TYPE_FLOAT)
-        .value("LLAMA_KV_OVERRIDE_TYPE_BOOL", LLAMA_KV_OVERRIDE_TYPE_BOOL)
-        .value("LLAMA_KV_OVERRIDE_TYPE_STR", LLAMA_KV_OVERRIDE_TYPE_STR)
-        .export_values();
-
-    nb::class_<llama_model_kv_override> (m, "llama_model_kv_override")
-        .def(nb::init<>())
-        .def_rw("tag", &llama_model_kv_override::tag);
-    
-    nb::class_<llama_model_params> (m, "llama_model_params")
-        .def(nb::init<>())
-        .def_rw("n_gpu_layers", &llama_model_params::n_gpu_layers)
-        .def_rw("split_mode", &llama_model_params::split_mode)
-        .def_rw("main_gpu", &llama_model_params::main_gpu)
-        .def_rw("vocab_only", &llama_model_params::vocab_only)
-        .def_rw("use_mmap", &llama_model_params::use_mmap)
-        .def_rw("use_mlock", &llama_model_params::use_mlock)
-        .def_rw("check_tensors", &llama_model_params::check_tensors);
-    
-    nb::class_<llama_context_params> (m, "llama_context_params")
-        .def(nb::init<>())
-        .def_rw("n_ctx", &llama_context_params::n_ctx)
-        .def_rw("n_batch", &llama_context_params::n_batch)
-        .def_rw("n_ubatch", &llama_context_params::n_ubatch)
-        .def_rw("n_seq_max", &llama_context_params::n_seq_max)
-        .def_rw("n_threads", &llama_context_params::n_threads)
-        .def_rw("n_threads_batch", &llama_context_params::n_threads_batch)
-        .def_rw("rope_scaling_type", &llama_context_params::rope_scaling_type)
-        .def_rw("pooling_type", &llama_context_params::pooling_type)
-        .def_rw("attention_type", &llama_context_params::attention_type)
-        .def_rw("rope_freq_base", &llama_context_params::rope_freq_base)
-        .def_rw("rope_freq_scale", &llama_context_params::rope_freq_scale)
-        .def_rw("yarn_ext_factor", &llama_context_params::yarn_ext_factor)
-        .def_rw("yarn_attn_factor", &llama_context_params::yarn_attn_factor)
-        .def_rw("yarn_beta_fast", &llama_context_params::yarn_beta_fast)
-        .def_rw("yarn_beta_slow", &llama_context_params::yarn_beta_slow)
-        .def_rw("yarn_orig_ctx", &llama_context_params::yarn_orig_ctx)
-        .def_rw("defrag_thold", &llama_context_params::defrag_thold)
-        .def_rw("type_k", &llama_context_params::type_k)
-        .def_rw("type_v", &llama_context_params::type_v)
-        .def_rw("logits_all", &llama_context_params::logits_all)
-        .def_rw("embeddings", &llama_context_params::embeddings)
-        .def_rw("offload_kqv", &llama_context_params::offload_kqv)
-        .def_rw("flash_attn", &llama_context_params::flash_attn)
-        .def_rw("no_perf", &llama_context_params::no_perf);
-
-    nb::class_<llama_model_quantize_params> (m, "llama_model_quantize_params")
-        .def(nb::init<>())
-        .def_rw("nthread", &llama_model_quantize_params::nthread)
-        .def_rw("ftype", &llama_model_quantize_params::ftype)
-        .def_rw("output_tensor_type", &llama_model_quantize_params::output_tensor_type)
-        .def_rw("token_embedding_type", &llama_model_quantize_params::token_embedding_type)
-        .def_rw("allow_requantize", &llama_model_quantize_params::allow_requantize)
-        .def_rw("quantize_output_tensor", &llama_model_quantize_params::quantize_output_tensor)
-        .def_rw("only_copy", &llama_model_quantize_params::only_copy)
-        .def_rw("pure", &llama_model_quantize_params::pure);
-
-    nb::class_<llama_logit_bias> (m, "llama_logit_bias", "")
-        .def(nb::init<>());
-        // .def_rw("token", &llama_model_quantize_params::token)
-        // .def_rw("bias", &llama_model_quantize_params::bias);
-
-    nb::class_<llama_sampler_chain_params> (m, "llama_sampler_chain_params", "")
-        .def(nb::init<>())
-        .def_rw("no_perf", &llama_sampler_chain_params::no_perf);
-
-    nb::class_<llama_chat_message> (m, "llama_chat_message")
-        .def(nb::init<>())
-        .def_rw("role", &llama_chat_message::role)
-        .def_rw("content", &llama_chat_message::content);
-
-    m.def("llama_model_default_params", (struct llama_model_params (*)()) &llama_model_default_params, "C++: llama_model_default_params() --> struct llama_model_params");
-    m.def("llama_context_default_params", (struct llama_context_params (*)()) &llama_context_default_params, "C++: llama_context_default_params() --> struct llama_context_params");
-    m.def("llama_sampler_chain_default_params", (struct llama_sampler_chain_params (*)()) &llama_sampler_chain_default_params);
-    m.def("llama_model_quantize_default_params", (struct llama_model_quantize_params (*)()) &llama_model_quantize_default_params, "C++: llama_model_quantize_default_params() --> struct llama_model_quantize_params");
-    m.def("llama_backend_init", (void (*)()) &llama_backend_init, "C++: llama_backend_init() --> void");
-    m.def("llama_numa_init", (void (*)(enum ggml_numa_strategy)) &llama_numa_init, "C++: llama_numa_init(enum ggml_numa_strategy) --> void", nb::arg("numa"));
-    m.def("llama_backend_free", (void (*)()) &llama_backend_free, "C++: llama_backend_free() --> void");
-    m.def("llama_load_model_from_file", (struct llama_model * (*)(const char *, struct llama_model_params *)) &llama_load_model_from_file, "Load a model from file", nb::arg("path_model"), nb::arg("params"), nb::rv_policy::reference);
-    m.def("llama_free_model", (void (*)(struct llama_model *)) &llama_free_model, "Free a model", nb::arg("model"));
-   
-    m.def("llama_new_context_with_model", (struct llama_context * (*)(struct llama_model *, struct llama_context_params)) &llama_new_context_with_model, "New context with model", nb::arg("model"), nb::arg("params"), nb::rv_policy::reference);
-   
-    m.def("llama_free", (void (*)(struct llama_context *)) &llama_free, "Free context", nb::arg("ctx"));
-    m.def("llama_time_us", (int64_t (*)()) &llama_time_us, "C++: llama_time_us() --> int");
-    m.def("llama_max_devices", (size_t (*)()) &llama_max_devices, "C++: llama_max_devices() --> int");
-    m.def("llama_supports_mmap", (bool (*)()) &llama_supports_mmap, "C++: llama_supports_mmap() --> bool");
-    m.def("llama_supports_mlock", (bool (*)()) &llama_supports_mlock, "C++: llama_supports_mlock() --> bool");
-    m.def("llama_supports_gpu_offload", (bool (*)()) &llama_supports_gpu_offload, "C++: llama_supports_gpu_offload() --> bool");
-
-    m.def("llama_n_ctx", (uint32_t (*)(const struct llama_context *)) &llama_n_ctx, "get n_ctx from context", nb::arg("ctx"));
-    m.def("llama_n_batch", (uint32_t (*)(const struct llama_context *)) &llama_n_batch, "get n_batch from context", nb::arg("ctx"));
-    m.def("llama_n_ubatch", (uint32_t (*)(const struct llama_context *)) &llama_n_ubatch, "get n_ubatch from context", nb::arg("ctx"));
-    m.def("llama_n_seq_max", (uint32_t (*)(const struct llama_context *)) &llama_n_seq_max, "get n_seq_max from context", nb::arg("ctx"));
-
-    m.def("llama_n_vocab", (int32_t (*)(const struct llama_model *)) &llama_n_vocab, "get n_vocab from model", nb::arg("model"));
-    m.def("llama_n_ctx_train", (int32_t (*)(const struct llama_model *)) &llama_n_ctx_train, "get n_ctx_train from model", nb::arg("model"));
-    m.def("llama_n_embd", (int32_t (*)(const struct llama_model *)) &llama_n_embd, "get n_embed from model", nb::arg("model"));
-    m.def("llama_n_layer", (int32_t (*)(const struct llama_model *)) &llama_n_layer, "get n_layer from model", nb::arg("model"));
-    m.def("llama_n_head", (int32_t (*)(const struct llama_model *)) &llama_n_head, "get n_head from model", nb::arg("model"));
-
-    m.def("llama_get_model", (const struct llama_model * (*)(const struct llama_context *)) &llama_get_model, "get model from context", nb::arg("ctx"));
-    m.def("get_llama_pooling_type", (enum llama_pooling_type (*)(const struct llama_context *)) &llama_pooling_type, "get pooling_type from context", nb::arg("ctx"));
-    m.def("get_llama_vocab_type", (enum llama_vocab_type (*)(const struct llama_model *)) &llama_vocab_type, "get vocab_type from model", nb::arg("model"));
-    m.def("get_llama_rope_type", (enum llama_rope_type (*)(const struct llama_model *)) &llama_rope_type, "get rope_type from model", nb::arg("model"));
-
-    m.def("llama_rope_freq_scale_train", (float (*)(const struct llama_model *)) &llama_rope_freq_scale_train, "get rope_freq_scale_train from model", nb::arg("model"));
-
-    m.def("llama_model_meta_val_str", (int32_t (*)(const struct llama_model *, const char *, const char *, size_t)) &llama_model_meta_val_str, "get meta_val_str from model", nb::arg("model"), nb::arg("key"), nb::arg("buf"), nb::arg("buf_size"));
-    m.def("llama_model_meta_count", (int32_t (*)(const struct llama_model *)) &llama_model_meta_count, "get meta_count from model", nb::arg("model"));
-    m.def("llama_model_meta_key_by_index", (int32_t (*)(const struct llama_model *, int32_t, const char *, size_t)) &llama_model_meta_key_by_index, "get meta_key_by_index from model", nb::arg("model"), nb::arg("i"), nb::arg("buf"), nb::arg("buf_size"));
-    m.def("llama_model_meta_val_str_by_index", (int32_t (*)(const struct llama_model *, int32_t, const char *, size_t)) &llama_model_meta_val_str_by_index, "get meta_val_str_by_index from model", nb::arg("model"), nb::arg("i"), nb::arg("buf"), nb::arg("buf_size"));
-    m.def("llama_model_desc", (int32_t (*)(const struct llama_model *, const char *, size_t)) &llama_model_desc, "get model_desc from model", nb::arg("model"), nb::arg("buf"), nb::arg("buf_size"));
-
-    m.def("llama_model_size", (uint64_t (*)(const struct llama_model *)) &llama_model_size, "get model_size from model", nb::arg("model"));
-    m.def("llama_model_n_params", (uint64_t (*)(const struct llama_model *)) &llama_model_n_params, "get model_n_params from model", nb::arg("model"));
-
-    m.def("llama_get_model_tensor", (struct ggml_tensor* (*)(struct llama_model *)) &llama_get_model_tensor, "get model tensor from model", nb::arg("model"));
-    m.def("llama_get_model_tensor", (struct ggml_tensor* (*)(struct llama_model *, const char *)) &llama_get_model_tensor, "get named model tensor from model", nb::arg("model"), nb::arg("name"));
-
-    m.def("llama_model_has_encoder", (bool (*)(const struct llama_model *)) &llama_model_has_encoder, "model has encoder?", nb::arg("model"));
-
-    m.def("llama_model_decoder_start_token", (llama_token (*)(const struct llama_model *)) &llama_model_decoder_start_token, "get decoder_start_token from model", nb::arg("model"));
-
-    m.def("llama_model_is_recurrent", (bool (*)(const struct llama_model *)) &llama_model_is_recurrent, "check if model is recurrent", nb::arg("model"));
-
-    m.def("llama_model_quantize", (int (*)(const char *, const char *, const struct llama_model_quantize_params *)) &llama_model_quantize, "C++: llama_model_quantize(const char *, const char *, const struct llama_model_quantize_params *) --> int", nb::arg("fname_inp"), nb::arg("fname_out"), nb::arg("params"));
-
-    m.def("llama_lora_adapter_init", (struct llama_lora_adapter (*)(const struct llama_model *, const char *)) &llama_lora_adapter_init, "", nb::arg("model"), nb::arg("path_lora"));
-    m.def("llama_lora_adapter_set", (int32_t (*)(struct llama_context*, struct llama_lora_adapter*, float)) &llama_lora_adapter_set, "", nb::arg("ctx"), nb::arg("adapter"), nb::arg("scale"));
-    m.def("llama_lora_adapter_remove", (int32_t (*)(struct llama_context*, struct llama_lora_adapter*)) &llama_lora_adapter_remove, "", nb::arg("ctx"), nb::arg("adapter"));
-    m.def("llama_lora_adapter_clear", (void (*)(struct llama_context*)) &llama_lora_adapter_clear, "", nb::arg("ctx"));
-    m.def("llama_lora_adapter_free", (void (*)(struct llama_lora_adapter*)) &llama_lora_adapter_free, "", nb::arg("adapter"));
-
-    m.def("llama_control_vector_apply", (int32_t (*)(struct llama_context * , const float*, size_t, int32_t, int32_t, int32_t)) &llama_model_quantize, "", nb::arg("lctx"), nb::arg("data"), nb::arg("len"), nb::arg("n_embd"), nb::arg("il_start"), nb::arg("il_end"));
-
-    nb::class_<llama_kv_cache_view_cell>(m, "llama_kv_cache_view_cell")
-        .def(nb::init<>())
-        .def_rw("pos", &llama_kv_cache_view_cell::pos);
-
-    nb::class_<llama_kv_cache_view>(m, "llama_kv_cache_view", "")
-        .def(nb::init<>())
-        .def_rw("n_cells", &llama_kv_cache_view::n_cells)
-        .def_rw("n_seq_max", &llama_kv_cache_view::n_seq_max)
-        .def_rw("token_count", &llama_kv_cache_view::token_count)
-        .def_rw("used_cells", &llama_kv_cache_view::used_cells)
-        .def_rw("max_contiguous", &llama_kv_cache_view::max_contiguous)
-        .def_rw("max_contiguous_idx", &llama_kv_cache_view::max_contiguous_idx);
-
-    m.def("llama_kv_cache_view_init", (struct llama_kv_cache_view (*)(const struct llama_context *, int32_t)) &llama_kv_cache_view_init, "", nb::arg("ctx"), nb::arg("n_seq_max"));
-    m.def("llama_kv_cache_view_free", (void (*)(struct llama_kv_cache_view *)) &llama_kv_cache_view_free, "", nb::arg("view"));
-    m.def("llama_kv_cache_view_update", (void (*)(const struct llama_context *, struct llama_kv_cache_view *)) &llama_kv_cache_view_update, "", nb::arg("ctx"), nb::arg("view"));
-    m.def("llama_get_kv_cache_token_count", (int32_t (*)(const struct llama_context *)) &llama_get_kv_cache_token_count, "", nb::arg("ctx"));
-    m.def("llama_get_kv_cache_used_cells", (int32_t (*)(const struct llama_context *)) &llama_get_kv_cache_used_cells, "", nb::arg("ctx"));
-    m.def("llama_kv_cache_clear", (void (*)(const struct llama_context *)) &llama_kv_cache_clear, "", nb::arg("ctx"));
-    m.def("llama_kv_cache_seq_rm", (bool (*)(const struct llama_context *, llama_seq_id, llama_pos, llama_pos)) &llama_kv_cache_seq_rm, "", nb::arg("ctx"), nb::arg("seq_id"), nb::arg("p0"), nb::arg("p1"));
-    m.def("llama_kv_cache_seq_cp", (void (*)(const struct llama_context *, llama_seq_id, llama_seq_id, llama_pos, llama_pos)) &llama_kv_cache_seq_cp, "", nb::arg("ctx"), nb::arg("seq_id_src"), nb::arg("seq_id_dst"), nb::arg("p0"), nb::arg("p1"));
-    m.def("llama_kv_cache_seq_keep", (void (*)(const struct llama_context *, llama_seq_id)) &llama_kv_cache_seq_keep, "", nb::arg("ctx"), nb::arg("seq_id"));
-    m.def("llama_kv_cache_seq_add", (void (*)(const struct llama_context *, llama_seq_id, llama_pos, llama_pos, llama_pos)) &llama_kv_cache_seq_add, "", nb::arg("ctx"), nb::arg("seq_id"), nb::arg("p0"), nb::arg("p1"), nb::arg("delta"));
-    m.def("llama_kv_cache_seq_div", (void (*)(const struct llama_context *, llama_seq_id, llama_pos, llama_pos, int)) &llama_kv_cache_seq_div, "", nb::arg("ctx"), nb::arg("seq_id"), nb::arg("p0"), nb::arg("p1"), nb::arg("d"));
-    m.def("llama_kv_cache_seq_pos_max", (llama_pos (*)(const struct llama_context *, llama_seq_id)) &llama_kv_cache_seq_pos_max, "", nb::arg("ctx"), nb::arg("seq_id"));
-    m.def("llama_kv_cache_defrag", (void (*)(const struct llama_context *)) &llama_kv_cache_defrag, "", nb::arg("ctx"));
-    m.def("llama_kv_cache_update", (void (*)(const struct llama_context *)) &llama_kv_cache_update, "", nb::arg("ctx"));
-
-    m.def("llama_batch_get_one", (struct llama_batch (*)(int *, int, int, int)) &llama_batch_get_one, "C++: llama_batch_get_one(int *, int, int, int) --> struct llama_batch", nb::arg("tokens"), nb::arg("n_tokens"), nb::arg("pos_0"), nb::arg("seq_id"));
-    m.def("llama_batch_init", (struct llama_batch (*)(int, int, int)) &llama_batch_init, "C++: llama_batch_init(int, int, int) --> struct llama_batch", nb::arg("n_tokens"), nb::arg("embd"), nb::arg("n_seq_max"));
-    m.def("llama_batch_free", (void (*)(struct llama_batch)) &llama_batch_free, "C++: llama_batch_free(struct llama_batch) --> void", nb::arg("batch"));
-
-    m.def("llama_encode", (int32_t (*)(const struct llama_context *, struct llama_batch)) &llama_encode, "", nb::arg("ctx"), nb::arg("batch"));
-    m.def("llama_decode", (int32_t (*)(const struct llama_context *, struct llama_batch)) &llama_decode, "", nb::arg("ctx"), nb::arg("batch"));
-
-    m.def("llama_set_n_threads", (void (*)(const struct llama_context *, uint32_t, uint32_t)) &llama_set_n_threads, "", nb::arg("ctx"), nb::arg("n_threads"), nb::arg("n_threads_batch"));
-    m.def("llama_n_threads", (uint32_t (*)(const struct llama_context *)) &llama_n_threads, "", nb::arg("ctx"));
-    m.def("llama_n_threads_batch", (uint32_t (*)(const struct llama_context *)) &llama_n_threads_batch, "", nb::arg("ctx"));
-
-    m.def("llama_set_embeddings", (void (*)(const struct llama_context *, bool)) &llama_set_embeddings, "", nb::arg("ctx"), nb::arg("embeddings"));
-
-    m.def("llama_set_causal_attn", (void (*)(const struct llama_context *, bool)) &llama_set_causal_attn, "", nb::arg("ctx"), nb::arg("causal_attn"));
-
-    // void llama_set_abort_callback(struct llama_context * ctx, ggml_abort_callback abort_callback, void * abort_callback_data);    
-
-    m.def("llama_synchronize", (void (*)(const struct llama_context *)) &llama_synchronize, "", nb::arg("ctx"));
-    
-    m.def("llama_get_logits", (float* (*)(const struct llama_context *)) &llama_get_logits, "", nb::arg("ctx"));
-    m.def("llama_get_logits_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_logits_ith, "", nb::arg("ctx"), nb::arg("i"));
-
-    m.def("llama_get_embeddings", (float* (*)(const struct llama_context *)) &llama_get_embeddings, "", nb::arg("ctx"));
-    m.def("llama_get_embeddings_ith", (float* (*)(const struct llama_context *, int32_t)) &llama_get_embeddings_ith, "", nb::arg("ctx"), nb::arg("i"));
-    m.def("llama_get_embeddings_seq", (float* (*)(const struct llama_context *, llama_seq_id)) &llama_get_embeddings_seq, "", nb::arg("ctx"), nb::arg("seq_id"));
-
-    m.def("llama_token_get_text", (const char* (*)(const struct llama_model *, llama_token)) &llama_token_get_text, "", nb::arg("model"), nb::arg("token"));
-    m.def("llama_token_get_score", (float (*)(const struct llama_model *, llama_token)) &llama_token_get_score, "", nb::arg("model"), nb::arg("token"));
-
-    m.def("llama_token_get_attr", (enum llama_token_attr (*)(const struct llama_model *, llama_token)) &llama_token_get_attr, "", nb::arg("model"), nb::arg("token"));
-    m.def("llama_token_is_eog", (bool (*)(const struct llama_model *, llama_token)) &llama_token_is_eog, "", nb::arg("model"), nb::arg("token"));
-    m.def("llama_token_is_control", (bool (*)(const struct llama_model *, llama_token)) &llama_token_is_control, "", nb::arg("model"), nb::arg("token"));
-
-    m.def("llama_token_bos", (llama_token (*)(const struct llama_model *)) &llama_token_bos, "", nb::arg("model"));
-    m.def("llama_token_eos", (llama_token (*)(const struct llama_model *)) &llama_token_eos, "", nb::arg("model"));
-    m.def("llama_token_cls", (llama_token (*)(const struct llama_model *)) &llama_token_cls, "", nb::arg("model"));
-    m.def("llama_token_sep", (llama_token (*)(const struct llama_model *)) &llama_token_sep, "", nb::arg("model"));
-    m.def("llama_token_nl",  (llama_token (*)(const struct llama_model *)) &llama_token_nl,  "", nb::arg("model"));
-    m.def("llama_token_pad", (llama_token (*)(const struct llama_model *)) &llama_token_pad, "", nb::arg("model"));
-
-    m.def("llama_add_bos_token", (int32_t (*)(const struct llama_model *)) &llama_add_bos_token, "", nb::arg("model"));
-    m.def("llama_add_eos_token", (int32_t (*)(const struct llama_model *)) &llama_add_eos_token, "", nb::arg("model"));
-
-    m.def("llama_token_prefix", (llama_token (*)(const struct llama_model *)) &llama_token_prefix, "", nb::arg("model"));
-    m.def("llama_token_middle", (llama_token (*)(const struct llama_model *)) &llama_token_middle, "", nb::arg("model"));
-    m.def("llama_token_suffix", (llama_token (*)(const struct llama_model *)) &llama_token_suffix, "", nb::arg("model"));
-    m.def("llama_token_eot", (llama_token (*)(const struct llama_model *)) &llama_token_eot, "", nb::arg("model"));
-
-    m.def("llama_tokenize", (int32_t (*)(const struct llama_model *, const char*, int32_t, llama_token*, int32_t, bool, bool)) &llama_tokenize, "", nb::arg("model"), nb::arg("text"), nb::arg("text_len"), nb::arg("tokens"), nb::arg("n_tokens_max"), nb::arg("add_special"), nb::arg("parse_special"));
-    // m.def("llama_token_to_piece", (int32_t (*)(const struct llama_model *, llama_token, char*, int32_t, int32_t, bool)) &llama_token_to_piece, "", nb::arg("model"), nb::arg("token"), nb::arg("buf"), nb::arg("length"), nb::arg("lstrip"), nb::arg("special"));
-    // m.def("llama_token_to_piece", [](const struct llama_model * model, llama_token token, std::string buf, int32_t lstrip, bool special) -> int32_t {
-    //     return llama_token_to_piece(model, token, buf.data(), buf.size(), lstrip, special);
-    // }, "", nb::arg("model"), nb::arg("token"), nb::arg("buf"), nb::arg("lstrip"), nb::arg("special"));
-    // m.def("llama_detokenize", (int32_t (*)(const struct llama_model *, const llama_token*, int32_t, char*, int32_t, bool, bool)) &llama_detokenize, "", nb::arg("model"), nb::arg("tokens"), nb::arg("n_tokens"), nb::arg("text"), nb::arg("text_len_max"), nb::arg("remove_special"), nb::arg("unparse_special"));
-    
-    // m.def("llama_chat_apply_template", (int32_t (*)(const struct llama_model *, const char*, const struct llama_chat_message*, size_t, bool, char*, int32_t)) &llama_chat_apply_template, "", nb::arg("model"), nb::arg("tmpl"), nb::arg("chat"), nb::arg("n_msg"), nb::arg("add_ass"), nb::arg("buf"), nb::arg("length"));
-
-    nb::class_<llama_sampler_i> (m, "llama_sampler_i", "")
-        .def(nb::init<>());
-        // .def_readwrite("name", &llama_sampler_i::name)
-        // .def_readwrite("accept", &llama_sampler_i::accept);
-        // const char *           (*name)  (const struct llama_sampler * smpl);                                 // can be NULL
-        // void                   (*accept)(      struct llama_sampler * smpl, llama_token token);              // can be NULL
-        // void                   (*apply) (      struct llama_sampler * smpl, llama_token_data_array * cur_p); // required
-        // void                   (*reset) (      struct llama_sampler * smpl);                                 // can be NULL
-        // struct llama_sampler * (*clone) (const struct llama_sampler * smpl);                                 // can be NULL if ctx is NULL
-        // void                   (*free)  (      struct llama_sampler * smpl);                                 // can be NULL if ctx is NULL
-
-    nb::class_<llama_sampler> (m, "llama_sampler", "")
-        .def(nb::init<>())
-        .def_rw("iface", &llama_sampler::iface)
-        .def_rw("ctx", &llama_sampler::ctx);
-
-
-    m.def("llama_sampler_name", (const char * (*)(const struct llama_sampler *)) &llama_sampler_name, "", nb::arg("smpl"));
-    m.def("llama_sampler_accept", (void (*)(struct llama_sampler *, llama_token)) &llama_sampler_accept, "", nb::arg("smpl"),  nb::arg("token"));
-    m.def("llama_sampler_apply", (void (*)(struct llama_sampler *, llama_token_data_array *)) &llama_sampler_apply, "", nb::arg("smpl"),  nb::arg("cur_p"));
-    m.def("llama_sampler_reset", (void (*)(struct llama_sampler *)) &llama_sampler_apply, "", nb::arg("smpl"));
-    m.def("llama_sampler_clone", (struct llama_sampler * (*)(const struct llama_sampler *)) &llama_sampler_clone, "", nb::arg("smpl"), nb::rv_policy::reference);
-    m.def("llama_sampler_free", (void (*)(const struct llama_sampler *)) &llama_sampler_free, "", nb::arg("smpl"));
-    m.def("llama_sampler_chain_init", (struct llama_sampler *  (*)(struct llama_sampler_chain_params)) &llama_sampler_chain_init, "", nb::arg("params"), nb::rv_policy::reference);
-    m.def("llama_sampler_chain_add", (void (*)(struct llama_sampler *, struct llama_sampler *)) &llama_sampler_chain_add, "", nb::arg("chain"), nb::arg("smpl"));
-    m.def("llama_sampler_chain_get", (struct llama_sampler * (*)(const struct llama_sampler *, int32_t)) &llama_sampler_chain_get, "", nb::arg("chain"), nb::arg("i"), nb::rv_policy::reference);
-    m.def("llama_sampler_chain_remove", (struct llama_sampler * (*)(const struct llama_sampler *, int32_t)) &llama_sampler_chain_remove, "", nb::arg("chain"), nb::arg("i"), nb::rv_policy::reference);    
-    m.def("llama_sampler_chain_n", (int (*)(const struct llama_sampler *)) &llama_sampler_chain_n, "", nb::arg("chain"));
-    
-    m.def("llama_sampler_init_greedy", (struct llama_sampler * (*)(void)) &llama_sampler_init_greedy, nb::rv_policy::reference);
-    m.def("llama_sampler_init_dist", (struct llama_sampler * (*)(uint32_t)) &llama_sampler_init_dist, "", nb::arg("seed"), nb::rv_policy::reference);
-
-    m.def("llama_sampler_init_softmax", (struct llama_sampler * (*)(void)) &llama_sampler_init_softmax);
-    m.def("llama_sampler_init_top_k", (struct llama_sampler * (*)(uint32_t)) &llama_sampler_init_top_k, "", nb::arg("k"));
-    m.def("llama_sampler_init_top_p", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_top_p, "", nb::arg("p"), nb::arg("min_keep"));
-    m.def("llama_sampler_init_min_p", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_min_p, "", nb::arg("p"), nb::arg("min_keep"));
-    m.def("llama_sampler_init_tail_free", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_tail_free, "", nb::arg("z"), nb::arg("min_keep"));
-
-    m.def("llama_sampler_init_typical", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_typical, "", nb::arg("p"), nb::arg("min_keep"));
-    m.def("llama_sampler_init_temp", (struct llama_sampler * (*)(float)) &llama_sampler_init_temp, "", nb::arg("t"));
-    m.def("llama_sampler_init_temp_ext", (struct llama_sampler * (*)(float, float, float)) &llama_sampler_init_temp_ext, "", nb::arg("t"), nb::arg("delta"), nb::arg("exponent"));
-    m.def("llama_sampler_init_mirostat", (struct llama_sampler * (*)(int32_t, uint32_t, float, float, int32_t)) &llama_sampler_init_mirostat, "", nb::arg("n_vocab"), nb::arg("seed"), nb::arg("tau"), nb::arg("eta"), nb::arg("m"));
-    m.def("llama_sampler_init_mirostat_v2", (struct llama_sampler * (*)(uint32_t, float, float)) &llama_sampler_init_mirostat_v2, "", nb::arg("seed"), nb::arg("tau"), nb::arg("eta"));
-    m.def("llama_sampler_init_grammar", (struct llama_sampler * (*)(const struct llama_model *, const char *, const char *)) &llama_sampler_init_grammar, "", nb::arg("model"), nb::arg("grammar_str"), nb::arg("grammar_root"));
-    m.def("llama_sampler_init_penalties", (struct llama_sampler * (*)(int32_t, llama_token, llama_token, int32_t, float, float, float, bool, bool)) &llama_sampler_init_penalties, "", nb::arg("n_vocab"), nb::arg("special_eos_id"), nb::arg("linefeed_id"), nb::arg("penalty_last_n"), nb::arg("penalty_repeat"), nb::arg("epenalty_freq"), nb::arg("penalty_present"), nb::arg("penalize_nl"), nb::arg("ignore_eos"));
-    m.def("llama_sampler_init_logit_bias", (struct llama_sampler * (*)(int32_t, int32_t, const llama_logit_bias *)) &llama_sampler_init_logit_bias, "", nb::arg("n_vocab"), nb::arg("n_logit_bias"), nb::arg("logit_bias"));
-
-    m.def("llama_sampler_sample", (llama_token (*)(struct llama_sampler *, struct llama_context *, int32_t)) &llama_sampler_sample, "", nb::arg("smpl"), nb::arg("ctx"), nb::arg("idx"));
-
-    // m.def("llama_split_path", (int (*)(char *, int, const char *, int, int)) &llama_split_path, "Build a split GGUF final path for this chunk.", nb::arg("split_path"), nb::arg("maxlen"), nb::arg("path_prefix"), nb::arg("split_no"), nb::arg("split_count"));
-    // m.def("llama_split_prefix", (int (*)(char *, int, const char *, int, int)) &llama_split_prefix, "Extract the path prefix from the split_path if and only if the split_no and split_count match.", nb::arg("split_prefix"), nb::arg("maxlen"), nb::arg("split_path"), nb::arg("split_no"), nb::arg("split_count"));
-
-    // Print system information
-    m.def("llama_print_system_info", (const char * (*)(void)) &llama_print_system_info, "");
-
-    // Set callback for all future logging events.
-    // If this is not called, or NULL is supplied, everything is output on stderr.
-    m.def("llama_log_set", (void (*)(ggml_log_callback log_callback, void * user_data)) &llama_log_set, "", nb::arg("log_callback"), nb::arg("user_data"));
-
-    nb::class_<llama_perf_context_data> (m, "llama_perf_context_data", "")
-        .def(nb::init<>())
-        .def_rw("t_start_ms", &llama_perf_context_data::t_start_ms)
-        .def_rw("t_load_ms", &llama_perf_context_data::t_load_ms)
-        .def_rw("t_p_eval_ms", &llama_perf_context_data::t_p_eval_ms)
-        .def_rw("t_eval_ms", &llama_perf_context_data::t_eval_ms)
-        .def_rw("n_p_eval", &llama_perf_context_data::n_p_eval)
-        .def_rw("n_eval", &llama_perf_context_data::n_eval);
-
-    nb::class_<llama_perf_sampler_data> (m, "llama_perf_sampler_data", "")
-        .def(nb::init<>())
-        .def_rw("t_sample_ms", &llama_perf_sampler_data::t_sample_ms)
-        .def_rw("n_sample", &llama_perf_sampler_data::n_sample);
-
-    m.def("llama_perf_context", (struct llama_perf_context_data (*)(const struct llama_context *)) &llama_perf_context, "", nb::arg("ctx"));
-    m.def("llama_perf_context_print", (void (*)(const struct llama_context *)) &llama_perf_context_print, "", nb::arg("ctx"));
-    m.def("llama_perf_context_reset", (void (*)(struct llama_context *)) &llama_perf_context_reset, "", nb::arg("ctx"));
-
-    m.def("llama_perf_sampler", (struct llama_perf_sampler_data (*)(const struct llama_sampler *)) &llama_perf_sampler, "", nb::arg("chain"));
-    m.def("llama_perf_sampler_print", (void (*)(const struct llama_sampler *)) &llama_perf_sampler_print, "", nb::arg("chain"));
-    m.def("llama_perf_sampler_reset", (void (*)(struct llama_sampler *)) &llama_perf_sampler_reset, "", nb::arg("chain"));
-
-
-    m.def("llama_perf_dump_yaml", (const char * (*)(FILE *, const struct llama_context *)) &llama_perf_dump_yaml, "", nb::arg("stream"), nb::arg("ctx"));
 
 }
