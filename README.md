@@ -1,14 +1,20 @@
 # llamalib - compiled python llama.cpp wrappers
 
-The project includes three different experimental python wrappers of @ggerganov's [llama.cpp](https://github.com/ggerganov/llama.cpp) which is likely "at the frontier of open-source compiled LLM inference". The purpose is to learn about the internals of this popular c++/c LLM inference engine while wrapping it for use by python code. It tries to keep up with the latest changes in the `llama.cpp` main branch.
+The project includes three different experimental python wrappers of @ggerganov's [llama.cpp](https://github.com/ggerganov/llama.cpp) which is likely the most active open-source compiled LLM inference engine. The python wrapping frameworks used are [cython](https://github.com/cython/cython), [pybind11](https://github.com/pybind/pybind11), and [nanobind](https://github.com/wjakob/nanobind) and share the common feature that they are compiled, and, in this project, statically linked against `llama.cpp`.
 
-A project goal is that each of the python wrapper variants should programmatically support the core feature-set of `llama.cpp` with respect to supported `.gguf`-format models.
+The purpose is to learn about the internals of this popular c++/c LLM inference engine while wrapping it for use by python code. It tries to keep up with the latest changes in the `llama.cpp` main branch.
 
-Given that there is a fairly mature and well-maintained ctypes based wrapper provided by @abetlen's [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) project and that llm inference is gpu-driven rather than cpu-driven, this all may see quite redundant. Irrespective, there are some benefits to developing alternative python wrappers to `llama.cpp`:
+A core goal is that each of the python wrapper variants should programmatically support the core feature-set of `llama.cpp` with respect to supported `.gguf`-format models.
 
-- There may be some incidental performance benefits to the use of compiled wrappers over the use of ctypes.
+Given that there is a fairly mature, well-maintained and performant ctypes based wrapper provided by @abetlen's [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) project and that llm inference is gpu-driven rather than cpu-driven, this all may see quite redundant. Irrespective, there are some benefits to developing alternative python wrappers to `llama.cpp`:
+
+- Packaging benefits with respect to self-contained statically compiled extension modules.
+
+- There may be some incidental performance the use of compiled wrappers over the use of ctypes.
 
 - It may be possible to incorporate external optimizations more readily into compiled wrappers, and
+
+- It provides a basis for integration with other code written in a given wrapper variant.
 
 - It may be useful in case one wants to de-couple the python frontend and wrapper backends to existing frameworks: that is a future development idea may be to just replace the ctypes wrapper in `llama-cpp-python` with one of compiled python wrappers and contribute it back as a PR.
 
@@ -82,9 +88,22 @@ Now, you will need `pytest` installed to run tests:
 pytest
 ```
 
-If all tests pass, feel free to `cd` into the `tests` directory and run some examples directly:
+If all tests pass, feel free to `cd` into the `tests` directory and run some examples directly, for example:
+
 
 ```sh
-cd tests && python3 pb_simple_highlevel.py`
+cd tests && python3 cy_simple.py`
 ```
+
+## TODO
+
+- [x] wrap llama-simple
+
+- [ ] wrap llama-cli
+
+- [ ] wrap llama-llava-cli
+
+- [ ] wrap [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
+
+- [ ] wrap [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp)
 
