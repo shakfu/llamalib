@@ -2,9 +2,13 @@
 
 The project includes three different experimental python wrappers of @ggerganov's [llama.cpp](https://github.com/ggerganov/llama.cpp) which is likely the most active open-source compiled LLM inference engine. The python wrapping frameworks used are [cython](https://github.com/cython/cython), [pybind11](https://github.com/pybind/pybind11), and [nanobind](https://github.com/wjakob/nanobind) and share the common feature that they are compiled, and, in this project, statically linked against `llama.cpp`.
 
-The purpose is to learn about the internals of this popular c++/c LLM inference engine while wrapping it for use by python code. It tries to keep up with the latest changes in the `llama.cpp` main branch.
+The goals of this projects are to:
 
-A core goal is that each of the python wrapper variants should programmatically support the core feature-set of `llama.cpp` with respect to supported `.gguf`-format models.
+- Produce a minimal performant / compiled python wrapper around the core `llama-cli` feature-set of `llama.cpp`.
+
+- Integrate wrappers of other related projects such as [whisper.cpp](https://github.com/ggerganov/whisper.cpp) and [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp)
+
+- Learn about the internals of this popular C++/C LLM inference engine.
 
 Given that there is a fairly mature, well-maintained and performant ctypes based wrapper provided by @abetlen's [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) project and that llm inference is gpu-driven rather than cpu-driven, this all may see quite redundant. Irrespective, there are some benefits to developing alternative python wrappers to `llama.cpp`:
 
@@ -73,9 +77,9 @@ This will:
 
 ## Testing
 
-As a first step type, you should download a `.gguf` model from [huggingface](https://huggingface.co/models?search=gguf). The following models have been known to work on a 16GB M1 Macbook air. A good start is [Llama-3.2-1B-Instruct-Q6_K.gguf](https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/blob/main/Llama-3.2-1B-Instruct-Q6_K.gguf).
+As a first step, you should download a smallish llm in the `.gguf` model from [huggingface](https://huggingface.co/models?search=gguf). This [document](https://github.com/shakfu/llamalib/blob/main/docs/model-performance.md) provides some examples of models which have been known to work on a 16GB M1 Macbook air.
 
-After downloading it, place the model in the `llamalib/models` folder and run:
+A good model to start with is [Llama-3.2-1B-Instruct-Q6_K.gguf](https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/blob/main/Llama-3.2-1B-Instruct-Q6_K.gguf). After downloading it, place the model in the `llamalib/models` folder and run:
 
 ```sh
 bin/llama-simple -c 512 -n 512 -m models/Llama-3.2-1B-Instruct-Q6_K.gguf \
