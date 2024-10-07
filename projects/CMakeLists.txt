@@ -34,9 +34,11 @@ endif()
 
 # common variables
 
-set(PROJECT_LIB_DIRS ${CMAKE_SOURCE_DIR}/lib)
+
+set(LLAMACPP_DIR ${CMAKE_SOURCE_DIR}/thirdparty/llama.cpp)
+set(PROJECT_LIB_DIRS ${LLAMACPP_DIR}/lib)
 set(PROJECT_INCLUDES
-	${CMAKE_SOURCE_DIR}/include
+	${LLAMACPP_DIR}/include
 	${CMAKE_SOURCE_DIR}/projects/llamalib
 )
 

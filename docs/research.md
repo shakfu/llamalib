@@ -220,6 +220,10 @@ see also:
 
 - [llama_index](https://github.com/run-llama/llama_index) - LlamaIndex is a data framework for your LLM applications
 
+- [llama_parse](https://github.com/run-llama/llama_parse) - Parse files for optimal RAG
+
+- [firecrawl](https://github.com/mendableai/firecrawl) - Turn entire websites into LLM-ready markdown or structured data. Scrape, crawl and extract with a single API.
+
 - [LARS](https://github.com/abgulati/LARS) - An application for running LLMs locally on your device, with your documents, facilitating detailed citations in generated responses (llama.cpp-based)
 
 - [kotaemon](https://github.com/Cinnamon/kotaemon) - An open-source RAG-based tool for chatting with your documents. (llamacpp-based)
@@ -231,6 +235,15 @@ see also:
 - [pymupdf/RAG](https://github.com/pymupdf/RAG) - RAG (Retrieval-Augmented Generation) Chatbot Examples Using PyMuPDF
 
 - [MemoryRAG](https://github.com/qhjqhj00/MemoRAG) - Empowering RAG with a memory-based data interface for all-purpose applications!
+
+
+## Guides
+
+- [Awesome-LLM](https://github.com/Hannibal046/Awesome-LLM) - a curated list of Large Language Models
+
+- [Awesome-LLM-Inference](https://github.com/DefTruth/Awesome-LLM-Inference) - A curated list of Awesome LLM Inference Paper with codes, TensorRT-LLM, vLLM, streaming-llm, AWQ, SmoothQuant, WINT8/4, Continuous Batching, FlashAttention, PagedAttention etc.
+
+- [Awesome-Efficient-LLM](https://github.com/horseee/Awesome-Efficient-LLM) - A curated list for Efficient Large Language Models
 
 
 

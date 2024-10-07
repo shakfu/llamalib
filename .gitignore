@@ -2,7 +2,14 @@
 bind/
 binder/
 models/
+thirdparty/llama.cpp/bin
+thirdparty/llama.cpp/lib
 projects/cyllama/cyllama.cpp
+thirdparty/whisper.cpp/bin
+thirdparty/whisper.cpp/lib
+thirdparty/whisper.cpp/lib
+thirdparty/stable-difussion.cpp/bin
+thirdparty/stable-difussion.cpp/lib
 
 
 # editors

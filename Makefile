@@ -1,6 +1,8 @@
 # set path so `llama-cli` etc.. be in path
 export PATH := $(PWD)/bin:$(PATH)
 
+THIRDPARTY := $(PWD)/thirdparty
+
 MODEL := models/gemma-2-9b-it-IQ4_XS.gguf
 # MODEL := models/mistral-7b-instruct-v0.1.Q4_K_M.gguf
 # MODEL := models/Llama-3.2-1B-Instruct-Q6_K.gguf
@@ -9,7 +11,7 @@ WITH_DYLIB=0
 
 MIN_OSX_VER := -mmacosx-version-min=13.6
 
-LIBLAMMA := ./lib/libllama.a
+LIBLAMMA := $(THIRDPARTY)/llama.cpp/lib/libllama.a
 
 
 .PHONY: cmake clean reset setup setup_inplace wheel bind header
@@ -108,9 +110,9 @@ bump:
 	@scripts/bump.sh
 
 clean:
-	@rm -rf build dist *.egg-info
+	@rm -rf build dist *.egg-info .pytest_cache
 
-reset:
-	@rm -rf build bin lib include thirdparty/llama_cpp
+reset: clean
+	@rm -rf bin thirdparty 
 
 
