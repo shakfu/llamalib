@@ -7,10 +7,16 @@ PLATFORM = platform.system()
 
 WITH_DYLIB = os.getenv("WITH_DYLIB", False)
 
+LLAMACPP_INCLUDE = "thirdparty/llama.cpp/include"
+LLAMACPP_LIBS_DIR = "thirdparty/llama.cpp/lib"
+
 INCLUDE_DIRS = [
     "projects/llamalib",
+    LLAMACPP_INCLUDE,
 ]
-LIBRARY_DIRS = []
+LIBRARY_DIRS = [
+    LLAMACPP_LIBS_DIR,
+]
 EXTRA_OBJECTS = []
 EXTRA_LINK_ARGS = []
 LIBRARIES = ["pthread"]
@@ -23,26 +29,27 @@ if WITH_DYLIB:
     ])
 else:
     EXTRA_OBJECTS.extend([
-        'lib/libcommon.a', 
-        'lib/libllama.a', 
-        'lib/libggml.a',
+        f'{LLAMACPP_LIBS_DIR}/libcommon.a', 
+        f'{LLAMACPP_LIBS_DIR}/libllama.a', 
+        f'{LLAMACPP_LIBS_DIR}/libggml.a',
     ])
 
 CWD = os.getcwd()
-LIB = os.path.join(CWD, 'lib')
-LIBRARY_DIRS.append(LIB)
 INCLUDE_DIRS.append(os.path.join(CWD, 'include'))
 
 if PLATFORM == 'Darwin':
     EXTRA_LINK_ARGS.append('-mmacosx-version-min=13.6')
     # add local rpath
-    EXTRA_LINK_ARGS.append('-Wl,-rpath,'+LIB)
+    EXTRA_LINK_ARGS.append('-Wl,-rpath,'+LLAMACPP_LIBS_DIR)
     os.environ['LDFLAGS'] = ' '.join([
         '-framework Accelerate',
         '-framework Foundation',
         '-framework Metal',
         '-framework MetalKit',
     ])
+
+if PLATFORM == 'Linux':
+    EXTRA_LINK_ARGS.append('-fopenmp')
 
 extensions = [
     Extension("cyllama", 
