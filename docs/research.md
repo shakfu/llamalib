@@ -144,6 +144,10 @@ see also:
  [distilabel](https://github.com/argilla-io/distilabel) - Distilabel is a framework for synthetic data and AI feedback for engineers who need fast, reliable and scalable pipelines based on verified research papers.
 
 
+## Frontends
+
+- [mikupad](https://github.com/lmg-anon/mikupad) - LLM Frontend in a single html file
+
 
 ## GGUF Compatible Projects
 
@@ -153,21 +157,21 @@ see also:
 
 - [text-generation-webui](https://github.com/oobabooga/text-generation-webui, the most widely used web UI, with many features and powerful extensions. Supports GPU acceleration.
 
-- [KoboldCpp](https://github.com/LostRuins/koboldcpp), a fork of llama-cpp, fully featured web UI, with GPU accel across all platforms and GPU architectures. Especially good for story telling.
-
-- [LM Studio](https://lmstudio.ai), an easy-to-use and powerful local GUI for Windows and macOS (Silicon), with GPU acceleration.
-
 - [oLLMS Web UI](https://github.com/ParisNeo/lollms-webui), a great web UI with many interesting and unique features, including a full model library for easy model selection.
 
 - [backyard.ai](https://backyard.ai/hub), an attractive and easy to use character-based chat GUI for Windows and macOS (both Silicon and Intel), with GPU acceleration.
 
 - [ctransformers](https://github.com/marella/ctransformers), a Python library with GPU accel, LangChain support, and OpenAI-compatible AI server.
 
-- [llama-cpp-python](https://github.com/abetlen/llama-cpp-python), a Python library with GPU accel, LangChain support, and OpenAI-compatible API server.
 
-- [candle](https://github.com/huggingface/candle), a Rust ML framework with a focus on performance, including GPU support, and ease of use.
+- [KoboldCpp](https://github.com/LostRuins/koboldcpp), a fork of llama-cpp, fully featured web UI, with GPU accel across all platforms and GPU architectures. Especially good for story telling.
+
+- [LM Studio](https://lmstudio.ai), an easy-to-use and powerful local GUI for Windows and macOS (Silicon), with GPU acceleration.
 
 - [llama-cpp-agent](https://github.com/Maximilian-Winter/llama-cpp-agent) - The llama-cpp-agent framework is a tool designed for easy interaction with Large Language Models (LLMs). Allowing users to chat with LLM models, execute structured function calls and get structured output. Works also with models not fine-tuned to JSON output and function calls.
+
+
+- [candle](https://github.com/huggingface/candle), a Rust ML framework with a focus on performance, including GPU support, and ease of use.
 
 - [open-interpreter](https://github.com/OpenInterpreter/open-interpreter) - A natural language interface for computers (can you llama-studio)
 
@@ -235,6 +239,10 @@ see also:
 - [pymupdf/RAG](https://github.com/pymupdf/RAG) - RAG (Retrieval-Augmented Generation) Chatbot Examples Using PyMuPDF
 
 - [MemoryRAG](https://github.com/qhjqhj00/MemoRAG) - Empowering RAG with a memory-based data interface for all-purpose applications!
+
+
+
+
 
 
 ## Guides
