@@ -122,11 +122,13 @@ cdef class LlamaSampler:
 
 cdef class CpuParams:
     cdef llama_cpp.cpu_params *ptr
+    cdef object owner
 
     @staticmethod
-    cdef CpuParams from_ptr(llama_cpp.cpu_params *p):
+    cdef CpuParams from_ptr(llama_cpp.cpu_params *p, object parent):
         cdef CpuParams wrapper = CpuParams.__new__(CpuParams)
         wrapper.ptr = p
+        wrapper.owner = parent
         return wrapper
 
     @property
@@ -195,17 +197,17 @@ cdef class GptParams:
     cdef GptParams from_instance(llama_cpp.gpt_params p):
         cdef GptParams wrapper = GptParams.__new__(GptParams)
         wrapper.p = p
-        wrapper.cpuparams = CpuParams.from_ptr(&wrapper.p.cpuparams)
-        wrapper.cpuparams_batch = CpuParams.from_ptr(&wrapper.p.cpuparams_batch)
-        wrapper.draft_cpuparams = CpuParams.from_ptr(&wrapper.p.draft_cpuparams)
-        wrapper.draft_cpuparams_batch = CpuParams.from_ptr(&wrapper.p.draft_cpuparams_batch)
+        wrapper.cpuparams = CpuParams.from_ptr(&wrapper.p.cpuparams, wrapper)
+        wrapper.cpuparams_batch = CpuParams.from_ptr(&wrapper.p.cpuparams_batch, wrapper)
+        wrapper.draft_cpuparams = CpuParams.from_ptr(&wrapper.p.draft_cpuparams, wrapper)
+        wrapper.draft_cpuparams_batch = CpuParams.from_ptr(&wrapper.p.draft_cpuparams_batch, wrapper)
         return wrapper
 
     def __cinit__(self):
-        self.cpuparams = CpuParams.from_ptr(&self.p.cpuparams)
-        self.cpuparams_batch = CpuParams.from_ptr(&self.p.cpuparams_batch)
-        self.draft_cpuparams = CpuParams.from_ptr(&self.p.draft_cpuparams)
-        self.draft_cpuparams_batch = CpuParams.from_ptr(&self.p.draft_cpuparams_batch)
+        self.cpuparams = CpuParams.from_ptr(&self.p.cpuparams, self)
+        self.cpuparams_batch = CpuParams.from_ptr(&self.p.cpuparams_batch, self)
+        self.draft_cpuparams = CpuParams.from_ptr(&self.p.draft_cpuparams, self)
+        self.draft_cpuparams_batch = CpuParams.from_ptr(&self.p.draft_cpuparams_batch, self)
 
     @property
     def n_predict(self) -> int:
@@ -1263,6 +1265,15 @@ cdef class GptParams:
         self.p.ssl_file_cert = value.encode('utf8')
 
     @property
+    def webui(self) -> bool:
+        """enable webui"""
+        return self.p.webui
+
+    @webui.setter
+    def webui(self, value: bool):
+        self.p.webui = value
+
+    @property
     def endpoint_slots(self) -> bool:
         """endpoint slots"""
         return self.p.endpoint_slots
@@ -1270,6 +1281,15 @@ cdef class GptParams:
     @endpoint_slots.setter
     def endpoint_slots(self, value: bool):
         self.p.endpoint_slots = value
+
+    @property
+    def endpoint_props(self) -> bool:
+        """endpoint props"""
+        return self.p.endpoint_props
+
+    @endpoint_props.setter
+    def endpoint_props(self, value: bool):
+        self.p.endpoint_props = value
 
     @property
     def endpoint_metrics(self) -> bool:

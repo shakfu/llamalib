@@ -1509,7 +1509,9 @@ cdef extern from "common.h":
         std_string ssl_file_key 
         std_string ssl_file_cert
 
+        bint webui
         bint endpoint_slots
+        bint endpoint_props
         bint endpoint_metrics
 
         bint log_json
