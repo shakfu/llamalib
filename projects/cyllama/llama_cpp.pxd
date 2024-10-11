@@ -532,6 +532,7 @@ cdef extern from "llama.h":
     cdef bint llama_supports_mmap       ()
     cdef bint llama_supports_mlock      ()
     cdef bint llama_supports_gpu_offload()
+    cdef bint llama_supports_rpc()
 
     cdef uint32_t llama_n_ctx      (const llama_context * ctx)
     cdef uint32_t llama_n_batch    (const llama_context * ctx)
@@ -1276,11 +1277,11 @@ cdef extern from "llama.h":
 
 cdef extern from "common.h":
 
-    ctypedef struct llama_lora_adapter_info:
+    ctypedef struct common_lora_adapter_info:
         std_string path
         float scale
 
-    ctypedef struct llama_lora_adapter_container: #llama_lora_adapter_info {
+    ctypedef struct common_lora_adapter_container: #common_lora_adapter_info {
         llama_lora_adapter * adapter
 
     # cdef int GGML_MAX_N_THREADS = 512
@@ -1311,20 +1312,20 @@ cdef extern from "common.h":
         LLAMA_EXAMPLE_LLAVA
         LLAMA_EXAMPLE_COUNT
 
-    ctypedef enum gpt_sampler_type:
-        GPT_SAMPLER_TYPE_NONE
-        GPT_SAMPLER_TYPE_TOP_K
-        GPT_SAMPLER_TYPE_TOP_P
-        GPT_SAMPLER_TYPE_MIN_P
-        GPT_SAMPLER_TYPE_TFS_Z
-        GPT_SAMPLER_TYPE_TYPICAL_P
-        GPT_SAMPLER_TYPE_TEMPERATURE
+    ctypedef enum common_sampler_type:
+        COMMON_SAMPLER_TYPE_NONE
+        COMMON_SAMPLER_TYPE_TOP_K
+        COMMON_SAMPLER_TYPE_TOP_P
+        COMMON_SAMPLER_TYPE_MIN_P
+        COMMON_SAMPLER_TYPE_TFS_Z
+        COMMON_SAMPLER_TYPE_TYPICAL_P
+        COMMON_SAMPLER_TYPE_TEMPERATURE
 
     ctypedef enum dimre_method:
         DIMRE_METHOD_PCA
         DIMRE_METHOD_MEAN
 
-    ctypedef struct gpt_sampler_params:
+    ctypedef struct common_sampler_params:
         uint32_t seed   ; # the seed used to initialize llama_sampler
 
         int32_t n_prev                 # number of previous tokens to remember
@@ -1348,7 +1349,7 @@ cdef extern from "common.h":
         bint    penalize_nl             # consider newlines as a repeatable token
         bint    ignore_eos
 
-        std_vector[gpt_sampler_type] samplers
+        std_vector[common_sampler_type] samplers
 
         std_string grammar # optional BNF-like grammar to constrain sampling
 
@@ -1357,7 +1358,7 @@ cdef extern from "common.h":
         # print the parameters into a string
         # std_string print() const
 
-    ctypedef struct gpt_params:
+    ctypedef struct common_params:
         llama_example curr_ex
 
         int32_t n_predict          # new tokens to predict
@@ -1401,7 +1402,7 @@ cdef extern from "common.h":
         llama_pooling_type      pooling_type       # pooling type for embeddings
         llama_attention_type    attention_type     # attention type for embeddings
 
-        gpt_sampler_params sparams
+        common_sampler_params sparams
 
         std_string model                # model path
         std_string model_draft          # draft model for speculative decoding
@@ -1426,9 +1427,9 @@ cdef extern from "common.h":
         std_vector[llama_model_kv_override] kv_overrides
 
         bint lora_init_without_apply # only load lora to memory, but do not apply it to ctx (user can manually apply lora later using llama_lora_adapter_apply)
-        # vector[llama_lora_adapter_info] lora_adapters # lora adapter path with user defined scale
+        # vector[common_lora_adapter_info] lora_adapters # lora adapter path with user defined scale
 
-        # vector[llama_control_vector_load_info] control_vectors # control vector with user defined scale
+        # vector[common_control_vector_load_info] control_vectors # control vector with user defined scale
 
         int32_t verbosity
         int32_t control_vector_layer_start # layer range for control vector
@@ -1563,9 +1564,9 @@ cdef extern from "common.h":
         # batched-bench params
         bint batched_bench_output_jsonl
 
-    cdef void gpt_init()
+    cdef void common_init()
 
-    cdef std_string gpt_params_get_system_info(const gpt_params & params)
+    cdef std_string common_params_get_system_info(const common_params & params)
 
     cdef bint parse_cpu_range(const std_string& range, bint(&bintmask)[GGML_MAX_N_THREADS])
     cdef bint parse_cpu_mask(const std_string& mask, bint(&bintmask)[GGML_MAX_N_THREADS])
@@ -1574,35 +1575,35 @@ cdef extern from "common.h":
 
     # Model utils
 
-    ctypedef struct llama_init_result:
+    ctypedef struct common_init_result:
         llama_model   * model
         llama_context * context
-        std_vector[llama_lora_adapter_container] lora_adapters
+        std_vector[common_lora_adapter_container] lora_adapters
 
 
-    cdef llama_init_result llama_init_from_gpt_params(gpt_params & params)
+    cdef common_init_result common_init_from_params(common_params & params)
 
-    cdef llama_model_params llama_model_params_from_gpt_params(const gpt_params & params)
-    cdef llama_context_params llama_context_params_from_gpt_params(const gpt_params & params)
+    cdef llama_model_params common_model_params_to_llama(const common_params & params)
+    cdef llama_context_params common_context_params_to_llama(const common_params & params)
     # struct ggml_threadpool_params ggml_threadpool_params_from_cpu_params(const cpu_params & params);
     
-    # struct llama_model * llama_load_model_from_url(const char * model_url, const char * path_model, const char * hf_token, const struct llama_model_params & params);
-    # struct llama_model * llama_load_model_from_hf(const char * repo, const char * file, const char * path_model, const char * hf_token, const struct llama_model_params & params);
+    # struct llama_model * common_load_model_from_url(const char * model_url, const char * path_model, const char * hf_token, const struct llama_model_params & params);
+    # struct llama_model * common_load_model_from_hf(const char * repo, const char * file, const char * path_model, const char * hf_token, const struct llama_model_params & params);
 
     # clear LoRA adapters from context, then apply new list of adapters
-    # void llama_lora_adapters_apply(struct llama_context * ctx, std::vector<llama_lora_adapter_container> & lora_adapters);
+    # void common_lora_adapters_apply(struct llama_context * ctx, std::vector<common_lora_adapter_container> & lora_adapters);
 
     # Batch utils
 
-    cdef void llama_batch_add(llama_batch & batch, llama_token id, llama_pos pos, const std_vector[llama_seq_id] & seq_ids, bint logits)
+    cdef void common_batch_add(llama_batch & batch, llama_token id, llama_pos pos, const std_vector[llama_seq_id] & seq_ids, bint logits)
 
-    cdef void llama_batch_clear(llama_batch & batch)
+    cdef void common_batch_clear(llama_batch & batch)
 
     # Vocab utils
 
-    cdef std_vector[llama_token] llama_tokenize(const llama_context * ctx, const std_string & text, bint add_special, bint parse_special)
+    cdef std_vector[llama_token] common_tokenize(const llama_context * ctx, const std_string & text, bint add_special, bint parse_special)
 
-    cdef std_vector[llama_token] llama_tokenize(const llama_model * model, const std_string & text, bint add_special, bint parse_special)
+    cdef std_vector[llama_token] common_tokenize(const llama_model * model, const std_string & text, bint add_special, bint parse_special)
 
     # tokenizes a token into a piece, optionally renders special/control tokens
     # should work similar to Python's `tokenizer.id_to_piece`
@@ -1610,61 +1611,61 @@ cdef extern from "common.h":
     # tokenizes a token into a piece, optionally renders special/control tokens
     # should work similar to Python's `tokenizer.id_to_piece`
     # cdef std_string llama_token_to_piece(const llama_context * ctx, llama_token token, bint special)
-    cdef std_string llama_token_to_piece2 "llama_token_to_piece" (const llama_context * ctx, llama_token token, bint special)
+    cdef std_string common_token_to_piece (const llama_context * ctx, llama_token token, bint special)
 
     # detokenizes a vector of tokens into a string
     # should work similar to Python's `tokenizer.decode`
     # optionally renders special/control tokens
-    cdef std_string llama_detokenize(llama_context * ctx, const std_vector[llama_token] & tokens, bint special)
+    cdef std_string common_detokenize(llama_context * ctx, const std_vector[llama_token] & tokens, bint special)
 
     # Chat template utils
 
     # same with llama_chat_message, but uses std::string
-    ctypedef struct llama_chat_msg:
+    ctypedef struct common_chat_msg:
         std_string role
         std_string content
 
     # Check if the template supplied via "--chat-template" is supported or not. Returns true if it's valid
-    cdef bint llama_chat_verify_template(const std_string & tmpl)
+    cdef bint common_chat_verify_template(const std_string & tmpl)
 
-    # CPP wrapper for llama_chat_apply_template
+    # CPP wrapper for common_chat_apply_template
     # If the built-in template is not supported, we default to chatml
     # If the custom "tmpl" is not supported, we throw an error
-    cdef std_string llama_chat_apply_template(const llama_model * model, const std_string & tmpl, const std_vector[llama_chat_msg] & chat, bint add_ass)
+    cdef std_string common_chat_apply_template(const llama_model * model, const std_string & tmpl, const std_vector[common_chat_msg] & chat, bint add_ass)
 
     # Format single message, while taking into account the position of that message in chat history
-    cdef std_string llama_chat_format_single(const llama_model * model, const std_string & tmpl, const std_vector[llama_chat_msg] & past_msg, const llama_chat_msg & new_msg, bint add_ass)
+    cdef std_string common_chat_format_single(const llama_model * model, const std_string & tmpl, const std_vector[common_chat_msg] & past_msg, const common_chat_msg & new_msg, bint add_ass)
 
     # # Returns an example of formatted chat
-    cdef std_string llama_chat_format_example(const llama_model * model, const std_string & tmpl)
+    cdef std_string common_chat_format_example(const llama_model * model, const std_string & tmpl)
 
     # KV cache utils
 
     # # Dump the KV cache view with the number of sequences per cell.
-    cdef void llama_kv_cache_dump_view(const llama_kv_cache_view & view, int row_size)
+    cdef void common_kv_cache_dump_view(const llama_kv_cache_view & view, int row_size)
 
     # # Dump the KV cache view showing individual sequences in each cell (long output).
-    cdef void llama_kv_cache_dump_view_seqs(const llama_kv_cache_view & view, int row_size)
+    cdef void common_kv_cache_dump_view_seqs(const llama_kv_cache_view & view, int row_size)
 
     # Embedding utils
 
-    cdef void llama_embd_normalize(const float * inp, float * out, int n, int embd_norm)
-    cdef float llama_embd_similarity_cos(const float * embd1, const float * embd2, int n)
+    cdef void common_embd_normalize(const float * inp, float * out, int n, int embd_norm)
+    cdef float common_embd_similarity_cos(const float * embd1, const float * embd2, int n)
 
     # Control vector utils
 
-    ctypedef struct llama_control_vector_data:
+    ctypedef struct common_control_vector_data:
         int n_embd
         # stores data for layers [1, n_layer] where n_layer = data.size() / n_embd
         std_vector[float] data
 
-    ctypedef struct llama_control_vector_load_info:
+    ctypedef struct common_control_vector_load_info:
         float strength
         std_string fname
 
     # Load control vectors, scale each by strength, and add them together.
     # On error, returns {-1, empty}
-    cdef llama_control_vector_data llama_control_vector_load(const std_vector[llama_control_vector_load_info] & load_infos)
+    cdef common_control_vector_data common_control_vector_load(const std_vector[common_control_vector_load_info] & load_infos)
 
 
 #------------------------------------------------------------------------------
@@ -1672,14 +1673,14 @@ cdef extern from "common.h":
 cdef extern from "sampling.h": # optional llama_sampler extensions
     ctypedef struct gpt_sampler # opaque
 
-    cdef gpt_sampler * gpt_sampler_init(const llama_model * model, const gpt_sampler_params & params)
+    cdef gpt_sampler * gpt_sampler_init(const llama_model * model, const common_sampler_params & params)
     # ..
 
 #------------------------------------------------------------------------------
 
 cdef extern from "arg.h":      
 
-    ctypedef struct llama_arg:
+    ctypedef struct common_arg:
         std_set[llama_example] examples
         std_vector[const char *] args
         const char * value_hint_2   # help text or example for arg value
@@ -1687,23 +1688,23 @@ cdef extern from "arg.h":
         const char * env
         std_string help
         bint is_sparam              # is current arg a sampling param?
-        void (*handler_void)   (gpt_params & params)
-        void (*handler_string) (gpt_params & params, const std_string &)
-        void (*handler_str_str)(gpt_params & params, const std_string &, const std_string &)
-        void (*handler_int)    (gpt_params & params, int)
+        void (*handler_void)   (common_params & params)
+        void (*handler_string) (common_params & params, const std_string &)
+        void (*handler_str_str)(common_params & params, const std_string &, const std_string &)
+        void (*handler_int)    (common_params & params, int)
 
-    ctypedef struct gpt_params_context:
+    ctypedef struct common_params_context:
         llama_example ex
-        gpt_params & params
-        std_vector[llama_arg] options
+        common_params & params
+        std_vector[common_arg] options
         void(*print_usage)(int, char **)
 
     # parse input arguments from CLI
     # if one argument has invalid value, it will automatically display usage of the specific argument (and not the full usage message)
-    cdef bint gpt_params_parse(int argc, char ** argv, gpt_params & params, llama_example ex, void(*print_usage)(int, char **))
+    cdef bint common_params_parse(int argc, char ** argv, common_params & params, llama_example ex, void(*print_usage)(int, char **))
 
     # function to be used by test-arg-parser
-    cdef gpt_params_context gpt_params_parser_init(gpt_params & params, llama_example ex, void(*print_usage)(int, char **))
+    cdef common_params_context common_params_parser_init(common_params & params, llama_example ex, void(*print_usage)(int, char **))
 
 #------------------------------------------------------------------------------
 

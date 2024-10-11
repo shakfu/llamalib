@@ -186,16 +186,16 @@ cdef class CpuParams:
     #     self.ptr.poll = value
 
 
-cdef class GptParams:
-    cdef llama_cpp.gpt_params p
+cdef class CommonParams:
+    cdef llama_cpp.common_params p
     cdef public CpuParams cpuparams
     cdef public CpuParams cpuparams_batch
     cdef public CpuParams draft_cpuparams
     cdef public CpuParams draft_cpuparams_batch
 
     @staticmethod
-    cdef GptParams from_instance(llama_cpp.gpt_params p):
-        cdef GptParams wrapper = GptParams.__new__(GptParams)
+    cdef CommonParams from_instance(llama_cpp.common_params p):
+        cdef CommonParams wrapper = CommonParams.__new__(CommonParams)
         wrapper.p = p
         wrapper.cpuparams = CpuParams.from_ptr(&wrapper.p.cpuparams, wrapper)
         wrapper.cpuparams_batch = CpuParams.from_ptr(&wrapper.p.cpuparams_batch, wrapper)
@@ -515,12 +515,12 @@ cdef class GptParams:
     #     self.p.attention_type = value
 
     @property
-    def sparams(self) -> llama_cpp.gpt_sampler_params:
+    def sparams(self) -> llama_cpp.common_sampler_params:
         """gpt sampler params."""
         return self.p.sparams
 
     @sparams.setter
-    def sparams(self, value: llama_cpp.gpt_sampler_params):
+    def sparams(self, value: llama_cpp.common_sampler_params):
         self.p.sparams = value
 
     @property
@@ -1669,9 +1669,9 @@ cdef class ContextParams:
         self.p = llama_cpp.llama_context_default_params()
 
     @staticmethod
-    cdef ContextParams from_gpt_params(GptParams params):
+    cdef ContextParams from_common_params(CommonParams params):
         cdef ContextParams wrapper = ContextParams.__new__(ContextParams)
-        wrapper.p = llama_cpp.llama_context_params_from_gpt_params(params.p)
+        wrapper.p = llama_cpp.common_context_params_to_llama(params.p)
         return wrapper
 
     # @property
@@ -2093,32 +2093,30 @@ def llama_backend_init():
 def llama_numa_init(llama_cpp.ggml_numa_strategy numa):
     llama_cpp.llama_numa_init(numa)
 
-def llama_model_params_from_gpt_params(params: GptParams) -> ModelParams:
-    cdef llama_cpp.llama_model_params model_params = llama_cpp.llama_model_params_from_gpt_params(params.p)
+def common_model_params_to_llama(params: CommonParams) -> ModelParams:
+    cdef llama_cpp.llama_model_params model_params = llama_cpp.common_model_params_to_llama(params.p)
     return ModelParams.from_instance(model_params)
 
-def llama_context_params_from_gpt_params(params: GptParams) -> ContextParams:
-    return ContextParams.from_gpt_params(params)
+def common_context_params_to_llama(params: CommonParams) -> ContextParams:
+    return ContextParams.from_common_params(params)
 
 def llama_sampler_chain_default_params() -> SamplerChainParams:
     return SamplerChainParams()
 
-def llama_tokenize(LlamaContext ctx, str text, bint add_special, bint parse_special = False):
-    return llama_cpp.llama_tokenize(<const llama_cpp.llama_context *>ctx.ptr, <string>text.encode(), add_special, parse_special)
+def common_tokenize(LlamaContext ctx, str text, bint add_special, bint parse_special = False):
+    return llama_cpp.common_tokenize(<const llama_cpp.llama_context *>ctx.ptr, <string>text.encode(), add_special, parse_special)
 
-def llama_tokenize_from_model(LlamaModel model, str text, bint add_special, bint parse_special = False):
-    return llama_cpp.llama_tokenize(<const llama_cpp.llama_model *>model.ptr, <string>text.encode(), add_special, parse_special)
+def common_tokenize_from_model(LlamaModel model, str text, bint add_special, bint parse_special = False):
+    return llama_cpp.common_tokenize(<const llama_cpp.llama_model *>model.ptr, <string>text.encode(), add_special, parse_special)
 
 def llama_n_ctx(LlamaContext ctx) -> int:
     return llama_cpp.llama_n_ctx(ctx.ptr)
 
-# FIXME: fix llama_token_to_piece overload ambiguity
-def llama_token_to_piece(LlamaContext ctx, int token, bint special = True) -> str:
-    # return llama_cpp.llama_token_to_piece(<const llama_cpp.llama_context *>ctx.ptr, <llama_cpp.llama_token>token, <bint>special).decode()
-    return llama_cpp.llama_token_to_piece2(ctx.ptr, token, special).decode()
+def common_token_to_piece(LlamaContext ctx, int token, bint special = True) -> str:
+    return llama_cpp.common_token_to_piece(ctx.ptr, token, special).decode()
 
-def llama_batch_add(LlamaBatch batch, llama_cpp.llama_token id, llama_cpp.llama_pos pos, list[int] seq_ids, bint logits):
-    return llama_cpp.llama_batch_add(batch.p, id, pos, seq_ids, logits)
+def common_batch_add(LlamaBatch batch, llama_cpp.llama_token id, llama_cpp.llama_pos pos, list[int] seq_ids, bint logits):
+    return llama_cpp.common_batch_add(batch.p, id, pos, seq_ids, logits)
 
 def llama_decode(LlamaContext ctx, LlamaBatch batch) -> int:
     return llama_cpp.llama_decode(ctx.ptr, batch.p)
@@ -2135,8 +2133,8 @@ def llama_sampler_accept(LlamaSampler smplr, llama_cpp.llama_token id):
 def llama_token_is_eog(LlamaModel model, llama_cpp.llama_token token) -> bool:
     return llama_cpp.llama_token_is_eog(model.ptr, token)
 
-def llama_batch_clear(LlamaBatch batch):
-    llama_cpp.llama_batch_clear(batch.p)
+def common_batch_clear(LlamaBatch batch):
+    llama_cpp.common_batch_clear(batch.p)
 
 def llama_backend_free():
     llama_cpp.llama_backend_free()

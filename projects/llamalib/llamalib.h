@@ -19,7 +19,7 @@ std::string simple_prompt(
     bool disable_log = true,
     int n_threads = 4)
 {
-    gpt_params params;
+    common_params params;
 
     params.prompt = prompt;
     params.model = model_path;
@@ -29,7 +29,7 @@ std::string simple_prompt(
     params.cpuparams.n_threads = n_threads;
 
     if (disable_log) {
-        gpt_log_set_verbosity_thold(params.verbosity);
+        common_log_set_verbosity_thold(params.verbosity);
     }
 
     // if (!gpt_params_parse(0, nullptr, params, LLAMA_EXAMPLE_COMMON, nullptr)) {
@@ -37,7 +37,7 @@ std::string simple_prompt(
     //     return std::string();
     // }
 
-    gpt_init();
+    common_init();
 
 
     // init LLM
@@ -45,7 +45,7 @@ std::string simple_prompt(
     llama_numa_init(params.numa);
 
     // initialize the model
-    llama_model_params model_params = llama_model_params_from_gpt_params(params);
+    llama_model_params model_params = common_model_params_to_llama(params);
     llama_model * model_ptr = llama_load_model_from_file(params.model.c_str(), model_params);
     if (model_ptr == NULL) {
         LOG_ERR("%s: error: unable to load model\n" , __func__);
@@ -53,7 +53,7 @@ std::string simple_prompt(
     }
 
     // initialize the context
-    llama_context_params ctx_params = llama_context_params_from_gpt_params(params);
+    llama_context_params ctx_params = common_context_params_to_llama(params);
     llama_context * ctx = llama_new_context_with_model(model_ptr, ctx_params);
     if (ctx == NULL) {
         LOG_ERR("%s: error: failed to create the llama_context\n" , __func__);
@@ -67,7 +67,7 @@ std::string simple_prompt(
 
     // tokenize the prompt
     std::vector<llama_token> tokens_list;
-    tokens_list = ::llama_tokenize(ctx, params.prompt, true);
+    tokens_list = ::common_tokenize(ctx, params.prompt, true);
     const int _n_ctx    = llama_n_ctx(ctx);
     const int n_kv_req = tokens_list.size() + (n_predict - tokens_list.size());
 
@@ -84,7 +84,7 @@ std::string simple_prompt(
     // print the prompt token-by-token
     LOG("\n");
     for (auto id : tokens_list) {
-        LOG("%s", llama_token_to_piece(ctx, id).c_str());
+        LOG("%s", common_token_to_piece(ctx, id).c_str());
     }
 
     // create a llama_batch with size 512
@@ -94,7 +94,7 @@ std::string simple_prompt(
 
     // evaluate the initial prompt
     for (size_t i = 0; i < tokens_list.size(); i++) {
-        llama_batch_add(batch, tokens_list[i], i, { 0 }, false);
+        common_batch_add(batch, tokens_list[i], i, { 0 }, false);
     }
 
     // llama_decode will output logits only for the last token of the prompt
@@ -127,13 +127,13 @@ std::string simple_prompt(
                 break;
             }
 
-            results += llama_token_to_piece(ctx, new_token_id);
+            results += common_token_to_piece(ctx, new_token_id);
 
             // prepare the next batch
-            llama_batch_clear(batch);
+            common_batch_clear(batch);
 
             // push this new token for next evaluation
-            llama_batch_add(batch, new_token_id, n_cur, { 0 }, true);
+            common_batch_add(batch, new_token_id, n_cur, { 0 }, true);
 
             n_decode += 1;
         }

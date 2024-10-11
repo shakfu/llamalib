@@ -7,15 +7,15 @@ MODEL = ROOT / 'models' / 'Llama-3.2-1B-Instruct-Q8_0.gguf'
 
 import nbllama as nb
 
-params = nb.gpt_params()
+params = nb.common_params()
 params.model = str(MODEL)
 params.prompt = "When did the universe begin?"
 params.n_predict = 32
 params.n_ctx = 2048
 
 args = []
-if not nb.gpt_params_parse(args, params, nb.LLAMA_EXAMPLE_COMMON):
-    raise SystemExit("gpt_params_parse failed")
+if not nb.common_params_parse(args, params, nb.LLAMA_EXAMPLE_COMMON):
+    raise SystemExit("common_params_parse failed")
 
 # total length of the sequence including the prompt
 n_predict: int = params.n_predict
@@ -27,7 +27,7 @@ nb.llama_numa_init(params.numa)
 
 # initialize the model
 
-model_params = nb.llama_model_params_from_gpt_params(params)
+model_params = nb.common_model_params_to_llama(params)
 
 # set local test model
 params.model = str(MODEL)
@@ -39,7 +39,7 @@ if not model:
 
 # initialize the context
 
-ctx_params = nb.llama_context_params_from_gpt_params(params)
+ctx_params = nb.common_context_params_to_llama(params)
 
 ctx = nb.llama_new_context_with_model(model, ctx_params)
 
@@ -62,7 +62,7 @@ nb.llama_sampler_chain_add(smpl, nb.llama_sampler_init_greedy())
 
 # tokenize the prompt
 
-tokens_list: list[int] = nb.llama_tokenize(ctx, params.prompt, True)
+tokens_list: list[int] = nb.common_tokenize(ctx, params.prompt, True)
 
 n_ctx: int = nb.llama_n_ctx(ctx)
 
@@ -79,7 +79,7 @@ if (n_kv_req > n_ctx):
 print()
 prompt=""
 for i in tokens_list:
-    prompt += nb.llama_token_to_piece(ctx, i)
+    prompt += nb.common_token_to_piece(ctx, i)
 print(prompt)
 
 # create a llama_batch with size 512
@@ -89,7 +89,7 @@ batch = nb.llama_batch_init(512, 0, 1)
 
 # evaluate the initial prompt
 for i, token in enumerate(tokens_list):
-    nb.llama_batch_add(batch, token, i, [0], False)
+    nb.common_batch_add(batch, token, i, [0], False)
 
 # llama_decode will output logits only for the last token of the prompt
 # logits = batch.get_logits()
@@ -125,14 +125,13 @@ while (n_cur <= n_predict):
             print()
             break
 
-        result += nb.llama_token_to_piece(ctx, new_token_id)
+        result += nb.common_token_to_piece(ctx, new_token_id)
 
         # prepare the next batch
-        nb.llama_batch_clear(batch);
+        nb.common_batch_clear(batch);
 
         # push this new token for next evaluation
-        # nb.llama_batch_add(batch, new_token_id, n_cur, { 0 }, true);
-        nb.llama_batch_add(batch, new_token_id, n_cur, [0], True)
+        nb.common_batch_add(batch, new_token_id, n_cur, [0], True)
 
         n_decode += 1
 

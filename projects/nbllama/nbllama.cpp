@@ -582,161 +582,161 @@ NB_MODULE(nbllama, m) {
     // -----------------------------------------------------------------------
     // common.h
 
-    nb::class_<gpt_params> (m, "gpt_params", "")
+    nb::class_<common_params> (m, "common_params", "")
         .def(nb::init<>())
-        .def_rw("n_predict", &gpt_params::n_predict)
-        .def_rw("n_ctx", &gpt_params::n_ctx)
-        .def_rw("n_batch", &gpt_params::n_batch)
-        .def_rw("n_ubatch", &gpt_params::n_ubatch)
-        .def_rw("n_keep", &gpt_params::n_keep)
-        .def_rw("n_draft", &gpt_params::n_draft)
-        .def_rw("n_chunks", &gpt_params::n_chunks)
-        .def_rw("n_parallel", &gpt_params::n_parallel)
-        .def_rw("n_sequences", &gpt_params::n_sequences)
-        .def_rw("p_split", &gpt_params::p_split)
-        .def_rw("n_gpu_layers", &gpt_params::n_gpu_layers)
-        .def_rw("n_gpu_layers_draft", &gpt_params::n_gpu_layers_draft)
-        .def_rw("main_gpu", &gpt_params::main_gpu)
-        .def_rw("grp_attn_n", &gpt_params::grp_attn_n)
-        .def_rw("grp_attn_w", &gpt_params::grp_attn_w)
-        .def_rw("n_print", &gpt_params::n_print)
-        .def_rw("rope_freq_base", &gpt_params::rope_freq_base)
-        .def_rw("rope_freq_scale", &gpt_params::rope_freq_scale)
-        .def_rw("yarn_ext_factor", &gpt_params::yarn_ext_factor)
-        .def_rw("yarn_attn_factor", &gpt_params::yarn_attn_factor)
-        .def_rw("yarn_beta_fast", &gpt_params::yarn_beta_fast)
-        .def_rw("yarn_beta_slow", &gpt_params::yarn_beta_slow)
-        .def_rw("yarn_orig_ctx", &gpt_params::yarn_orig_ctx)
-        .def_rw("defrag_thold", &gpt_params::defrag_thold)
-        .def_rw("numa", &gpt_params::numa)
-        .def_rw("split_mode", &gpt_params::split_mode)
-        .def_rw("rope_scaling_type", &gpt_params::rope_scaling_type)
-        .def_rw("pooling_type", &gpt_params::pooling_type)
-        .def_rw("attention_type", &gpt_params::attention_type)
-        .def_rw("sparams", &gpt_params::sparams)
-        .def_rw("model", &gpt_params::model)
-        .def_rw("model_draft", &gpt_params::model_draft)
-        .def_rw("model_alias", &gpt_params::model_alias)
-        .def_rw("model_url", &gpt_params::model_url)
-        .def_rw("hf_token", &gpt_params::hf_token)
-        .def_rw("hf_repo", &gpt_params::hf_repo)
-        .def_rw("hf_file", &gpt_params::hf_file)
-        .def_rw("prompt", &gpt_params::prompt)
-        .def_rw("prompt_file", &gpt_params::prompt_file)
-        .def_rw("path_prompt_cache", &gpt_params::path_prompt_cache)
-        .def_rw("input_prefix", &gpt_params::input_prefix)
-        .def_rw("input_suffix", &gpt_params::input_suffix)
-        .def_rw("logdir", &gpt_params::logdir)
-        .def_rw("lookup_cache_static", &gpt_params::lookup_cache_static)
-        .def_rw("lookup_cache_dynamic", &gpt_params::lookup_cache_dynamic)
-        .def_rw("logits_file", &gpt_params::logits_file)
-        .def_rw("rpc_servers", &gpt_params::rpc_servers)
-        .def_rw("in_files", &gpt_params::in_files)
-        .def_rw("antiprompt", &gpt_params::antiprompt)
-        .def_rw("kv_overrides", &gpt_params::kv_overrides)
-        .def_rw("lora_adapters", &gpt_params::lora_adapters)
-        .def_rw("control_vectors", &gpt_params::control_vectors)
-        .def_rw("verbosity", &gpt_params::verbosity)
-        .def_rw("control_vector_layer_start", &gpt_params::control_vector_layer_start)
-        .def_rw("control_vector_layer_end", &gpt_params::control_vector_layer_end)
-        .def_rw("ppl_stride", &gpt_params::ppl_stride)
-        .def_rw("ppl_output_type", &gpt_params::ppl_output_type)
-        .def_rw("hellaswag", &gpt_params::hellaswag)
-        .def_rw("hellaswag_tasks", &gpt_params::hellaswag_tasks)
-        .def_rw("winogrande", &gpt_params::winogrande)
-        .def_rw("winogrande_tasks", &gpt_params::winogrande_tasks)
-        .def_rw("multiple_choice", &gpt_params::multiple_choice)
-        .def_rw("multiple_choice_tasks", &gpt_params::multiple_choice_tasks)
-        .def_rw("kl_divergence", &gpt_params::kl_divergence)
-        .def_rw("usage", &gpt_params::usage)
-        .def_rw("use_color", &gpt_params::use_color)
-        .def_rw("special", &gpt_params::special)
-        .def_rw("interactive", &gpt_params::interactive)
-        .def_rw("interactive_first", &gpt_params::interactive_first)
-        .def_rw("conversation", &gpt_params::conversation)
-        .def_rw("prompt_cache_all", &gpt_params::prompt_cache_all)
-        .def_rw("prompt_cache_ro", &gpt_params::prompt_cache_ro)
-        .def_rw("escape", &gpt_params::escape)
-        .def_rw("multiline_input", &gpt_params::multiline_input)
-        .def_rw("simple_io", &gpt_params::simple_io)
-        .def_rw("cont_batching", &gpt_params::cont_batching)
-        .def_rw("flash_attn", &gpt_params::flash_attn)
-        .def_rw("no_perf", &gpt_params::flash_attn)
-        .def_rw("ctx_shift", &gpt_params::flash_attn)
-        .def_rw("input_prefix_bos", &gpt_params::input_prefix_bos)
-        // .def_rw("ignore_eos", &gpt_params::ignore_eos)
-        .def_rw("logits_all", &gpt_params::logits_all)
-        .def_rw("use_mmap", &gpt_params::use_mmap)
-        .def_rw("use_mlock", &gpt_params::use_mlock)
-        .def_rw("verbose_prompt", &gpt_params::verbose_prompt)
-        .def_rw("display_prompt", &gpt_params::display_prompt)
-        // .def_rw("infill", &gpt_params::infill)
-        .def_rw("dump_kv_cache", &gpt_params::dump_kv_cache)
-        .def_rw("no_kv_offload", &gpt_params::no_kv_offload)
-        .def_rw("warmup", &gpt_params::warmup)
-        .def_rw("check_tensors", &gpt_params::check_tensors)
-        .def_rw("cache_type_k", &gpt_params::cache_type_k)
-        .def_rw("cache_type_v", &gpt_params::cache_type_v)
-        .def_rw("mmproj", &gpt_params::mmproj)
-        .def_rw("image", &gpt_params::image)
-        .def_rw("embedding", &gpt_params::embedding)
-        .def_rw("embd_normalize", &gpt_params::embd_normalize)
-        .def_rw("embd_out", &gpt_params::embd_out)
-        .def_rw("embd_sep", &gpt_params::embd_sep)
-        .def_rw("reranking", &gpt_params::reranking)
-        .def_rw("port", &gpt_params::port)
-        .def_rw("timeout_read", &gpt_params::timeout_read)
-        .def_rw("timeout_write", &gpt_params::timeout_write)
-        .def_rw("n_threads_http", &gpt_params::n_threads_http)
-        .def_rw("hostname", &gpt_params::hostname)
-        .def_rw("public_path", &gpt_params::public_path)
-        .def_rw("chat_template", &gpt_params::chat_template)
-        .def_rw("system_prompt", &gpt_params::system_prompt)
-        .def_rw("enable_chat_template", &gpt_params::enable_chat_template)
-        .def_rw("api_keys", &gpt_params::api_keys)
-        .def_rw("ssl_file_key", &gpt_params::ssl_file_key)
-        .def_rw("ssl_file_cert", &gpt_params::ssl_file_cert)
-        .def_rw("webui", &gpt_params::webui)
-        .def_rw("endpoint_slots", &gpt_params::endpoint_slots)
-        .def_rw("endpoint_metrics", &gpt_params::endpoint_metrics)
-        .def_rw("endpoint_props", &gpt_params::endpoint_props)
-        .def_rw("log_json", &gpt_params::log_json)
-        .def_rw("slot_save_path", &gpt_params::slot_save_path)
-        .def_rw("slot_prompt_similarity", &gpt_params::slot_prompt_similarity)
-        .def_rw("is_pp_shared", &gpt_params::is_pp_shared)
-        .def_rw("n_pp", &gpt_params::n_pp)
-        .def_rw("n_tg", &gpt_params::n_tg)
-        .def_rw("n_pl", &gpt_params::n_pl)
-        .def_rw("context_files", &gpt_params::context_files)
-        .def_rw("chunk_size", &gpt_params::chunk_size)
-        .def_rw("chunk_separator", &gpt_params::chunk_separator)
-        .def_rw("n_junk", &gpt_params::n_junk)
-        .def_rw("i_pos", &gpt_params::i_pos)
-        .def_rw("out_file", &gpt_params::out_file)
-        .def_rw("n_out_freq", &gpt_params::n_out_freq)
-        .def_rw("n_save_freq", &gpt_params::n_save_freq)
-        .def_rw("i_chunk", &gpt_params::i_chunk)
-        .def_rw("process_output", &gpt_params::process_output)
-        .def_rw("compute_ppl", &gpt_params::compute_ppl)
-        .def_rw("n_pca_batch", &gpt_params::n_pca_batch)
-        .def_rw("n_pca_iterations", &gpt_params::n_pca_iterations)
-        .def_rw("cvector_dimre_method", &gpt_params::cvector_dimre_method)
-        .def_rw("cvector_outfile", &gpt_params::cvector_outfile)
-        .def_rw("cvector_positive_file", &gpt_params::cvector_positive_file)
-        .def_rw("cvector_negative_file", &gpt_params::cvector_negative_file)
-        .def_rw("spm_infill", &gpt_params::spm_infill)
-        .def_rw("lora_outfile", &gpt_params::lora_outfile);
+        .def_rw("n_predict", &common_params::n_predict)
+        .def_rw("n_ctx", &common_params::n_ctx)
+        .def_rw("n_batch", &common_params::n_batch)
+        .def_rw("n_ubatch", &common_params::n_ubatch)
+        .def_rw("n_keep", &common_params::n_keep)
+        .def_rw("n_draft", &common_params::n_draft)
+        .def_rw("n_chunks", &common_params::n_chunks)
+        .def_rw("n_parallel", &common_params::n_parallel)
+        .def_rw("n_sequences", &common_params::n_sequences)
+        .def_rw("p_split", &common_params::p_split)
+        .def_rw("n_gpu_layers", &common_params::n_gpu_layers)
+        .def_rw("n_gpu_layers_draft", &common_params::n_gpu_layers_draft)
+        .def_rw("main_gpu", &common_params::main_gpu)
+        .def_rw("grp_attn_n", &common_params::grp_attn_n)
+        .def_rw("grp_attn_w", &common_params::grp_attn_w)
+        .def_rw("n_print", &common_params::n_print)
+        .def_rw("rope_freq_base", &common_params::rope_freq_base)
+        .def_rw("rope_freq_scale", &common_params::rope_freq_scale)
+        .def_rw("yarn_ext_factor", &common_params::yarn_ext_factor)
+        .def_rw("yarn_attn_factor", &common_params::yarn_attn_factor)
+        .def_rw("yarn_beta_fast", &common_params::yarn_beta_fast)
+        .def_rw("yarn_beta_slow", &common_params::yarn_beta_slow)
+        .def_rw("yarn_orig_ctx", &common_params::yarn_orig_ctx)
+        .def_rw("defrag_thold", &common_params::defrag_thold)
+        .def_rw("numa", &common_params::numa)
+        .def_rw("split_mode", &common_params::split_mode)
+        .def_rw("rope_scaling_type", &common_params::rope_scaling_type)
+        .def_rw("pooling_type", &common_params::pooling_type)
+        .def_rw("attention_type", &common_params::attention_type)
+        .def_rw("sparams", &common_params::sparams)
+        .def_rw("model", &common_params::model)
+        .def_rw("model_draft", &common_params::model_draft)
+        .def_rw("model_alias", &common_params::model_alias)
+        .def_rw("model_url", &common_params::model_url)
+        .def_rw("hf_token", &common_params::hf_token)
+        .def_rw("hf_repo", &common_params::hf_repo)
+        .def_rw("hf_file", &common_params::hf_file)
+        .def_rw("prompt", &common_params::prompt)
+        .def_rw("prompt_file", &common_params::prompt_file)
+        .def_rw("path_prompt_cache", &common_params::path_prompt_cache)
+        .def_rw("input_prefix", &common_params::input_prefix)
+        .def_rw("input_suffix", &common_params::input_suffix)
+        .def_rw("logdir", &common_params::logdir)
+        .def_rw("lookup_cache_static", &common_params::lookup_cache_static)
+        .def_rw("lookup_cache_dynamic", &common_params::lookup_cache_dynamic)
+        .def_rw("logits_file", &common_params::logits_file)
+        .def_rw("rpc_servers", &common_params::rpc_servers)
+        .def_rw("in_files", &common_params::in_files)
+        .def_rw("antiprompt", &common_params::antiprompt)
+        .def_rw("kv_overrides", &common_params::kv_overrides)
+        .def_rw("lora_adapters", &common_params::lora_adapters)
+        .def_rw("control_vectors", &common_params::control_vectors)
+        .def_rw("verbosity", &common_params::verbosity)
+        .def_rw("control_vector_layer_start", &common_params::control_vector_layer_start)
+        .def_rw("control_vector_layer_end", &common_params::control_vector_layer_end)
+        .def_rw("ppl_stride", &common_params::ppl_stride)
+        .def_rw("ppl_output_type", &common_params::ppl_output_type)
+        .def_rw("hellaswag", &common_params::hellaswag)
+        .def_rw("hellaswag_tasks", &common_params::hellaswag_tasks)
+        .def_rw("winogrande", &common_params::winogrande)
+        .def_rw("winogrande_tasks", &common_params::winogrande_tasks)
+        .def_rw("multiple_choice", &common_params::multiple_choice)
+        .def_rw("multiple_choice_tasks", &common_params::multiple_choice_tasks)
+        .def_rw("kl_divergence", &common_params::kl_divergence)
+        .def_rw("usage", &common_params::usage)
+        .def_rw("use_color", &common_params::use_color)
+        .def_rw("special", &common_params::special)
+        .def_rw("interactive", &common_params::interactive)
+        .def_rw("interactive_first", &common_params::interactive_first)
+        .def_rw("conversation", &common_params::conversation)
+        .def_rw("prompt_cache_all", &common_params::prompt_cache_all)
+        .def_rw("prompt_cache_ro", &common_params::prompt_cache_ro)
+        .def_rw("escape", &common_params::escape)
+        .def_rw("multiline_input", &common_params::multiline_input)
+        .def_rw("simple_io", &common_params::simple_io)
+        .def_rw("cont_batching", &common_params::cont_batching)
+        .def_rw("flash_attn", &common_params::flash_attn)
+        .def_rw("no_perf", &common_params::flash_attn)
+        .def_rw("ctx_shift", &common_params::flash_attn)
+        .def_rw("input_prefix_bos", &common_params::input_prefix_bos)
+        // .def_rw("ignore_eos", &common_params::ignore_eos)
+        .def_rw("logits_all", &common_params::logits_all)
+        .def_rw("use_mmap", &common_params::use_mmap)
+        .def_rw("use_mlock", &common_params::use_mlock)
+        .def_rw("verbose_prompt", &common_params::verbose_prompt)
+        .def_rw("display_prompt", &common_params::display_prompt)
+        // .def_rw("infill", &common_params::infill)
+        .def_rw("dump_kv_cache", &common_params::dump_kv_cache)
+        .def_rw("no_kv_offload", &common_params::no_kv_offload)
+        .def_rw("warmup", &common_params::warmup)
+        .def_rw("check_tensors", &common_params::check_tensors)
+        .def_rw("cache_type_k", &common_params::cache_type_k)
+        .def_rw("cache_type_v", &common_params::cache_type_v)
+        .def_rw("mmproj", &common_params::mmproj)
+        .def_rw("image", &common_params::image)
+        .def_rw("embedding", &common_params::embedding)
+        .def_rw("embd_normalize", &common_params::embd_normalize)
+        .def_rw("embd_out", &common_params::embd_out)
+        .def_rw("embd_sep", &common_params::embd_sep)
+        .def_rw("reranking", &common_params::reranking)
+        .def_rw("port", &common_params::port)
+        .def_rw("timeout_read", &common_params::timeout_read)
+        .def_rw("timeout_write", &common_params::timeout_write)
+        .def_rw("n_threads_http", &common_params::n_threads_http)
+        .def_rw("hostname", &common_params::hostname)
+        .def_rw("public_path", &common_params::public_path)
+        .def_rw("chat_template", &common_params::chat_template)
+        .def_rw("system_prompt", &common_params::system_prompt)
+        .def_rw("enable_chat_template", &common_params::enable_chat_template)
+        .def_rw("api_keys", &common_params::api_keys)
+        .def_rw("ssl_file_key", &common_params::ssl_file_key)
+        .def_rw("ssl_file_cert", &common_params::ssl_file_cert)
+        .def_rw("webui", &common_params::webui)
+        .def_rw("endpoint_slots", &common_params::endpoint_slots)
+        .def_rw("endpoint_metrics", &common_params::endpoint_metrics)
+        .def_rw("endpoint_props", &common_params::endpoint_props)
+        .def_rw("log_json", &common_params::log_json)
+        .def_rw("slot_save_path", &common_params::slot_save_path)
+        .def_rw("slot_prompt_similarity", &common_params::slot_prompt_similarity)
+        .def_rw("is_pp_shared", &common_params::is_pp_shared)
+        .def_rw("n_pp", &common_params::n_pp)
+        .def_rw("n_tg", &common_params::n_tg)
+        .def_rw("n_pl", &common_params::n_pl)
+        .def_rw("context_files", &common_params::context_files)
+        .def_rw("chunk_size", &common_params::chunk_size)
+        .def_rw("chunk_separator", &common_params::chunk_separator)
+        .def_rw("n_junk", &common_params::n_junk)
+        .def_rw("i_pos", &common_params::i_pos)
+        .def_rw("out_file", &common_params::out_file)
+        .def_rw("n_out_freq", &common_params::n_out_freq)
+        .def_rw("n_save_freq", &common_params::n_save_freq)
+        .def_rw("i_chunk", &common_params::i_chunk)
+        .def_rw("process_output", &common_params::process_output)
+        .def_rw("compute_ppl", &common_params::compute_ppl)
+        .def_rw("n_pca_batch", &common_params::n_pca_batch)
+        .def_rw("n_pca_iterations", &common_params::n_pca_iterations)
+        .def_rw("cvector_dimre_method", &common_params::cvector_dimre_method)
+        .def_rw("cvector_outfile", &common_params::cvector_outfile)
+        .def_rw("cvector_positive_file", &common_params::cvector_positive_file)
+        .def_rw("cvector_negative_file", &common_params::cvector_negative_file)
+        .def_rw("spm_infill", &common_params::spm_infill)
+        .def_rw("lora_outfile", &common_params::lora_outfile);
 
     // overloaded
 
-    m.def("llama_token_to_piece", (std::string (*)(const struct llama_context *, llama_token, bool)) &llama_token_to_piece, "", nb::arg("ctx"), nb::arg("token"), nb::arg("special") = true);
+    m.def("common_token_to_piece", (std::string (*)(const struct llama_context *, llama_token, bool)) &common_token_to_piece, "", nb::arg("ctx"), nb::arg("token"), nb::arg("special") = true);
 
-    m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &llama_tokenize, "", nb::arg("ctx"), nb::arg("text"), nb::arg("add_special"), nb::arg("parse_special") = false);
-    m.def("llama_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &llama_tokenize, "", nb::arg("model"), nb::arg("text"), nb::arg("add_special"), nb::arg("parse_special") = false);
+    m.def("common_tokenize", (std::vector<llama_token> (*)(const struct llama_context *, const std::string &, bool, bool)) &common_tokenize, "", nb::arg("ctx"), nb::arg("text"), nb::arg("add_special"), nb::arg("parse_special") = false);
+    m.def("common_tokenize", (std::vector<llama_token> (*)(const struct llama_model *, const std::string &, bool, bool)) &common_tokenize, "", nb::arg("model"), nb::arg("text"), nb::arg("add_special"), nb::arg("parse_special") = false);
 
-    // m.def("gpt_params_parse_from_env", (void (*)(struct gpt_params &)) &gpt_params_parse_from_env, "", nb::arg("params"));
-    // m.def("gpt_params_handle_model_default", (void (*)(struct gpt_params &)) &gpt_params_handle_model_default, "C++: gpt_params_handle_model_default(struct gpt_params &) --> void", nb::arg("params"));
-    m.def("gpt_params_get_system_info", (std::string (*)(const struct gpt_params &)) &gpt_params_get_system_info, "C++: gpt_params_get_system_info(const struct gpt_params &) --> std::string", nb::arg("params"));
+    // m.def("common_params_parse_from_env", (void (*)(struct common_params &)) &common_params_parse_from_env, "", nb::arg("params"));
+    // m.def("common_params_handle_model_default", (void (*)(struct common_params &)) &common_params_handle_model_default, "C++: common_params_handle_model_default(struct common_params &) --> void", nb::arg("params"));
+    m.def("common_params_get_system_info", (std::string (*)(const struct common_params &)) &common_params_get_system_info, "C++: common_params_get_system_info(const struct common_params &) --> std::string", nb::arg("params"));
 
     m.def("string_split", (class std::vector<std::string> (*)(std::string, char)) &string_split, "C++: string_split(std::string, char) --> class std::vector<std::string>", nb::arg("input"), nb::arg("separator"));
     m.def("string_strip", (std::string (*)(const std::string &)) &string_strip, "C++: string_strip(const std::string &) --> std::string", nb::arg("str"));
@@ -749,44 +749,44 @@ NB_MODULE(nbllama, m) {
     m.def("fs_get_cache_directory", (std::string (*)()) &fs_get_cache_directory, "C++: fs_get_cache_directory() --> std::string");
     m.def("fs_get_cache_file", (std::string (*)(const std::string &)) &fs_get_cache_file, "C++: fs_get_cache_file(const std::string &) --> std::string", nb::arg("filename"));
 
-    m.def("llama_init_from_gpt_params", (class std::tuple<struct llama_model *, struct llama_context *> (*)(struct gpt_params &)) &llama_init_from_gpt_params, "C++: llama_init_from_gpt_params(struct gpt_params &) --> class std::tuple<struct llama_model *, struct llama_context *>", nb::arg("params"));
+    m.def("common_init_from_params", (class std::tuple<struct llama_model *, struct llama_context *> (*)(struct common_params &)) &common_init_from_params, "", nb::arg("params"));
 
-    m.def("llama_model_params_from_gpt_params", (struct llama_model_params (*)(const struct gpt_params &)) &llama_model_params_from_gpt_params, "C++: llama_model_params_from_gpt_params(const struct gpt_params &) --> struct llama_model_params", nb::arg("params"));
+    m.def("common_model_params_to_llama", (struct llama_model_params (*)(const struct common_params &)) &common_model_params_to_llama, "C++: common_model_params_to_llama(const struct common_params &) --> struct llama_model_params", nb::arg("params"));
 
-    m.def("llama_context_params_from_gpt_params", (struct llama_context_params (*)(const struct gpt_params &)) &llama_context_params_from_gpt_params, "C++: llama_context_params_from_gpt_params(const struct gpt_params &) --> struct llama_context_params", nb::arg("params"));
+    m.def("common_context_params_to_llama", (struct llama_context_params (*)(const struct common_params &)) &common_context_params_to_llama, "C++: common_context_params_to_llama(const struct common_params &) --> struct llama_context_params", nb::arg("params"));
 
-    m.def("llama_batch_clear", (void (*)(struct llama_batch &)) &llama_batch_clear, "C++: llama_batch_clear(struct llama_batch &) --> void", nb::arg("batch"));
-    m.def("llama_batch_add", (void (*)(struct llama_batch &, int, int, const class std::vector<int> &, bool)) &llama_batch_add, "C++: llama_batch_add(struct llama_batch &, int, int, const class std::vector<int> &, bool) --> void", nb::arg("batch"), nb::arg("id"), nb::arg("pos"), nb::arg("seq_ids"), nb::arg("logits"));
+    m.def("common_batch_clear", (void (*)(struct llama_batch &)) &common_batch_clear, "C++: common_batch_clear(struct llama_batch &) --> void", nb::arg("batch"));
+    m.def("common_batch_add", (void (*)(struct llama_batch &, int, int, const class std::vector<int> &, bool)) &common_batch_add, "C++: common_batch_add(struct llama_batch &, int, int, const class std::vector<int> &, bool) --> void", nb::arg("batch"), nb::arg("id"), nb::arg("pos"), nb::arg("seq_ids"), nb::arg("logits"));
 
-    nb::class_<llama_chat_msg> (m, "llama_chat_msg", "")
+    nb::class_<common_chat_msg> (m, "common_chat_msg", "")
         .def(nb::init<>())
-        .def_rw("role", &llama_chat_msg::role)
-        .def_rw("content", &llama_chat_msg::content);
+        .def_rw("role", &common_chat_msg::role)
+        .def_rw("content", &common_chat_msg::content);
 
-    m.def("llama_chat_verify_template", (bool (*)(const std::string &)) &llama_chat_verify_template, "C++: llama_chat_verify_template(const std::string &) --> bool", nb::arg("tmpl"));
+    m.def("common_chat_verify_template", (bool (*)(const std::string &)) &common_chat_verify_template, "C++: common_chat_verify_template(const std::string &) --> bool", nb::arg("tmpl"));
 
-    m.def("llama_kv_cache_dump_view", [](const struct llama_kv_cache_view & a0) -> void { return llama_kv_cache_dump_view(a0); }, "", nb::arg("view"));
-    m.def("llama_kv_cache_dump_view", (void (*)(const struct llama_kv_cache_view &, int)) &llama_kv_cache_dump_view, "C++: llama_kv_cache_dump_view(const struct llama_kv_cache_view &, int) --> void", nb::arg("view"), nb::arg("row_size"));
+    m.def("common_kv_cache_dump_view", [](const struct llama_kv_cache_view & a0) -> void { return common_kv_cache_dump_view(a0); }, "", nb::arg("view"));
+    m.def("common_kv_cache_dump_view", (void (*)(const struct llama_kv_cache_view &, int)) &common_kv_cache_dump_view, "C++: common_kv_cache_dump_view(const struct llama_kv_cache_view &, int) --> void", nb::arg("view"), nb::arg("row_size"));
 
-    m.def("llama_kv_cache_dump_view_seqs", [](const struct llama_kv_cache_view & a0) -> void { return llama_kv_cache_dump_view_seqs(a0); }, "", nb::arg("view"));
-    m.def("llama_kv_cache_dump_view_seqs", (void (*)(const struct llama_kv_cache_view &, int)) &llama_kv_cache_dump_view_seqs, "C++: llama_kv_cache_dump_view_seqs(const struct llama_kv_cache_view &, int) --> void", nb::arg("view"), nb::arg("row_size"));
+    m.def("common_kv_cache_dump_view_seqs", [](const struct llama_kv_cache_view & a0) -> void { return common_kv_cache_dump_view_seqs(a0); }, "", nb::arg("view"));
+    m.def("common_kv_cache_dump_view_seqs", (void (*)(const struct llama_kv_cache_view &, int)) &common_kv_cache_dump_view_seqs, "C++: common_kv_cache_dump_view_seqs(const struct llama_kv_cache_view &, int) --> void", nb::arg("view"), nb::arg("row_size"));
 
-    m.def("llama_embd_normalize", [](const float * a0, float * a1, int const & a2) -> void { return llama_embd_normalize(a0, a1, a2); }, "", nb::arg("inp"), nb::arg("out"), nb::arg("n"));
-    m.def("llama_embd_normalize", (void (*)(const float *, float *, int, int)) &llama_embd_normalize, "C++: llama_embd_normalize(const float *, float *, int, int) --> void", nb::arg("inp"), nb::arg("out"), nb::arg("n"), nb::arg("embd_norm"));
+    m.def("common_embd_normalize", [](const float * a0, float * a1, int const & a2) -> void { return common_embd_normalize(a0, a1, a2); }, "", nb::arg("inp"), nb::arg("out"), nb::arg("n"));
+    m.def("common_embd_normalize", (void (*)(const float *, float *, int, int)) &common_embd_normalize, "C++: common_embd_normalize(const float *, float *, int, int) --> void", nb::arg("inp"), nb::arg("out"), nb::arg("n"), nb::arg("embd_norm"));
 
-    m.def("llama_embd_similarity_cos", (float (*)(const float *, const float *, int)) &llama_embd_similarity_cos, "C++: llama_embd_similarity_cos(const float *, const float *, int) --> float", nb::arg("embd1"), nb::arg("embd2"), nb::arg("n"));
+    m.def("common_embd_similarity_cos", (float (*)(const float *, const float *, int)) &common_embd_similarity_cos, "C++: common_embd_similarity_cos(const float *, const float *, int) --> float", nb::arg("embd1"), nb::arg("embd2"), nb::arg("n"));
 
-    nb::class_<llama_control_vector_data> (m, "llama_control_vector_data", "")
+    nb::class_<common_control_vector_data> (m, "common_control_vector_data", "")
         .def(nb::init<>())
-        .def_rw("n_embd", &llama_control_vector_data::n_embd)
-        .def_rw("data", &llama_control_vector_data::data);
+        .def_rw("n_embd", &common_control_vector_data::n_embd)
+        .def_rw("data", &common_control_vector_data::data);
 
-    nb::class_<llama_control_vector_load_info> (m, "llama_control_vector_load_info", "")
+    nb::class_<common_control_vector_load_info> (m, "common_control_vector_load_info", "")
         .def(nb::init<>())
-        .def_rw("strength", &llama_control_vector_load_info::strength)
-        .def_rw("fname", &llama_control_vector_load_info::fname);
+        .def_rw("strength", &common_control_vector_load_info::strength)
+        .def_rw("fname", &common_control_vector_load_info::fname);
 
-    m.def("llama_control_vector_load", (struct llama_control_vector_data (*)(const class std::vector<struct llama_control_vector_load_info> &)) &llama_control_vector_load, "C++: llama_control_vector_load(const class std::vector<struct llama_control_vector_load_info> &) --> struct llama_control_vector_data", nb::arg("load_infos"));
+    m.def("common_control_vector_load", (struct common_control_vector_data (*)(const class std::vector<struct common_control_vector_load_info> &)) &common_control_vector_load, "C++: common_control_vector_load(const class std::vector<struct common_control_vector_load_info> &) --> struct common_control_vector_data", nb::arg("load_infos"));
 
     m.def("yaml_dump_vector_float", (void (*)(struct __sFILE *, const char *, const class std::vector<float> &)) &yaml_dump_vector_float, "C++: yaml_dump_vector_float(struct __sFILE *, const char *, const class std::vector<float> &) --> void", nb::arg("stream"), nb::arg("prop_name"), nb::arg("data"));
     m.def("yaml_dump_vector_int", (void (*)(struct __sFILE *, const char *, const class std::vector<int> &)) &yaml_dump_vector_int, "C++: yaml_dump_vector_int(struct __sFILE *, const char *, const class std::vector<int> &) --> void", nb::arg("stream"), nb::arg("prop_name"), nb::arg("data"));
@@ -819,29 +819,29 @@ NB_MODULE(nbllama, m) {
         .value("LLAMA_EXAMPLE_COUNT", LLAMA_EXAMPLE_COUNT)
         .export_values();
 
-    nb::class_<llama_arg> (m, "llama_arg", "")
-        // .def( nb::init( [](){ return new llama_arg(); } ) )
-        .def_rw("examples", &llama_arg::examples)
-        .def_rw("args", &llama_arg::args)
-        .def_rw("value_hint", &llama_arg::value_hint)
-        .def_rw("value_hint_2", &llama_arg::value_hint_2)
-        .def_rw("env", &llama_arg::env)
-        .def_rw("help", &llama_arg::help)
-        .def_rw("is_sparam", &llama_arg::is_sparam);
-        // .def_rw("handler_void", &llama_arg::handler_void)
-        // .def_rw("handler_string", &llama_arg::handler_string)
-        // .def_rw("handler_str_str", &llama_arg::handler_str_str)
-        // .def_rw("handler_int", &llama_arg::handler_int);
+    nb::class_<common_arg> (m, "common_arg", "")
+        // .def( nb::init( [](){ return new common_arg(); } ) )
+        .def_rw("examples", &common_arg::examples)
+        .def_rw("args", &common_arg::args)
+        .def_rw("value_hint", &common_arg::value_hint)
+        .def_rw("value_hint_2", &common_arg::value_hint_2)
+        .def_rw("env", &common_arg::env)
+        .def_rw("help", &common_arg::help)
+        .def_rw("is_sparam", &common_arg::is_sparam);
+        // .def_rw("handler_void", &common_arg::handler_void)
+        // .def_rw("handler_string", &common_arg::handler_string)
+        // .def_rw("handler_str_str", &common_arg::handler_str_str)
+        // .def_rw("handler_int", &common_arg::handler_int);
 
-    nb::class_<gpt_params_context> (m, "gpt_params_context", "")
-        .def(nb::init<gpt_params &>())
-        .def_rw("ex", &gpt_params_context::ex)
-        // .def_rw("params", &gpt_params_context::params)
-        .def_rw("options", &gpt_params_context::options);
+    nb::class_<common_params_context> (m, "common_params_context", "")
+        .def(nb::init<common_params &>())
+        .def_rw("ex", &common_params_context::ex)
+        // .def_rw("params", &common_params_context::params)
+        .def_rw("options", &common_params_context::options);
         // void(*print_usage)(int, char **) = nullptr;
 
 
-    m.def("gpt_params_parse", [](std::vector<std::string> args, gpt_params & params, enum llama_example example) -> bool {
+    m.def("common_params_parse", [](std::vector<std::string> args, common_params & params, enum llama_example example) -> bool {
         void(*print_usage)(int, char **) = NULL;
         std::vector<char*> cstrings;
         cstrings.reserve(args.size());
@@ -850,12 +850,12 @@ NB_MODULE(nbllama, m) {
             cstrings.push_back(const_cast<char*>(args[i].c_str()));
 
         if (cstrings.empty()) {
-            return gpt_params_parse(0, nullptr, params, example, print_usage);
+            return common_params_parse(0, nullptr, params, example, print_usage);
         } else {
-            return gpt_params_parse(cstrings.size(), &cstrings[0], params, example, print_usage);
+            return common_params_parse(cstrings.size(), &cstrings[0], params, example, print_usage);
         }
     }, "",  nb::arg("args"), nb::arg("params"), nb::arg("example"));
 
-    m.def("gpt_params_parser_init", (std::vector<llama_arg> (*)(gpt_params &, llama_example)) &gpt_params_parser_init, "", nb::arg("params"), nb::arg("ex"));
+    m.def("common_params_parser_init", (std::vector<common_arg> (*)(common_params &, llama_example)) &common_params_parser_init, "", nb::arg("params"), nb::arg("ex"));
 
 }

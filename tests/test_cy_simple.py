@@ -11,7 +11,7 @@ def test_cy_highlevel_simple(model_path):
 
 def test_cy_lowlevel_simple(model_path):
 
-    params = cy.GptParams()
+    params = cy.CommonParams()
     params.model = model_path
     params.prompt = "When did the universe begin?"
     params.n_predict = 32
@@ -33,7 +33,7 @@ def test_cy_lowlevel_simple(model_path):
 
     # initialize the model
 
-    model_params = cy.llama_model_params_from_gpt_params(params)
+    model_params = cy.common_model_params_to_llama(params)
 
     # set local test model
     params.model = model_path
@@ -46,8 +46,7 @@ def test_cy_lowlevel_simple(model_path):
 
     # initialize the context
 
-    ctx_params = cy.llama_context_params_from_gpt_params(params)
-    # ctx_params = cy.ContextParams.from_gpt_params(params)
+    ctx_params = cy.common_context_params_to_llama(params)
 
     # ctx = cy.llama_new_context_with_model(model, ctx_params)
     ctx = cy.LlamaContext(model=model, params=ctx_params)
@@ -73,7 +72,7 @@ def test_cy_lowlevel_simple(model_path):
 
     # tokenize the prompt
 
-    tokens_list: list[int] = cy.llama_tokenize(ctx, params.prompt, True)
+    tokens_list: list[int] = cy.common_tokenize(ctx, params.prompt, True)
 
     n_ctx: int = cy.llama_n_ctx(ctx)
 
@@ -90,7 +89,7 @@ def test_cy_lowlevel_simple(model_path):
     print()
     prompt=""
     for i in tokens_list:
-        prompt += cy.llama_token_to_piece(ctx, i)
+        prompt += cy.common_token_to_piece(ctx, i)
     print(prompt)
 
     # create a llama_batch with size 512
@@ -101,7 +100,7 @@ def test_cy_lowlevel_simple(model_path):
 
     # evaluate the initial prompt
     for i, token in enumerate(tokens_list):
-        cy.llama_batch_add(batch, token, i, [0], False)
+        cy.common_batch_add(batch, token, i, [0], False)
 
     # llama_decode will output logits only for the last token of the prompt
     # batch.logits[batch.n_tokens - 1] = True
@@ -136,14 +135,13 @@ def test_cy_lowlevel_simple(model_path):
                 print()
                 break
 
-            result += cy.llama_token_to_piece(ctx, new_token_id)
+            result += cy.common_token_to_piece(ctx, new_token_id)
 
             # prepare the next batch
-            cy.llama_batch_clear(batch);
+            cy.common_batch_clear(batch);
 
             # push this new token for next evaluation
-            # cy.llama_batch_add(batch, new_token_id, n_cur, { 0 }, true);
-            cy.llama_batch_add(batch, new_token_id, n_cur, [0], True)
+            cy.common_batch_add(batch, new_token_id, n_cur, [0], True)
 
             n_decode += 1
 

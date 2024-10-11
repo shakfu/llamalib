@@ -16,16 +16,15 @@ def test_nb_highlevel_simple(model_path):
 
 def test_pb_simple(model_path):
 
-    params = pb.gpt_params()
+    params = pb.common_params()
     params.model = model_path
     params.prompt = "When did the universe begin?"
     params.n_predict = 32
     params.n_ctx = 2048
 
-
     args = []
-    if not pb.gpt_params_parse(args, params, pb.LLAMA_EXAMPLE_COMMON):
-        raise SystemExit("gpt_params_parse failed")
+    if not pb.common_params_parse(args, params, pb.LLAMA_EXAMPLE_COMMON):
+        raise SystemExit("common_params_parse failed")
 
     # total length of the sequence including the prompt
     n_predict: int = params.n_predict
@@ -37,7 +36,7 @@ def test_pb_simple(model_path):
 
     # initialize the model
 
-    model_params = pb.llama_model_params_from_gpt_params(params)
+    model_params = pb.common_model_params_to_llama(params)
 
     # set local test model
     params.model = model_path
@@ -49,7 +48,7 @@ def test_pb_simple(model_path):
 
     # initialize the context
 
-    ctx_params = pb.llama_context_params_from_gpt_params(params)
+    ctx_params = pb.common_context_params_to_llama(params)
 
     ctx = pb.llama_new_context_with_model(model, ctx_params)
 
@@ -72,7 +71,7 @@ def test_pb_simple(model_path):
 
     # tokenize the prompt
 
-    tokens_list: list[int] = pb.llama_tokenize(ctx, params.prompt, True)
+    tokens_list: list[int] = pb.common_tokenize(ctx, params.prompt, True)
 
     n_ctx: int = pb.llama_n_ctx(ctx)
 
@@ -89,22 +88,15 @@ def test_pb_simple(model_path):
     print()
     prompt=""
     for i in tokens_list:
-        prompt += pb.llama_token_to_piece(ctx, i)
+        prompt += pb.common_token_to_piece(ctx, i)
     print(prompt)
-
-    # create a llama_batch with size 512
-    # we use this object to submit token data for decoding
 
     batch = pb.llama_batch_init(512, 0, 1)
 
     # evaluate the initial prompt
     for i, token in enumerate(tokens_list):
-        pb.llama_batch_add(batch, token, i, [0], False)
+        pb.common_batch_add(batch, token, i, [0], False)
 
-    # llama_decode will output logits only for the last token of the prompt
-    # logits = batch.get_logits()
-    # logits[batch.n_tokens - 1] = True
-    # batch.logits[batch.n_tokens - 1] = True
     batch.set_last_logits_to_true()
 
     logits = batch.get_logits()
@@ -135,14 +127,13 @@ def test_pb_simple(model_path):
                 print()
                 break
 
-            result += pb.llama_token_to_piece(ctx, new_token_id)
+            result += pb.common_token_to_piece(ctx, new_token_id)
 
             # prepare the next batch
-            pb.llama_batch_clear(batch);
+            pb.common_batch_clear(batch);
 
             # push this new token for next evaluation
-            # pb.llama_batch_add(batch, new_token_id, n_cur, { 0 }, true);
-            pb.llama_batch_add(batch, new_token_id, n_cur, [0], True)
+            pb.common_batch_add(batch, new_token_id, n_cur, [0], True)
 
             n_decode += 1
 
@@ -153,15 +144,7 @@ def test_pb_simple(model_path):
             raise SystemExit("llama_decode() failed.")
 
     print(result)
-
     print()
-
-    t_main_end: int = pb.ggml_time_us()
-
-    print("decoded %d tokens in %.2f s, speed: %.2f t/s",
-            n_decode, (t_main_end - t_main_start) / 1000000.0, n_decode / ((t_main_end - t_main_start) / 1000000.0))
-    print()
-
 
     pb.llama_batch_free(batch)
     pb.llama_sampler_free(smpl)
