@@ -951,34 +951,37 @@ cdef extern from "llama.h":
     # Vocab
     #
 
-    cdef const char * llama_token_get_text(const  llama_model * model, llama_token token)
+    cdef const char * llama_token_get_text(const llama_model * model, llama_token token)
 
-    cdef float llama_token_get_score(const  llama_model * model, llama_token token)
+    cdef float llama_token_get_score(const llama_model * model, llama_token token)
 
-    cdef llama_token_attr llama_token_get_attr(const  llama_model * model, llama_token token)
+    cdef llama_token_attr llama_token_get_attr(const llama_model * model, llama_token token)
 
     # Check if the token is supposed to end generation (end-of-generation, eg. EOS, EOT, etc.)
-    cdef bint llama_token_is_eog(const  llama_model * model, llama_token token)
+    cdef bint llama_token_is_eog(const llama_model * model, llama_token token)
 
     # Identify if Token Id is a control token or a render-able token
-    cdef bint llama_token_is_control(const  llama_model * model, llama_token token)
+    cdef bint llama_token_is_control(const llama_model * model, llama_token token)
 
     # Special tokens
-    cdef llama_token llama_token_bos(const  llama_model * model) # beginning-of-sentence
-    cdef llama_token llama_token_eos(const  llama_model * model) # end-of-sentence
-    cdef llama_token llama_token_cls(const  llama_model * model) # classification
-    cdef llama_token llama_token_sep(const  llama_model * model) # sentence separator
-    cdef llama_token llama_token_nl (const  llama_model * model) # next-line
-    cdef llama_token llama_token_pad(const  llama_model * model) # padding
+    cdef llama_token llama_token_bos(const llama_model * model) # beginning-of-sentence
+    cdef llama_token llama_token_eos(const llama_model * model) # end-of-sentence
+    cdef llama_token llama_token_eot(const llama_model * model) # end-of-turn
+    cdef llama_token llama_token_cls(const llama_model * model) # classification
+    cdef llama_token llama_token_sep(const llama_model * model) # sentence separator
+    cdef llama_token llama_token_nl (const llama_model * model) # next-line
+    cdef llama_token llama_token_pad(const llama_model * model) # padding
 
-    cdef int32_t llama_add_bos_token(const  llama_model * model)
-    cdef int32_t llama_add_eos_token(const  llama_model * model)
+    cdef int32_t llama_add_bos_token(const llama_model * model)
+    cdef int32_t llama_add_eos_token(const llama_model * model)
 
-    # Codellama infill tokens
-    cdef llama_token llama_token_prefix(const  llama_model * model) # Beginning of infill prefix
-    cdef llama_token llama_token_middle(const  llama_model * model) # Beginning of infill middle
-    cdef llama_token llama_token_suffix(const  llama_model * model) # Beginning of infill suffix
-    cdef llama_token llama_token_eot   (const  llama_model * model) # End of infill middle
+    # infill tokens
+    cdef llama_token llama_token_fim_pre(const llama_model * model) # Beginning of infill prefix
+    cdef llama_token llama_token_fim_suf(const llama_model * model) # Beginning of infill suffix
+    cdef llama_token llama_token_fim_mid(const llama_model * model) # Beginning of infill middle
+    cdef llama_token llama_token_fim_pad(const llama_model * model)
+    cdef llama_token llama_token_fim_rep(const llama_model * model)
+    cdef llama_token llama_token_fim_sep(const llama_model * model)
 
     #
     # Tokenization (The API is thread-safe)
@@ -1502,7 +1505,6 @@ cdef extern from "common.h":
         std_string hostname
         std_string public_path
         std_string chat_template
-        std_string system_prompt
         bint enable_chat_template
 
         std_vector[std_string] api_keys

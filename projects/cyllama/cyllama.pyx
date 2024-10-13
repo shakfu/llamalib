@@ -1214,14 +1214,14 @@ cdef class CommonParams:
     def chat_template(self, value: str):
         self.p.chat_template = value.encode('utf8')
 
-    @property
-    def system_prompt(self) -> str:
-        """system prompt"""
-        return self.p.system_prompt.decode()
+    # @property
+    # def system_prompt(self) -> str:
+    #     """system prompt"""
+    #     return self.p.system_prompt.decode()
 
-    @system_prompt.setter
-    def system_prompt(self, value: str):
-        self.p.system_prompt = value.encode('utf8')
+    # @system_prompt.setter
+    # def system_prompt(self, value: str):
+    #     self.p.system_prompt = value.encode('utf8')
 
     @property
     def enable_chat_template(self) -> bool:
@@ -1555,17 +1555,26 @@ cdef class LlamaModel:
     def token_nl(self) -> int:
         return llama_cpp.llama_token_nl(self.ptr)
 
-    def token_prefix(self) -> int:
-        return llama_cpp.llama_token_prefix(self.ptr)
+    def token_fim_prefix(self) -> int:
+        return llama_cpp.llama_token_fim_pre(self.ptr)
 
-    def token_middle(self) -> int:
-        return llama_cpp.llama_token_middle(self.ptr)
+    def token_fim_middle(self) -> int:
+        return llama_cpp.llama_token_fim_suf(self.ptr)
 
-    def token_suffix(self) -> int:
-        return llama_cpp.llama_token_suffix(self.ptr)
+    def token_fim_suffix(self) -> int:
+        return llama_cpp.llama_token_fim_mid(self.ptr)
 
-    def token_eot(self) -> int:
-        return llama_cpp.llama_token_eot(self.ptr)
+    def token_fim_pad(self) -> int:
+        return llama_cpp.llama_token_fim_pad(self.ptr)
+
+    def token_fim_rep(self) -> int:
+        return llama_cpp.llama_token_fim_rep(self.ptr)
+
+    def token_fim_sep(self) -> int:
+        return llama_cpp.llama_token_fim_sep(self.ptr)
+
+    # def token_eot(self) -> int:
+    #     return llama_cpp.llama_token_eot(self.ptr)
 
     def add_bos_token(self) -> bool:
         return llama_cpp.llama_add_bos_token(self.ptr)

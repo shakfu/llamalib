@@ -6,9 +6,11 @@ The goals of this projects are to:
 
 - Produce a minimal performant / compiled python wrapper around the core `llama-cli` feature-set of `llama.cpp`.
 
-- Integrate wrappers of other related projects such as [whisper.cpp](https://github.com/ggerganov/whisper.cpp) and [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp)
+- Integrate and wrap `llava-cli` features.
 
-- Learn about the internals of this popular C++/C LLM inference engine.
+- Integrate and wrap features from related projects such as [whisper.cpp](https://github.com/ggerganov/whisper.cpp) and [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp)
+
+- Learn about the internals of this popular C++/C LLM inference engine along the way.
 
 Given that there is a fairly mature, well-maintained and performant ctypes based wrapper provided by @abetlen's [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) project and that llm inference is gpu-driven rather than cpu-driven, this all may see quite redundant. Irrespective, there are some benefits to developing alternative python wrappers to `llama.cpp`:
 

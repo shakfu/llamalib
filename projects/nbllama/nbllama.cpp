@@ -470,6 +470,7 @@ NB_MODULE(nbllama, m) {
 
     m.def("llama_token_bos", (llama_token (*)(const struct llama_model *)) &llama_token_bos, "", nb::arg("model"));
     m.def("llama_token_eos", (llama_token (*)(const struct llama_model *)) &llama_token_eos, "", nb::arg("model"));
+    m.def("llama_token_eot", (llama_token (*)(const struct llama_model *)) &llama_token_eot, "", nb::arg("model"));
     m.def("llama_token_cls", (llama_token (*)(const struct llama_model *)) &llama_token_cls, "", nb::arg("model"));
     m.def("llama_token_sep", (llama_token (*)(const struct llama_model *)) &llama_token_sep, "", nb::arg("model"));
     m.def("llama_token_nl",  (llama_token (*)(const struct llama_model *)) &llama_token_nl,  "", nb::arg("model"));
@@ -478,10 +479,13 @@ NB_MODULE(nbllama, m) {
     m.def("llama_add_bos_token", (int32_t (*)(const struct llama_model *)) &llama_add_bos_token, "", nb::arg("model"));
     m.def("llama_add_eos_token", (int32_t (*)(const struct llama_model *)) &llama_add_eos_token, "", nb::arg("model"));
 
-    m.def("llama_token_prefix", (llama_token (*)(const struct llama_model *)) &llama_token_prefix, "", nb::arg("model"));
-    m.def("llama_token_middle", (llama_token (*)(const struct llama_model *)) &llama_token_middle, "", nb::arg("model"));
-    m.def("llama_token_suffix", (llama_token (*)(const struct llama_model *)) &llama_token_suffix, "", nb::arg("model"));
-    m.def("llama_token_eot", (llama_token (*)(const struct llama_model *)) &llama_token_eot, "", nb::arg("model"));
+    m.def("llama_token_fim_pre", (llama_token (*)(const struct llama_model *)) &llama_token_fim_pre, "", nb::arg("model"));
+    m.def("llama_token_fim_mid", (llama_token (*)(const struct llama_model *)) &llama_token_fim_mid, "", nb::arg("model"));
+    m.def("llama_token_fim_suf", (llama_token (*)(const struct llama_model *)) &llama_token_fim_suf, "", nb::arg("model"));
+    m.def("llama_token_fim_pad", (llama_token (*)(const struct llama_model *)) &llama_token_fim_pad, "", nb::arg("model"));
+    m.def("llama_token_fim_rep", (llama_token (*)(const struct llama_model *)) &llama_token_fim_rep, "", nb::arg("model"));
+    m.def("llama_token_fim_sep", (llama_token (*)(const struct llama_model *)) &llama_token_fim_sep, "", nb::arg("model"));
+
 
     m.def("llama_tokenize", (int32_t (*)(const struct llama_model *, const char*, int32_t, llama_token*, int32_t, bool, bool)) &llama_tokenize, "", nb::arg("model"), nb::arg("text"), nb::arg("text_len"), nb::arg("tokens"), nb::arg("n_tokens_max"), nb::arg("add_special"), nb::arg("parse_special"));
     // m.def("llama_token_to_piece", (int32_t (*)(const struct llama_model *, llama_token, char*, int32_t, int32_t, bool)) &llama_token_to_piece, "", nb::arg("model"), nb::arg("token"), nb::arg("buf"), nb::arg("length"), nb::arg("lstrip"), nb::arg("special"));
@@ -691,7 +695,6 @@ NB_MODULE(nbllama, m) {
         .def_rw("hostname", &common_params::hostname)
         .def_rw("public_path", &common_params::public_path)
         .def_rw("chat_template", &common_params::chat_template)
-        .def_rw("system_prompt", &common_params::system_prompt)
         .def_rw("enable_chat_template", &common_params::enable_chat_template)
         .def_rw("api_keys", &common_params::api_keys)
         .def_rw("ssl_file_key", &common_params::ssl_file_key)

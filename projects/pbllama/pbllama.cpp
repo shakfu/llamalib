@@ -612,6 +612,7 @@ PYBIND11_MODULE(pbllama, m) {
 
     m.def("llama_token_bos", (llama_token (*)(const struct llama_model *)) &llama_token_bos, "", py::arg("model"));
     m.def("llama_token_eos", (llama_token (*)(const struct llama_model *)) &llama_token_eos, "", py::arg("model"));
+    m.def("llama_token_eot", (llama_token (*)(const struct llama_model *)) &llama_token_eot, "", py::arg("model"));
     m.def("llama_token_cls", (llama_token (*)(const struct llama_model *)) &llama_token_cls, "", py::arg("model"));
     m.def("llama_token_sep", (llama_token (*)(const struct llama_model *)) &llama_token_sep, "", py::arg("model"));
     m.def("llama_token_nl",  (llama_token (*)(const struct llama_model *)) &llama_token_nl,  "", py::arg("model"));
@@ -620,10 +621,12 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_add_bos_token", (int32_t (*)(const struct llama_model *)) &llama_add_bos_token, "", py::arg("model"));
     m.def("llama_add_eos_token", (int32_t (*)(const struct llama_model *)) &llama_add_eos_token, "", py::arg("model"));
 
-    m.def("llama_token_prefix", (llama_token (*)(const struct llama_model *)) &llama_token_prefix, "", py::arg("model"));
-    m.def("llama_token_middle", (llama_token (*)(const struct llama_model *)) &llama_token_middle, "", py::arg("model"));
-    m.def("llama_token_suffix", (llama_token (*)(const struct llama_model *)) &llama_token_suffix, "", py::arg("model"));
-    m.def("llama_token_eot", (llama_token (*)(const struct llama_model *)) &llama_token_eot, "", py::arg("model"));
+    m.def("llama_token_fim_pre", (llama_token (*)(const struct llama_model *)) &llama_token_fim_pre, "", py::arg("model"));
+    m.def("llama_token_fim_mid", (llama_token (*)(const struct llama_model *)) &llama_token_fim_mid, "", py::arg("model"));
+    m.def("llama_token_fim_suf", (llama_token (*)(const struct llama_model *)) &llama_token_fim_suf, "", py::arg("model"));
+    m.def("llama_token_fim_pad", (llama_token (*)(const struct llama_model *)) &llama_token_fim_pad, "", py::arg("model"));
+    m.def("llama_token_fim_rep", (llama_token (*)(const struct llama_model *)) &llama_token_fim_rep, "", py::arg("model"));
+    m.def("llama_token_fim_sep", (llama_token (*)(const struct llama_model *)) &llama_token_fim_sep, "", py::arg("model"));
 
     m.def("llama_tokenize", (int32_t (*)(const struct llama_model *, const char*, int32_t, llama_token*, int32_t, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("text_len"), py::arg("tokens"), py::arg("n_tokens_max"), py::arg("add_special"), py::arg("parse_special"), py::return_value_policy::reference_internal);
     m.def("llama_token_to_piece", (int32_t (*)(const struct llama_model *, llama_token, char*, int32_t, int32_t, bool)) &llama_token_to_piece, "", py::arg("model"), py::arg("token"), py::arg("buf"), py::arg("length"), py::arg("lstrip"), py::arg("special"));
@@ -833,7 +836,6 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("hostname", &common_params::hostname)
         .def_readwrite("public_path", &common_params::public_path)
         .def_readwrite("chat_template", &common_params::chat_template)
-        .def_readwrite("system_prompt", &common_params::system_prompt)
         .def_readwrite("enable_chat_template", &common_params::enable_chat_template)
         .def_readwrite("api_keys", &common_params::api_keys)
         .def_readwrite("ssl_file_key", &common_params::ssl_file_key)
