@@ -692,6 +692,7 @@ NB_MODULE(nbllama, m) {
         .def_rw("timeout_read", &common_params::timeout_read)
         .def_rw("timeout_write", &common_params::timeout_write)
         .def_rw("n_threads_http", &common_params::n_threads_http)
+        .def_rw("n_cache_reuse", &common_params::n_cache_reuse)
         .def_rw("hostname", &common_params::hostname)
         .def_rw("public_path", &common_params::public_path)
         .def_rw("chat_template", &common_params::chat_template)

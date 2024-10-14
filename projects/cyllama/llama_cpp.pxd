@@ -1500,7 +1500,8 @@ cdef extern from "common.h":
         int32_t port                # server listens on this network port
         int32_t timeout_read        # http read timeout in seconds
         int32_t timeout_write       # http write timeout in seconds
-        int     n_threads_http      # number of threads to process HTTP requests (TODO: support threadpool)
+        int32_t n_threads_http      # number of threads to process HTTP requests (TODO: support threadpool)
+        int32_t n_cache_reuse       # min chunk size to reuse from the cache via KV shifting
 
         std_string hostname
         std_string public_path
@@ -1676,6 +1677,8 @@ cdef extern from "sampling.h": # optional llama_sampler extensions
     ctypedef struct gpt_sampler # opaque
 
     cdef gpt_sampler * gpt_sampler_init(const llama_model * model, const common_sampler_params & params)
+
+    # cdef llama_token_data_array * common_sampler_get_candidates(common_sampler * gsmpl)
     # ..
 
 #------------------------------------------------------------------------------
@@ -1817,7 +1820,6 @@ cdef extern from "llava.h":
     # write the image represented by embed into the llama context with batch size n_batch, starting at context pos n_past.
     # on completion, n_past points to the next position in the context after the image embed.
     cdef bint llava_eval_image_embed(llama_context * ctx_llama, const llava_image_embed * embed, int n_batch, int * n_past)
-
 
 
 #------------------------------------------------------------------------------

@@ -833,6 +833,7 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("timeout_read", &common_params::timeout_read)
         .def_readwrite("timeout_write", &common_params::timeout_write)
         .def_readwrite("n_threads_http", &common_params::n_threads_http)
+        .def_readwrite("n_cache_reuse", &common_params::n_cache_reuse)
         .def_readwrite("hostname", &common_params::hostname)
         .def_readwrite("public_path", &common_params::public_path)
         .def_readwrite("chat_template", &common_params::chat_template)

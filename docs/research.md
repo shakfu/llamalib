@@ -241,10 +241,6 @@ see also:
 - [MemoryRAG](https://github.com/qhjqhj00/MemoRAG) - Empowering RAG with a memory-based data interface for all-purpose applications!
 
 
-
-
-
-
 ## Guides
 
 - [Awesome-LLM](https://github.com/Hannibal046/Awesome-LLM) - a curated list of Large Language Models
@@ -253,5 +249,9 @@ see also:
 
 - [Awesome-Efficient-LLM](https://github.com/horseee/Awesome-Efficient-LLM) - A curated list for Efficient Large Language Models
 
+
+## Technical Questions
+
+- [Is llama_context.logits a 2d array, and where is it allocated?](https://github.com/ggerganov/llama.cpp/discussions/9345)
 
 
