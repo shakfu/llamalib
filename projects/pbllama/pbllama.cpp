@@ -630,6 +630,7 @@ PYBIND11_MODULE(pbllama, m) {
 
     m.def("llama_tokenize", (int32_t (*)(const struct llama_model *, const char*, int32_t, llama_token*, int32_t, bool, bool)) &llama_tokenize, "", py::arg("model"), py::arg("text"), py::arg("text_len"), py::arg("tokens"), py::arg("n_tokens_max"), py::arg("add_special"), py::arg("parse_special"), py::return_value_policy::reference_internal);
     m.def("llama_token_to_piece", (int32_t (*)(const struct llama_model *, llama_token, char*, int32_t, int32_t, bool)) &llama_token_to_piece, "", py::arg("model"), py::arg("token"), py::arg("buf"), py::arg("length"), py::arg("lstrip"), py::arg("special"));
+    m.def("llama_token_is_prefix", (bool (*)(const struct llama_model *, llama_token, llama_token)) &llama_token_is_prefix, "", py::arg("model"), py::arg("token0"), py::arg("token1"));
     m.def("llama_detokenize", (int32_t (*)(const struct llama_model *, const llama_token*, int32_t, char*, int32_t, bool, bool)) &llama_detokenize, "", py::arg("model"), py::arg("tokens"), py::arg("n_tokens"), py::arg("text"), py::arg("text_len_max"), py::arg("remove_special"), py::arg("unparse_special"));
 
     // Chat templates
@@ -679,11 +680,13 @@ PYBIND11_MODULE(pbllama, m) {
     m.def("llama_sampler_init_typical", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_typical, "", py::arg("p"), py::arg("min_keep"));
     m.def("llama_sampler_init_temp", (struct llama_sampler * (*)(float)) &llama_sampler_init_temp, "", py::arg("t"));
     m.def("llama_sampler_init_temp_ext", (struct llama_sampler * (*)(float, float, float)) &llama_sampler_init_temp_ext, "", py::arg("t"), py::arg("delta"), py::arg("exponent"));
+    m.def("llama_sampler_init_xtc", (struct llama_sampler * (*)(float, float, float, uint32_t)) &llama_sampler_init_xtc, "", py::arg("p"), py::arg("t"), py::arg("min_keep"), py::arg("seed")); 
     m.def("llama_sampler_init_mirostat", (struct llama_sampler * (*)(int32_t, uint32_t, float, float, int32_t)) &llama_sampler_init_mirostat, "", py::arg("n_vocab"), py::arg("seed"), py::arg("tau"), py::arg("eta"), py::arg("m"));
     m.def("llama_sampler_init_mirostat_v2", (struct llama_sampler * (*)(uint32_t, float, float)) &llama_sampler_init_mirostat_v2, "", py::arg("seed"), py::arg("tau"), py::arg("eta"));
     m.def("llama_sampler_init_grammar", (struct llama_sampler * (*)(const struct llama_model *, const char *, const char *)) &llama_sampler_init_grammar, "", py::arg("model"), py::arg("grammar_str"), py::arg("grammar_root"));
     m.def("llama_sampler_init_penalties", (struct llama_sampler * (*)(int32_t, llama_token, llama_token, int32_t, float, float, float, bool, bool)) &llama_sampler_init_penalties, "", py::arg("n_vocab"), py::arg("special_eos_id"), py::arg("linefeed_id"), py::arg("penalty_last_n"), py::arg("penalty_repeat"), py::arg("epenalty_freq"), py::arg("penalty_present"), py::arg("penalize_nl"), py::arg("ignore_eos"));
     m.def("llama_sampler_init_logit_bias", (struct llama_sampler * (*)(int32_t, int32_t, const llama_logit_bias *)) &llama_sampler_init_logit_bias, "", py::arg("n_vocab"), py::arg("n_logit_bias"), py::arg("logit_bias"));
+    m.def("llama_sampler_init_infill", (struct llama_sampler * (*)(const struct llama_model *)) &llama_sampler_init_infill, "", py::arg("model"));
 
     m.def("llama_sampler_sample", (llama_token (*)(struct llama_sampler *, struct llama_context *, int32_t)) &llama_sampler_sample, "", py::arg("smpl"), py::arg("ctx"), py::arg("idx"));
 

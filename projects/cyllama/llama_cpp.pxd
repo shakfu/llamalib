@@ -1016,6 +1016,12 @@ cdef extern from "llama.h":
                                int32_t   lstrip,
                                   bint   special)
 
+    # check if token0 is contained as a prefix in token1
+    cdef bint llama_token_is_prefix(
+              const llama_model * model,
+                           llama_token   token0,
+                           llama_token   token1)
+
     # @details Convert the provided tokens into text (inverse of llama_tokenize()).
     # @param text The char pointer must be large enough to hold the resulting text.
     # @return Returns the number of chars/bytes on success, no more than text_len_max.
@@ -1143,20 +1149,23 @@ cdef extern from "llama.h":
     cdef llama_sampler * llama_sampler_init_top_k(int32_t k)
 
     # @details Nucleus sampling described in academic paper "The Curious Case of Neural Text Degeneration" https:#arxiv.org/abs/1904.09751
-    cdef llama_sampler * llama_sampler_init_top_p      (float   p, size_t min_keep)
+    cdef llama_sampler * llama_sampler_init_top_p (float p, size_t min_keep)
 
     # @details Minimum P sampling as described in https:#github.com/ggerganov/llama.cpp/pull/3841
-    cdef llama_sampler * llama_sampler_init_min_p      (float   p, size_t min_keep)
+    cdef llama_sampler * llama_sampler_init_min_p (float p, size_t min_keep)
 
     # @details Tail Free Sampling described in https:#www.trentonbricken.com/Tail-Free-Sampling/.
-    cdef llama_sampler * llama_sampler_init_tail_free  (float   z, size_t min_keep)
+    cdef llama_sampler * llama_sampler_init_tail_free (float z, size_t min_keep)
 
     # @details Locally Typical Sampling implementation described in the paper https:#arxiv.org/abs/2202.00666.
-    cdef llama_sampler * llama_sampler_init_typical    (float   p, size_t min_keep)
-    cdef llama_sampler * llama_sampler_init_temp       (float   t)
+    cdef llama_sampler * llama_sampler_init_typical (float p, size_t min_keep)
+    cdef llama_sampler * llama_sampler_init_temp (float t)
 
     # @details Dynamic temperature implementation described in the paper https:#arxiv.org/abs/2309.02772.
-    cdef llama_sampler * llama_sampler_init_temp_ext   (float   t, float   delta, float exponent)
+    cdef llama_sampler * llama_sampler_init_temp_ext (float t, float delta, float exponent)
+
+    # @details XTC sampler as described in https://github.com/oobabooga/text-generation-webui/pull/6335
+    cdef llama_sampler * llama_sampler_init_xtc (float p, float t, size_t min_keep, uint32_t seed)
 
     # @details Mirostat 1.0 algorithm described in the paper https:#arxiv.org/abs/2007.14966. Uses tokens instead of words.
     # @param candidates A vector of `llama_token_data` containing the candidate tokens, their probabilities (p), and log-odds (logit) for the current position in the generated text.
@@ -1201,6 +1210,29 @@ cdef extern from "llama.h":
                              int32_t   n_vocab,
                              int32_t   n_logit_bias,
               const llama_logit_bias * logit_bias)
+
+    # this sampler is meant to be used for fill-in-the-middle infilling
+    # it's supposed to be used after top_k + top_p sampling
+    #
+    # 1. if the sum of the EOG probs times the number of candidates is higher than the sum of the other probs -> pick EOG
+    # 2. combine probs of tokens that have the same prefix
+    #
+    # example:
+    #
+    # - before:
+    #   "hel":   0.5
+    #   "hell":  0.2
+    #   "hello": 0.1
+    #   "dummy": 0.1
+    #
+    # - after:
+    #   "hel":   0.8
+    #   "dummy": 0.1
+    #
+    # 3. discard non-EOG tokens with low prob
+    # 4. if no tokens are left -> pick EOT
+    #
+    cdef llama_sampler * llama_sampler_init_infill(const llama_model * model)
 
 
     # Returns the seed used by the sampler if applicable, LLAMA_DEFAULT_SEED otherwise
@@ -1323,6 +1355,8 @@ cdef extern from "common.h":
         COMMON_SAMPLER_TYPE_TFS_Z
         COMMON_SAMPLER_TYPE_TYPICAL_P
         COMMON_SAMPLER_TYPE_TEMPERATURE
+        COMMON_SAMPLER_TYPE_XTC
+        COMMON_SAMPLER_TYPE_INFILL
 
     ctypedef enum dimre_method:
         DIMRE_METHOD_PCA
@@ -1337,6 +1371,8 @@ cdef extern from "common.h":
         int32_t top_k                  # <= 0 to use vocab size
         float   top_p                  # 1.0 = disabled
         float   min_p                  # 0.0 = disabled
+        float   xtc_probability        # 0.0 = disabled
+        float   xtc_threshold          # > 0.5 disables XTC
         float   tfs_z                  # 1.0 = disabled
         float   typ_p                  # typical_p, 1.0 = disabled
         float   temp                   # <= 0.0 to sample greedily, 0.0 to not output probabilities

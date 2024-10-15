@@ -489,6 +489,7 @@ NB_MODULE(nbllama, m) {
 
     m.def("llama_tokenize", (int32_t (*)(const struct llama_model *, const char*, int32_t, llama_token*, int32_t, bool, bool)) &llama_tokenize, "", nb::arg("model"), nb::arg("text"), nb::arg("text_len"), nb::arg("tokens"), nb::arg("n_tokens_max"), nb::arg("add_special"), nb::arg("parse_special"));
     // m.def("llama_token_to_piece", (int32_t (*)(const struct llama_model *, llama_token, char*, int32_t, int32_t, bool)) &llama_token_to_piece, "", nb::arg("model"), nb::arg("token"), nb::arg("buf"), nb::arg("length"), nb::arg("lstrip"), nb::arg("special"));
+    m.def("llama_token_is_prefix", (bool (*)(const struct llama_model *, llama_token, llama_token)) &llama_token_is_prefix, "", nb::arg("model"), nb::arg("token0"), nb::arg("token1"));
     // m.def("llama_detokenize", (int32_t (*)(const struct llama_model *, const llama_token*, int32_t, char*, int32_t, bool, bool)) &llama_detokenize, "", nb::arg("model"), nb::arg("tokens"), nb::arg("n_tokens"), nb::arg("text"), nb::arg("text_len_max"), nb::arg("remove_special"), nb::arg("unparse_special"));
     
     // Chat templates
@@ -539,11 +540,13 @@ NB_MODULE(nbllama, m) {
     m.def("llama_sampler_init_typical", (struct llama_sampler * (*)(float, size_t)) &llama_sampler_init_typical, "", nb::arg("p"), nb::arg("min_keep"));
     m.def("llama_sampler_init_temp", (struct llama_sampler * (*)(float)) &llama_sampler_init_temp, "", nb::arg("t"));
     m.def("llama_sampler_init_temp_ext", (struct llama_sampler * (*)(float, float, float)) &llama_sampler_init_temp_ext, "", nb::arg("t"), nb::arg("delta"), nb::arg("exponent"));
+    m.def("llama_sampler_init_xtc", (struct llama_sampler * (*)(float, float, float, uint32_t)) &llama_sampler_init_xtc, "", nb::arg("p"), nb::arg("t"), nb::arg("min_keep"), nb::arg("seed")); 
     m.def("llama_sampler_init_mirostat", (struct llama_sampler * (*)(int32_t, uint32_t, float, float, int32_t)) &llama_sampler_init_mirostat, "", nb::arg("n_vocab"), nb::arg("seed"), nb::arg("tau"), nb::arg("eta"), nb::arg("m"));
     m.def("llama_sampler_init_mirostat_v2", (struct llama_sampler * (*)(uint32_t, float, float)) &llama_sampler_init_mirostat_v2, "", nb::arg("seed"), nb::arg("tau"), nb::arg("eta"));
     m.def("llama_sampler_init_grammar", (struct llama_sampler * (*)(const struct llama_model *, const char *, const char *)) &llama_sampler_init_grammar, "", nb::arg("model"), nb::arg("grammar_str"), nb::arg("grammar_root"));
     m.def("llama_sampler_init_penalties", (struct llama_sampler * (*)(int32_t, llama_token, llama_token, int32_t, float, float, float, bool, bool)) &llama_sampler_init_penalties, "", nb::arg("n_vocab"), nb::arg("special_eos_id"), nb::arg("linefeed_id"), nb::arg("penalty_last_n"), nb::arg("penalty_repeat"), nb::arg("epenalty_freq"), nb::arg("penalty_present"), nb::arg("penalize_nl"), nb::arg("ignore_eos"));
     m.def("llama_sampler_init_logit_bias", (struct llama_sampler * (*)(int32_t, int32_t, const llama_logit_bias *)) &llama_sampler_init_logit_bias, "", nb::arg("n_vocab"), nb::arg("n_logit_bias"), nb::arg("logit_bias"));
+    m.def("llama_sampler_init_infill", (struct llama_sampler * (*)(const struct llama_model *)) &llama_sampler_init_infill, "", nb::arg("model"));
 
     m.def("llama_sampler_sample", (llama_token (*)(struct llama_sampler *, struct llama_context *, int32_t)) &llama_sampler_sample, "", nb::arg("smpl"), nb::arg("ctx"), nb::arg("idx"));
 
