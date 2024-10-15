@@ -1459,6 +1459,103 @@ cdef class ModelParams:
         self.p.check_tensors = value
 
 
+cdef class ModelQuantizeParams:
+    cdef llama_cpp.llama_model_quantize_params p
+
+    def __init__(self):
+        self.p = llama_cpp.llama_model_quantize_default_params()
+
+    @staticmethod
+    cdef ModelQuantizeParams from_instance(llama_cpp.llama_model_quantize_params params):
+        cdef ModelQuantizeParams wrapper = ModelQuantizeParams.__new__(ModelQuantizeParams)
+        wrapper.p = params
+        return wrapper
+
+    @property
+    def nthread(self) -> int:
+        """number of threads to use for quantizing.
+
+        if <=0 will use std::thread::hardware_concurrency().
+        """
+        return self.p.nthread
+
+    @nthread.setter
+    def nthread(self, value: int):
+        self.p.nthread = value
+
+    @property
+    def ftype(self) -> int:
+        """quantize to this llama_ftype"""
+        return self.p.ftype
+
+    @ftype.setter
+    def ftype(self, value: int):
+        self.p.ftype = value
+
+    @property
+    def output_tensor_type(self) -> int:
+        """output tensor type"""
+        return self.p.output_tensor_type
+
+    @output_tensor_type.setter
+    def output_tensor_type(self, value: int):
+        self.p.output_tensor_type = value
+
+    @property
+    def token_embedding_type(self) -> int:
+        """itoken embeddings tensor type"""
+        return self.p.token_embedding_type
+
+    @token_embedding_type.setter
+    def token_embedding_type(self, value: int):
+        self.p.token_embedding_type = value
+
+    @property
+    def allow_requantize(self) -> bool:
+        """allow quantizing non-f32/f16 tensors"""
+        return self.p.allow_requantize
+
+    @allow_requantize.setter
+    def allow_requantize(self, value: bool):
+        self.p.allow_requantize = value
+
+    @property
+    def quantize_output_tensor(self) -> bool:
+        """quantize output.weight"""
+        return self.p.quantize_output_tensor
+
+    @quantize_output_tensor.setter
+    def quantize_output_tensor(self, value: bool):
+        self.p.quantize_output_tensor = value
+
+    @property
+    def only_copy(self) -> bool:
+        """only copy tensors - ftype, allow_requantize and quantize_output_tensor are ignored"""
+        return self.p.only_copy
+
+    @only_copy.setter
+    def only_copy(self, value: bool):
+        self.p.only_copy = value
+
+    @property
+    def pure(self) -> bool:
+        """quantize all tensors to the default type"""
+        return self.p.pure
+
+    @pure.setter
+    def pure(self, value: bool):
+        self.p.pure = value
+
+    @property
+    def keep_split(self) -> bool:
+        """quantize to the same number of shards"""
+        return self.p.keep_split
+
+    @keep_split.setter
+    def keep_split(self, value: bool):
+        self.p.keep_split = value
+
+
 cdef class LlamaModel:
     """cython wrapper for llama_cpp.cpp llama_model."""
     cdef llama_cpp.llama_model * ptr
@@ -1492,6 +1589,13 @@ cdef class LlamaModel:
         if self.ptr is not NULL and self.owner is True:
             llama_cpp.llama_free_model(self.ptr)
             self.ptr = NULL
+
+    @staticmethod
+    cdef LlamaModel from_ptr(llama_cpp.llama_model *ptr, bint owner=False):
+        cdef LlamaModel wrapper = LlamaModel.__new__(LlamaModel)
+        wrapper.ptr = ptr
+        wrapper.ptr_owner = owner
+        return wrapper
 
     def vocab_type(self) -> int:
         return llama_cpp.get_llama_vocab_type(self.ptr)
@@ -1792,6 +1896,13 @@ cdef class LlamaContext:
         if self.ptr is not NULL and self.owner is True:
             llama_cpp.llama_free(self.ptr)
             self.ptr = NULL
+
+    @staticmethod
+    cdef LlamaContext from_ptr(llama_cpp.llama_context *ptr, bint owner=False):
+        cdef LlamaContext wrapper = LlamaContext.__new__(LlamaContext)
+        wrapper.ptr = ptr
+        wrapper.ptr_owner = owner
+        return wrapper
 
     def close(self):
         self.__dealloc__()
@@ -2109,6 +2220,8 @@ cdef class LlamaTokenDataArray:
 
 
 
+
+
 def llama_backend_init():
     llama_cpp.llama_backend_init()
 
@@ -2124,6 +2237,9 @@ def common_context_params_to_llama(params: CommonParams) -> ContextParams:
 
 def llama_sampler_chain_default_params() -> SamplerChainParams:
     return SamplerChainParams()
+
+def llama_model_quantize_default_params() -> ModelQuantizeParams:
+    return ModelQuantizeParams()
 
 def common_tokenize(LlamaContext ctx, str text, bint add_special, bint parse_special = False):
     return llama_cpp.common_tokenize(<const llama_cpp.llama_context *>ctx.ptr, <string>text.encode(), add_special, parse_special)
@@ -2143,8 +2259,36 @@ def common_batch_add(LlamaBatch batch, llama_cpp.llama_token id, llama_cpp.llama
 def llama_decode(LlamaContext ctx, LlamaBatch batch) -> int:
     return llama_cpp.llama_decode(ctx.ptr, batch.p)
 
+def llama_new_context_with_model(LlamaModel model, ContextParams params) -> LlamaContext:
+    cdef llama_cpp.llama_context * ctx = llama_cpp.llama_new_context_with_model(model.ptr, params.p)
+    return LlamaContext.from_ptr(ctx)
+
+def llama_load_model_from_file(str path_model, ModelParams params) -> LlamaModel:
+    cdef llama_cpp.llama_model * model = llama_cpp.llama_load_model_from_file(path_model.encode(), params.p)
+    return LlamaModel.from_ptr(model)
+
 def ggml_time_us() -> int:
     return llama_cpp.ggml_time_us()
+
+def llama_time_us() -> int:
+    return llama_cpp.llama_time_us()
+
+def llama_max_devices() -> int:
+    return llama_cpp.llama_max_devices()
+
+def llama_supports_mmap() -> bool:
+    return llama_cpp.llama_supports_mmap()
+
+def llama_supports_mlock() -> bool:
+    return llama_cpp.llama_supports_mlock()
+
+def llama_supports_gpu_offload() -> bool:
+    return llama_cpp.llama_supports_gpu_offload()
+
+def llama_supports_rpc() -> bool:
+    return llama_cpp.llama_supports_rpc()
+
+
 
 def llama_sampler_sample(LlamaSampler smplr, LlamaContext ctx, int idx) -> int:
     return llama_cpp.llama_sampler_sample(smplr.ptr, ctx.ptr, idx)
