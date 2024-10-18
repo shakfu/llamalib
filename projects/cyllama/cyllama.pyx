@@ -1,5 +1,5 @@
 # distutils: language = c++
-
+from libc.stdint cimport uint8_t
 from libc.stdlib cimport malloc, calloc, realloc, free
 from libcpp.vector cimport vector
 from libcpp.string cimport string
@@ -1970,26 +1970,190 @@ cdef class LlamaContext:
     def n_ctx(self) -> int:
         return llama_cpp.llama_n_ctx(self.ptr)
 
+    def n_batch(self) -> int:
+        return llama_cpp.llama_n_batch(self.ptr)
+
+    def n_ubatch(self) -> int:
+        return llama_cpp.llama_n_ubatch(self.ptr)
+
+    def n_seq_max(self) -> int:
+        return llama_cpp.llama_n_seq_max(self.ptr)
+
     def pooling_type(self) -> int:
         return llama_cpp.get_llama_pooling_type(self.ptr)
 
+    # KV cache
+
     def kv_cache_clear(self):
+        """Clear the KV cache - both cell info is erased and KV data is zeroed"""
         llama_cpp.llama_kv_cache_clear(self.ptr)
 
     def kv_cache_seq_rm(self, seq_id: int, p0: int, p1: int):
+        """Removes all tokens that belong to the specified sequence and have positions in [p0, p1)
+        
+        Returns false if a partial sequence cannot be removed. Removing a whole sequence never fails
+        seq_id < 0 : match any sequence
+        p0 < 0     : [0,  p1]
+        p1 < 0     : [p0, inf)
+        """
         llama_cpp.llama_kv_cache_seq_rm(self.ptr, seq_id, p0, p1)
 
     def kv_cache_seq_cp(self, seq_id_src: int, seq_id_dst: int, p0: int, p1: int):
+        """Copy all tokens that belong to the specified sequence to another sequence
+        
+        Note that this does not allocate extra KV cache memory - it simply assigns the tokens to the new sequence
+        p0 < 0 : [0,  p1]
+        p1 < 0 : [p0, inf)
+        """
         llama_cpp.llama_kv_cache_seq_cp(self.ptr, seq_id_src, seq_id_dst, p0, p1)
 
     def kv_cache_seq_keep(self, seq_id: int):
+        """Removes all tokens that do not belong to the specified sequence"""
         llama_cpp.llama_kv_cache_seq_keep(self.ptr, seq_id)
 
     def kv_cache_seq_shift(self, seq_id: int, p0: int, p1: int, shift: int):
+        """Adds relative position "delta" to all tokens that belong to the specified sequence and have positions in [p0, p1)
+        
+        If the KV cache is RoPEd, the KV data is updated accordingly:
+          - lazily on next llama_decode()
+          - explicitly with llama_kv_cache_update()
+        p0 < 0 : [0,  p1]
+        p1 < 0 : [p0, inf)
+        """
         llama_cpp.llama_kv_cache_seq_add(self.ptr, seq_id, p0, p1, shift)
 
+    def kv_cache_seq_div(self, seq_id: int, p0: int, p1: int, d: int):
+        """Adds relative position "delta" to all tokens that belong to the specified sequence and have positions in [p0, p1)
+        
+        If the KV cache is RoPEd, the KV data is updated accordingly:
+          - lazily on next llama_decode()
+          - explicitly with llama_kv_cache_update()
+        p0 < 0 : [0,  p1]
+        p1 < 0 : [p0, inf)
+        """
+        llama_cpp.llama_kv_cache_seq_div(self.ptr, seq_id, p0, p1, d)
+
+    def kv_cache_seq_pos_max(self, seq_id: int) -> int:
+        """Returns the largest position present in the KV cache for the specified sequence"""
+        return llama_cpp.llama_kv_cache_seq_pos_max(self.ptr, seq_id)
+
+
+    def kv_cache_defrag(self):
+        """Defragment the KV cache
+        
+        This will be applied:
+        - lazily on next llama_decode()
+        - explicitly with llama_kv_cache_update()
+        """
+        llama_cpp.llama_kv_cache_defrag(self.ptr)
+
+    
+    def kv_cache_update(self):
+        """Apply the KV cache updates (such as K-shifts, defragmentation, etc.)"""
+        llama_cpp.llama_kv_cache_update(self.ptr)
+
+
+    # State / sessions
+
     def get_state_size(self) -> int:
+        """Returns the *actual* size in bytes of the state
+
+        (logits, embedding and kv_cache)
+        Only use when saving the state, not when restoring it, otherwise the size may be too small.
+        """
         return llama_cpp.llama_state_get_size(self.ptr)
+
+    def get_state_data(self) -> list[int]:
+        """Copies the state to the specified destination address.
+        
+        Destination needs to have allocated enough memory.
+        Returns the number of bytes copied
+        """
+        cdef uint8_t * dst = NULL
+        cdef size_t size = 0
+        cdef vector[uint8_t] result
+        cdef size_t copied = llama_cpp.llama_state_get_data(self.ptr, dst, size)
+        for i in range(size):
+            result.push_back(dst[i])
+        return result
+
+    def set_state_data(self, data: list[int]) -> int:
+        """Set the state reading from the specified address
+
+        Returns the number of bytes read
+        """
+        cdef vector[uint8_t] result = data
+        cdef size_t read = llama_cpp.llama_state_set_data(self.ptr, result.data(), result.size())
+        return read
+
+    def load_state_file(self, path_session: str, max_n_tokens: int = 256) -> list[int]:
+        """Load session file"""
+        cdef llama_cpp.llama_token * tokens_out = NULL
+        cdef size_t * n_token_count_out = NULL
+        cdef bint loaded = llama_cpp.llama_state_load_file(
+            self.ptr, 
+            path_session.encode(), 
+            tokens_out,
+            max_n_tokens,
+            n_token_count_out)
+        cdef vector[int] result
+        if loaded:
+            for i in range(n_token_count_out[0]):
+                result.push_back(tokens_out[i])
+        return result
+
+    def save_state_file(self, path_session: str, tokens: list[int]) -> bool:
+        """Save session file"""
+        cdef vector[llama_cpp.llama_token] vec_tokens
+        for token in tokens:
+            vec_tokens.push_back(<llama_cpp.llama_token>token)
+        return llama_cpp.llama_state_save_file(
+            self.ptr,
+            path_session.encode(),
+            vec_tokens.data(),
+            vec_tokens.size())
+
+    def get_state_seq_size(self, int seq_id) -> int:
+        """Get the exact size needed to copy the KV cache of a single sequence"""
+        return llama_cpp.llama_state_seq_get_size(self.ptr, seq_id)
+
+    def get_state_seq_data(self, int seq_id) -> list[int]:
+        """Copy the KV cache of a single sequence into the specified buffer"""
+        cdef uint8_t * dst = NULL
+        cdef size_t size = 0
+        cdef size_t copied = llama_cpp.llama_state_seq_get_data(
+            self.ptr, dst, size, seq_id)
+        cdef vector[uint8_t] result
+        if copied > 0:
+            for i in range(size):
+                result.push_back(dst[i])
+        return result
+
+    # Copy the sequence data (originally copied with `llama_state_seq_get_data`) into the specified sequence
+    # Returns:
+    #  - Positive: Ok
+    #  - Zero: Failed to load
+    # cdef size_t llama_state_seq_set_data(
+    #          llama_context * ctx,
+    #                const uint8_t * src,
+    #                       size_t   size,
+    #                 llama_seq_id   dest_seq_id)
+
+    # cdef size_t llama_state_seq_save_file(
+    #          llama_context * ctx,
+    #                   const char * filepath,
+    #                 llama_seq_id   seq_id,
+    #            const llama_token * tokens,
+    #                       size_t   n_token_count)
+
+    # cdef size_t llama_state_seq_load_file(
+    #          llama_context * ctx,
+    #                   const char * filepath,
+    #                 llama_seq_id   dest_seq_id,
+    #                  llama_token * tokens_out,
+    #                       size_t   n_token_capacity,
+    #                       size_t * n_token_count_out)
+
 
     # TODO: copy_state_data
 
