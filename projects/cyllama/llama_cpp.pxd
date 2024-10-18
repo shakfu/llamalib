@@ -920,6 +920,8 @@ cdef extern from "llama.h":
     # Cols: n_vocab
     cdef float * llama_get_logits( llama_context * ctx)
 
+    # cdef int32_t llama_n_outputs(llama_context * ctx)
+
     # Logits for the ith token. For positive indices, Equivalent to:
     # llama_get_logits(ctx) + ctx->output_ids[i]*n_vocab
     # Negative indicies can be used to access logits in reverse order, -1 is the last logit.

@@ -2024,6 +2024,7 @@ cdef class LlamaContext:
         return llama_cpp.get_llama_pooling_type(self.ptr)
 
     # Lora
+    # -------------------------------------------------------------------------
 
     def lora_adapter_set(self, LoraAdapter adapter, float scale):
         """Add a loaded LoRA adapter to given context
@@ -2075,6 +2076,7 @@ cdef class LlamaContext:
         )
 
     # KV cache
+    # -------------------------------------------------------------------------
 
     def kv_cache_clear(self):
         """Clear the KV cache - both cell info is erased and KV data is zeroed"""
@@ -2145,6 +2147,7 @@ cdef class LlamaContext:
         llama_cpp.llama_kv_cache_update(self.ptr)
 
     # State / sessions
+    # -------------------------------------------------------------------------
 
     def get_state_size(self) -> int:
         """Returns the *actual* size in bytes of the state
@@ -2220,61 +2223,187 @@ cdef class LlamaContext:
                 result.push_back(dst[i])
         return result
 
-    # Copy the sequence data (originally copied with `llama_state_seq_get_data`) into the specified sequence
-    # Returns:
-    #  - Positive: Ok
-    #  - Zero: Failed to load
-    # cdef size_t llama_state_seq_set_data(
-    #          llama_context * ctx,
-    #                const uint8_t * src,
-    #                       size_t   size,
-    #                 llama_seq_id   dest_seq_id)
+    def set_state_seq_data(self, src: list[int], dest_seq_id: int):
+        """Copy the sequence data (originally copied with `llama_state_seq_get_data`) into the specified sequence
 
-    # cdef size_t llama_state_seq_save_file(
-    #          llama_context * ctx,
-    #                   const char * filepath,
-    #                 llama_seq_id   seq_id,
-    #            const llama_token * tokens,
-    #                       size_t   n_token_count)
+        Returns:
+         - Positive: Ok
+         - Zero: Failed to load
+        """
+        cdef vector[int] vec
+        cdef size_t res = 0 
+        for i in src:
+            vec.push_back(i)
+        res = llama_cpp.llama_state_seq_set_data(
+            self.ptr, src.data(), src.size(), dest_seq_id)
+        if res == 0:
+            raise ValueError("Failed to load sequence data")
 
-    # cdef size_t llama_state_seq_load_file(
-    #          llama_context * ctx,
-    #                   const char * filepath,
-    #                 llama_seq_id   dest_seq_id,
-    #                  llama_token * tokens_out,
-    #                       size_t   n_token_capacity,
-    #                       size_t * n_token_count_out)
+    def save_state_seq_file(self, filepath: str, seq_id: int, tokens: list[int]):
+        """Save state sequence data to a file"""
+        cdef vector[int] vec
+        cdef size_t res = 0
+        for i in tokens:
+            vec.push_back(i)
+        res = llama_cpp.llama_state_seq_save_file(
+            self.ptr,
+            filepath.encode(),
+            seq_id,
+            <const llama_cpp.llama_token *>vec.data(),
+            vec.size())
+        if res == 0:
+            raise ValueError(f"Failed to save seq data {filepath}")
 
+    def load_state_seq_file(self, filepath: str, dest_seq_id: int, max_n_tokens: int = 256):
+        """Load state sequence data from a file"""
+        cdef llama_cpp.llama_token * tokens_out = NULL
+        cdef size_t * n_token_count_out = NULL
+        cdef size_t loaded = llama_cpp.llama_state_seq_load_file(
+            self.ptr,
+            filepath.encode(), 
+            dest_seq_id,
+            tokens_out,
+            max_n_tokens,
+            n_token_count_out)
+        cdef vector[int] result
+        if loaded:
+            for i in range(n_token_count_out[0]):
+                result.push_back(tokens_out[i])
+        return result
 
-    # TODO: copy_state_data
+    # Decoding
+    # -------------------------------------------------------------------------
 
-    # TODO: set_state_data
+    def encode(self, LlamaBatch batch):
+        """Processes a batch of tokens with the encoder part of the encoder-decoder model.
 
-    # TODO: llama_load_session_file
-
-    # TODO: llama_save_session_file
+        Stores the encoder output internally for later use by the decoder cross-attention layers.
+          0 - success
+        < 0 - error
+        """
+        cdef int32_t res = llama_cpp.llama_encode(self.ptr, batch.p)
+        if res < 0:
+            raise RuntimeError("error encoding batch")
 
     def decode(self, LlamaBatch batch):
-        return_code = llama_cpp.llama_decode(
+        """Positive return values does not mean a fatal error, but rather a warning.
+          
+          0 - success
+          1 - could not find a KV slot for the batch (try reducing the size of the batch or increase the context)
+        < 0 - error
+        """
+        cdef int32_t res = llama_cpp.llama_decode(
             self.ptr,
             batch.p,
         )
-        if return_code != 0:
-            raise RuntimeError(f"llama_decode returned {return_code}")
+        if res == 1:
+            raise ValueError("could not find a KV slot for the batch (try reducing the size of the batch or increase the context)")
+        if res < 0:
+            raise RuntimeError(f"llama_decode failed")
 
     def set_n_threads(self, n_threads: int, n_threads_batch: int):
+        """Set the number of threads used for decoding
+        
+        n_threads is the number of threads used for generation (single token)
+        n_threads_batch is the number of threads used for prompt and batch processing (multiple tokens)
+        """
         llama_cpp.llama_set_n_threads(self.ptr, n_threads, n_threads_batch)
 
-    # def get_logits(self):
-    #     return llama_cpp.llama_get_logits(self.ptr)
+    def n_threads(self):
+        """Get the number of threads used for generation of a single token."""
+        return llama_cpp.llama_n_threads(self.ptr)
 
-    # def get_logits_ith(self, i: int):
-    #     return llama_cpp.llama_get_logits_ith(self.ptr, i)
+    def n_threads_batch(self):
+        """Get the number of threads used for prompt and batch processing (multiple token)."""
+        return llama_cpp.llama_n_threads_batch(self.ptr)
+
+    def set_embeddings_mode(self, embeddings: bool):
+        """Set whether the model is in embeddings mode or not
+    
+        If true, embeddings will be returned but logits will not
+        """
+        llama_cpp.llama_set_embeddings(self.ptr, embeddings)
+
+    def set_causal_attn(self, causal_attn: bool):
+        """Set whether to use causal attention or not
+
+        If set to true, the model will only attend to the past tokens
+        """
+        llama_cpp.llama_set_causal_attn(self.ptr, causal_attn)
+
+    # def set_abort_callback(self, abort_callback):
+    #     """Set abort callback"""
+    #     llama_cpp.llama_set_abort_callback(self.ptr, ggml_abort_callback abort_callback, void * abort_callback_data)
+
+    def synchronize(self):
+        """Wait until all computations are finished
+
+        This is automatically done when using one of the functions below to obtain the computation results
+        and is not necessary to call it explicitly in most cases
+        """
+        llama_cpp.llama_synchronize(self.ptr)
+
+    # def get_logits(self) -> list[float]:
+    #     """Token logits obtained from the last call to llama_decode()
+
+    #     The logits for which llama_batch.logits[i] != 0 are stored contiguously
+    #     in the order they have appeared in the batch.
+
+    #     Rows: number of tokens for which llama_batch.logits[i] != 0
+    #     Cols: n_vocab
+    #     """
+    #     cdef int n_vocab = self.model.n_vocab()
+    #     cdef int n_outputs = llama_cpp.llama_n_outputs(self.ptr)
+    #     cdef float * logits = llama_cpp.llama_get_logits(self.ptr)
+    #     cdef vector[float] vec
+    #     for i in range(n_vocab * n_outputs):
+    #         vec.push_back(logits[i])
+    #     return vec
+
+    # def get_logits_ith(self, int i):
+    #     """Logits for the ith token. For positive indices, 
+
+    #     Equivalent to:
+    #     llama_get_logits(ctx) + ctx->output_ids[i]*n_vocab
+    #     Negative indicies can be used to access logits in reverse order, -1 is the last logit.
+    #     returns NULL for invalid ids.
+    #     """
+    #     cdef float * logits = llama_get_logits_ith( llama_context * ctx, int32_t i)
 
     # def get_embeddings(self):
-    #     return llama_cpp.llama_get_embeddings(self.ptr)
+    #     """Get all output token embeddings.
+
+    #     when pooling_type == LLAMA_POOLING_TYPE_NONE or when using a generative model,
+    #     the embeddings for which llama_batch.logits[i] != 0 are stored contiguously
+    #     in the order they have appeared in the batch.
+    #     shape: [n_outputs*n_embd]
+    #     Otherwise, returns NULL.
+    #     """
+    #     cdef float * embds = llama_cpp.llama_get_embeddings(self.ptr)
+
+
+    # def get_embeddings_ith(self, int i):
+    #     """Get the embeddings for the ith token. For positive indices, Equivalent to:
+        
+    #     llama_get_embeddings(ctx) + ctx->output_ids[i]*n_embd
+    #     Negative indicies can be used to access embeddings in reverse order, -1 is the last embedding.
+    #     returns NULL for invalid ids.
+    #     """
+    #     cdef float * embds = llama_cpp.llama_get_embeddings_ith(self.ptr, i)
+
+
+    # def get_embeddings_seq(self, int seq_id):
+    #     """Get the embeddings for a sequence id
+
+    #     Returns NULL if pooling_type is LLAMA_POOLING_TYPE_NONE
+    #     when pooling_type == LLAMA_POOLING_TYPE_RANK, returns float[1] with the rank of the sequence
+    #     otherwise: float[n_embd] (1-dimensional)
+    #     """
+    #     cdef float * embds = llama_get_embeddings_seq(self.ptr, seq_id)
+
 
     # Sampling functions
+    # -------------------------------------------------------------------------
 
     # def set_rng_seed(self, seed: int):
     #     # TODO: Fix
@@ -2399,6 +2528,14 @@ cdef class LlamaContext:
 
     # def print_timings(self):
     #     llama_cpp.llama_perf_context_print(self.ctx)
+
+    # Performace
+
+    # cdef llama_perf_context_data llama_perf_context(const llama_context * ctx)
+    # cdef void llama_perf_context_print(const llama_context * ctx)
+    # cdef void llama_perf_context_reset(      llama_context * ctx)
+
+
 
     # Utility functions
     @staticmethod
