@@ -548,7 +548,7 @@ cdef extern from "llama.h":
     cdef const llama_model * llama_get_model(const llama_context * ctx)
 
     cdef llama_pooling_type get_llama_pooling_type "llama_pooling_type" (const llama_context * ctx)
-    cdef llama_vocab_type get_llama_vocab_type "llama_vocab_type" (const llama_model * model)
+    cdef llama_vocab_type   get_llama_vocab_type "llama_vocab_type" (const llama_model * model)
     cdef llama_rope_type    get_llama_rope_type  "llama_rope_type" (const llama_model * model)
 
     # Get the model's RoPE frequency scaling factor

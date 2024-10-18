@@ -1,5 +1,5 @@
 # distutils: language = c++
-from libc.stdint cimport uint8_t
+from libc.stdint cimport uint8_t, int32_t
 from libc.stdlib cimport malloc, calloc, realloc, free
 from libcpp.vector cimport vector
 from libcpp.string cimport string
@@ -21,6 +21,34 @@ def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_th
         disable_log,
         n_threads).decode()
     return result.strip()
+
+
+cdef class LoraAdapter:
+    cdef llama_cpp.llama_lora_adapter * ptr
+    cdef bint ptr_owner
+
+    def __cinit__(self):
+        self.ptr = NULL
+        self.ptr_owner = False
+
+    def __dealloc__(self):
+        # De-allocate if not null and flag is set
+        if self.ptr is not NULL and self.ptr_owner is True:
+            llama_cpp.llama_lora_adapter_free(self.ptr)
+            self.ptr = NULL
+
+    def __init__(self):
+        # Prevent accidental instantiation from normal Python code
+        # since we cannot pass a struct pointer into a Python constructor.
+        raise TypeError("This class cannot be instantiated directly.")
+
+    @staticmethod
+    cdef LoraAdapter from_ptr(llama_cpp.llama_lora_adapter *ptr, bint owner=False):
+        # Fast call to __new__() that bypasses the __init__() constructor.
+        cdef LoraAdapter wrapper = LoraAdapter.__new__(LoraAdapter)
+        wrapper.ptr = ptr
+        wrapper.ptr_owner = owner
+        return wrapper
 
 
 cdef class GGMLTensor:
@@ -1619,6 +1647,7 @@ cdef class LlamaModel:
         return llama_cpp.llama_n_head(self.ptr)
 
     def rope_freq_scale_train(self) -> float:
+        """Get the model's RoPE frequency scaling factor"""
         return llama_cpp.llama_rope_freq_scale_train(self.ptr)
 
     def desc(self) -> str:
@@ -1640,6 +1669,18 @@ cdef class LlamaModel:
         cdef llama_cpp.ggml_tensor * tensor = llama_cpp.llama_get_model_tensor(
             self.ptr, name.encode("utf-8"))
         return GGMLTensor.from_ptr(tensor)
+
+    # lora
+
+    def lora_adapter_init(self, str path_lora) -> LoraAdapter:
+        """Load a LoRA adapter from file
+
+        The loaded adapter will be associated to the given model, and will be free when the model is deleted
+        """
+        cdef llama_cpp.llama_lora_adapter * ptr = llama_cpp.llama_lora_adapter_init(
+            self.ptr, path_lora.encode())
+        cdef LoraAdapter adapter = LoraAdapter.from_ptr(ptr)
+        return adapter
 
     # metadata
 
@@ -1982,6 +2023,57 @@ cdef class LlamaContext:
     def pooling_type(self) -> int:
         return llama_cpp.get_llama_pooling_type(self.ptr)
 
+    # Lora
+
+    def lora_adapter_set(self, LoraAdapter adapter, float scale):
+        """Add a loaded LoRA adapter to given context
+        
+        This will not modify model's weight
+        """
+        cdef int32_t res = llama_cpp.llama_lora_adapter_set(
+            self.ptr, adapter.ptr, scale)
+        if res == -1:
+            raise ValueError(f"cannot load lora adapter to context")
+
+    def lora_adapter_remove(self, LoraAdapter adapter):
+        """Remove a specific LoRA adapter from given context
+
+        Return -1 if the adapter is not present in the context
+        """
+        cdef int32_t res = llama_cpp.llama_lora_adapter_remove(
+            self.ptr, adapter.ptr)
+        if res == -1:
+            raise ValueError(f"cannot remove, lora the adapter is not present in the context")
+
+    def lora_adapter_clear(self):
+        """Remove all LoRA adapters from given context"""
+        llama_cpp.llama_lora_adapter_clear(self.ptr)
+
+
+    def control_vector_apply(self, data: list[float], n_embd: int, il_start: int, il_end: int) -> int:
+        """Apply a loaded control vector to a llama_context, or if data is NULL, clear
+        the currently loaded vector.
+        
+        `n_embd` should be the size of a single layer's control, and data should point
+        to an n_embd x n_layers buffer starting from layer 1.
+
+        `il_start` and `il_end` are the layer range the vector should apply to (both inclusive)
+        
+        See llama_control_vector_load in common to load a control vector.
+        """
+        cdef vector[float] vec
+        for i in data:
+            vec.push_back(i)
+
+        return llama_cpp.llama_control_vector_apply(
+            self.ptr,
+            vec.data(),
+            vec.size(),
+            n_embd,
+            il_start,
+            il_end
+        )
+
     # KV cache
 
     def kv_cache_clear(self):
@@ -2051,7 +2143,6 @@ cdef class LlamaContext:
     def kv_cache_update(self):
         """Apply the KV cache updates (such as K-shifts, defragmentation, etc.)"""
         llama_cpp.llama_kv_cache_update(self.ptr)
-
 
     # State / sessions
 
@@ -2447,6 +2538,11 @@ cdef class LlamaTokenDataArray:
 
 
 def llama_backend_init():
+    """Initialize the llama + ggml backend
+
+    If numa is true, use NUMA optimizations
+    Call once at the start of the program
+    """
     llama_cpp.llama_backend_init()
 
 def llama_numa_init(llama_cpp.ggml_numa_strategy numa):
@@ -2527,4 +2623,5 @@ def common_batch_clear(LlamaBatch batch):
     llama_cpp.common_batch_clear(batch.p)
 
 def llama_backend_free():
+    """Call once at the end of the program - currently only used for MPI"""
     llama_cpp.llama_backend_free()
