@@ -911,7 +911,7 @@ cdef extern from "llama.h":
     # Wait until all computations are finished
     # This is automatically done when using one of the functions below to obtain the computation results
     # and is not necessary to call it explicitly in most cases
-    cdef void llama_synchronize(llama_context * ctx)
+    cdef void llama_synchronize( llama_context * ctx)
 
     # Token logits obtained from the last call to llama_decode()
     # The logits for which llama_batch.logits[i] != 0 are stored contiguously
@@ -1016,11 +1016,6 @@ cdef extern from "llama.h":
                                int32_t   lstrip,
                                   bint   special)
 
-    # check if token0 is contained as a prefix in token1
-    cdef bint llama_token_is_prefix(
-              const llama_model * model,
-                           llama_token   token0,
-                           llama_token   token1)
 
     # @details Convert the provided tokens into text (inverse of llama_tokenize()).
     # @param text The char pointer must be large enough to hold the resulting text.
@@ -1171,7 +1166,7 @@ cdef extern from "llama.h":
     # @param candidates A vector of `llama_token_data` containing the candidate tokens, their probabilities (p), and log-odds (logit) for the current position in the generated text.
     # @param tau  The target cross-entropy (or surprise) value you want to achieve for the generated text. A higher value corresponds to more surprising or less predictable text, while a lower value corresponds to less surprising or more predictable text.
     # @param eta The learning rate used to update `mu` based on the error between the target and observed surprisal of the sampled word. A larger learning rate will cause `mu` to be updated more quickly, while a smaller learning rate will result in slower updates.
-    # @param m The number of tokens considered in the estimation of `s_hat`. This is an arbitrary value that is used to calculate `s_hat`, which in turn helps to calculate the value of `k`. In the paper, they use `m = 100`, but you can experiment with different values to see how it affects the performance of the algorithm.
+    # @pam m The number of tokens considered in the estimation of `s_hat`. This is an arbitrary value that is used to calculate `s_hat`, which in turn helps to calculate the value of `k`. In the paper, they use `m = 100`, but you can experiment with different values to see how it affects the performance of the algorithm.
     # @param mu Maximum cross-entropy. This value is initialized to be twice the target cross-entropy (`2 * tau`) and is updated in the algorithm based on the error between the target and observed surprisal.
     cdef llama_sampler * llama_sampler_init_mirostat(
                  int32_t   n_vocab,

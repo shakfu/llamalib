@@ -1600,6 +1600,9 @@ cdef class LlamaModel:
     def vocab_type(self) -> int:
         return llama_cpp.get_llama_vocab_type(self.ptr)
 
+    def rope_type(self) -> int:
+        return llama_cpp.get_llama_rope_type(self.ptr)
+
     def n_vocab(self) -> int:
         return llama_cpp.llama_n_vocab(self.ptr)
 
@@ -1609,27 +1612,84 @@ cdef class LlamaModel:
     def n_embd(self) -> int:
         return llama_cpp.llama_n_embd(self.ptr)
 
+    def n_layer(self) -> int:
+        return llama_cpp.llama_n_layer(self.ptr)
+
+    def n_head(self) -> int:
+        return llama_cpp.llama_n_head(self.ptr)
+
     def rope_freq_scale_train(self) -> float:
         return llama_cpp.llama_rope_freq_scale_train(self.ptr)
 
     def desc(self) -> str:
+        """Get a string describing the model type"""
         cdef char buf[1024]
         llama_cpp.llama_model_desc(self.ptr, buf, 1024)
         return buf.decode("utf-8")
 
     def size(self) -> int:
+        """Returns the total size of all the tensors in the model in bytes"""
         return llama_cpp.llama_model_size(self.ptr)
 
     def n_params(self) -> int:
+        """Returns the total number of parameters in the model"""
         return llama_cpp.llama_model_n_params(self.ptr)
 
     def get_tensor(self, name: str) -> GGMLTensor:
+        """Get a llama model tensor"""
         cdef llama_cpp.ggml_tensor * tensor = llama_cpp.llama_get_model_tensor(
             self.ptr, name.encode("utf-8"))
         return GGMLTensor.from_ptr(tensor)
 
-    # def get_tensor(self, name: str) -> ctypes.c_void_p:
-    #     return llama_cpp.llama_get_model_tensor(self.ptr, name.encode("utf-8"))
+    # metadata
+
+    def meta_val_str(self, str key) -> str:
+        """Get metadata value as a string by key name"""
+        cdef char buf[128]
+        cdef int res = llama_cpp.llama_model_meta_val_str(self.ptr, key.encode(), buf, 128)
+        if res == -1:
+            raise ValueError(F"could not get metadata value from {key}")
+        cdef str value = buf.decode('UTF-8')
+        return value
+
+    def meta_count(self):
+        """Get the number of metadata key/value pairs"""
+        return llama_cpp.llama_model_meta_count(self.ptr)
+
+    def meta_key_by_index(self, int index) -> str:
+        """Get metadata key name by index"""
+        cdef char buf[128]
+        cdef int res = llama_cpp.llama_model_meta_key_by_index(self.ptr, index, buf, 128)
+        cdef str key = buf.decode('UTF-8')
+        return key
+
+    def meta_val_str_by_index(self, int index) -> str:
+        """Get metadata key name by index"""
+        cdef char buf[128]
+        cdef int res = llama_cpp.llama_model_meta_val_str_by_index(self.ptr, index, buf, 128)
+        cdef str value = buf.decode('UTF-8')
+        return value
+
+    # encode / decode
+
+    def has_encoder(self) -> bool:
+        """Returns true if the model contains an encoder that requires llama_encode() call"""
+        return llama_cpp.llama_model_has_encoder(self.ptr)
+
+    def has_decoder(self) -> bool:
+        """Returns true if the model contains a decoder that requires llama_decode() callD"""
+        return llama_cpp.llama_model_has_decoder(self.ptr)
+
+    def decoder_start_token(self) -> int:
+        """For encoder-decoder models, this function returns id of the token that must be provided
+        to the decoder to start generating output sequence. For other models, it returns -1.
+        """
+        return llama_cpp.llama_model_decoder_start_token(self.ptr)
+
+    def is_recurrent(self) -> bool:
+        """Returns true if the model is recurrent (like Mamba, RWKV, etc.)"""
+        return llama_cpp.llama_model_is_recurrent(self.ptr)
+
 
     # Vocab
 
