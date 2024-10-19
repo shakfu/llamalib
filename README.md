@@ -1,12 +1,12 @@
 # llamalib - compiled python llama.cpp wrappers
 
-The project provides three different python wrappers of @ggerganov's [llama.cpp](https://github.com/ggerganov/llama.cpp) which is likely the most active open-source compiled LLM inference engine. The python wrapping frameworks used are [cython](https://github.com/cython/cython), [pybind11](https://github.com/pybind/pybind11), and [nanobind](https://github.com/wjakob/nanobind) and share the common feature that they are compiled, and, in this project, statically linked against `llama.cpp`.
+The project provides three different python wrappers of @ggerganov's [llama.cpp](https://github.com/ggerganov/llama.cpp) which is likely the most active open-source compiled LLM inference engine. The python wrapping frameworks used are [cython](https://github.com/cython/cython), [pybind11](https://github.com/pybind/pybind11), and [nanobind](https://github.com/wjakob/nanobind) and share the common feature of being compiled, and in this project statically linked, against `llama.cpp`.
 
-The goals of this projects are to:
+Development goals are to:
 
-- Stay up-to-datew with bleeding-edge `llama.cpp`.
+- Stay up-to-date with bleeding-edge `llama.cpp`.
 
-- Produce a minimal performant / compiled python wrapper around the core `llama-cli` feature-set of `llama.cpp`.
+- Produce a minimal, performant, compiled, thin python wrapper around the core `llama-cli` feature-set of `llama.cpp`.
 
 - Integrate and wrap `llava-cli` features.
 
@@ -14,17 +14,17 @@ The goals of this projects are to:
 
 - Learn about the internals of this popular C++/C LLM inference engine along the way.
 
-Given that there is a fairly mature, well-maintained and performant ctypes based wrapper provided by @abetlen's [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) project and that llm inference is gpu-driven rather than cpu-driven, this all may see quite redundant. Irrespective, there are some benefits to developing alternative python wrappers to `llama.cpp`:
+Given that there is a fairly mature, well-maintained and performant ctypes based wrapper provided by @abetlen's [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) project and that llm inference is gpu-driven rather than cpu-driven, this all may see quite redundant. Nonetheless, we anticipate some benefits to using compiled wrappers:
 
 - Packaging benefits with respect to self-contained statically compiled extension modules.
 
-- There may be some incidental performance the use of compiled wrappers over the use of ctypes.
+- There may be some performance improvements in the use of compiled wrappers over the use of ctypes.
 
 - It may be possible to incorporate external optimizations more readily into compiled wrappers, and
 
-- It provides a basis for integration with other code written in a given wrapper variant.
+- It provides a basis for integration with other code written in a wrapper variant.
 
-- It may be useful in case one wants to de-couple the python frontend and wrapper backends to existing frameworks: that is a future development idea may be to just replace the ctypes wrapper in `llama-cpp-python` with one of compiled python wrappers and contribute it back as a PR.
+- It may be useful in case one wants to de-couple the python frontend and wrapper backends to existing frameworks: for example, it may be useful to just replace the ctypes wrapper in `llama-cpp-python` with one of compiled python wrappers and contribute it back as a PR.
 
 - This is the most efficient way, for me at least, to learn about the underlying technologies.
 
@@ -44,6 +44,8 @@ Development only on macOS to keep things simple. The following table provide an 
   
 
 The initial milestone for each wrapper type was to create a high-level wrapper of the `simple.cpp` llama.cpp example, following by a low-level one. The high-level wrapper c++ code is placed in `llamalib.h` single-header library, and wrapping is complete for all three frameworks. The final object is to fully wrap the functionality of `llama-cli` for all three wrapper-types.
+
+Nonetheless, not all wrapping efforts proceed at an equal pace: in general, the cython wrapper will likely be the most advanced of the 3.
 
 It goes without saying that any help / collaboration / contributions to accelerate the above would be welcome!
 
