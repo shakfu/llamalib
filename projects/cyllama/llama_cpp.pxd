@@ -386,10 +386,6 @@ cdef extern from "llama.h":
         llama_seq_id ** seq_id
         int8_t       *  logits   # TODO: rename this to "output"
 
-        llama_pos    all_pos_0  # used if pos == NULL
-        llama_pos    all_pos_1  # used if pos == NULL
-        llama_seq_id all_seq_id # used if seq_id == NULL
-
     ctypedef enum llama_model_kv_override_type:
         LLAMA_KV_OVERRIDE_TYPE_INT
         LLAMA_KV_OVERRIDE_TYPE_FLOAT
@@ -845,15 +841,14 @@ cdef extern from "llama.h":
     # Decoding
     #
 
-    # Return batch for single sequence of tokens starting at pos_0
+    # Return batch for single sequence of tokens
+    # The sequence ID will be fixed to 0
+    # The position of the tokens will be tracked automatically by llama_decode
     #
     # NOTE: this is a helper function to facilitate transition to the new batch API - avoid using it
     #
-    cdef  llama_batch llama_batch_get_one(
-                  llama_token * tokens,
-                      int32_t   n_tokens,
-                    llama_pos   pos_0,
-                 llama_seq_id   seq_id)
+    cdef  llama_batch llama_batch_get_one(llama_token * tokens, int32_t n_tokens)
+
 
     # Allocates a batch of tokens on the heap that can hold a maximum of n_tokens
     # Each token can be assigned up to n_seq_max sequence ids
@@ -920,7 +915,8 @@ cdef extern from "llama.h":
     # Cols: n_vocab
     cdef float * llama_get_logits( llama_context * ctx)
 
-    # cdef int32_t llama_n_outputs(llama_context * ctx)
+    # FIXME: should this be added
+    # cdef int32_t llama_n_outputs( llama_context * ctx);
 
     # Logits for the ith token. For positive indices, Equivalent to:
     # llama_get_logits(ctx) + ctx->output_ids[i]*n_vocab

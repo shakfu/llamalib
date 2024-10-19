@@ -251,9 +251,7 @@ PYBIND11_MODULE(pbllama, m) {
         .def("get_logits", [](llama_batch& self) -> py::array_t<int8_t> {
             return to_array<int8_t>(self.logits, self.n_tokens);
         })
-        .def_readwrite("all_pos_0", &llama_batch::all_pos_0)
-        .def_readwrite("all_pos_1", &llama_batch::all_pos_1)
-        .def_readwrite("all_seq_id", &llama_batch::all_seq_id);
+        ;
 
     py::enum_<llama_model_kv_override_type>(m, "llama_model_kv_override_type", py::arithmetic(), "")
         .value("LLAMA_KV_OVERRIDE_TYPE_INT", LLAMA_KV_OVERRIDE_TYPE_INT)
@@ -446,7 +444,7 @@ PYBIND11_MODULE(pbllama, m) {
 
     // decoding
 
-    m.def("llama_batch_get_one", (struct llama_batch (*)(int *, int, int, int)) &llama_batch_get_one, "C++: llama_batch_get_one(int *, int, int, int) --> struct llama_batch", py::arg("tokens"), py::arg("n_tokens"), py::arg("pos_0"), py::arg("seq_id"));
+    m.def("llama_batch_get_one", (struct llama_batch (*)(int *, int)) &llama_batch_get_one, "C++: llama_batch_get_one(int *, int) --> struct llama_batch", py::arg("tokens"), py::arg("n_tokens"));
     m.def("llama_batch_init", (struct llama_batch (*)(int, int, int)) &llama_batch_init, "C++: llama_batch_init(int, int, int) --> struct llama_batch", py::arg("n_tokens"), py::arg("embd"), py::arg("n_seq_max"));
     m.def("llama_batch_free", (void (*)(struct llama_batch)) &llama_batch_free, "C++: llama_batch_free(struct llama_batch) --> void", py::arg("batch"));
 

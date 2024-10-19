@@ -240,9 +240,7 @@ NB_MODULE(nbllama, m) {
         // .def("get_logits", [](llama_batch& self) -> nb::ndarray<int8_t> {
         //     return to_array<int8_t>(self.logits, self.n_tokens);
         // })
-        .def_rw("all_pos_0", &llama_batch::all_pos_0)
-        .def_rw("all_pos_1", &llama_batch::all_pos_1)
-        .def_rw("all_seq_id", &llama_batch::all_seq_id);
+        ;
     
     nb::enum_<enum llama_model_kv_override_type>(m, "llama_model_kv_override_type")
         .value("LLAMA_KV_OVERRIDE_TYPE_INT", LLAMA_KV_OVERRIDE_TYPE_INT)
@@ -435,7 +433,7 @@ NB_MODULE(nbllama, m) {
 
     // decoding
 
-    m.def("llama_batch_get_one", (struct llama_batch (*)(int *, int, int, int)) &llama_batch_get_one, "C++: llama_batch_get_one(int *, int, int, int) --> struct llama_batch", nb::arg("tokens"), nb::arg("n_tokens"), nb::arg("pos_0"), nb::arg("seq_id"));
+    m.def("llama_batch_get_one", (struct llama_batch (*)(int *, int)) &llama_batch_get_one, "C++: llama_batch_get_one(int *, int) --> struct llama_batch", nb::arg("tokens"), nb::arg("n_tokens"));
     m.def("llama_batch_init", (struct llama_batch (*)(int, int, int)) &llama_batch_init, "C++: llama_batch_init(int, int, int) --> struct llama_batch", nb::arg("n_tokens"), nb::arg("embd"), nb::arg("n_seq_max"));
     m.def("llama_batch_free", (void (*)(struct llama_batch)) &llama_batch_free, "C++: llama_batch_free(struct llama_batch) --> void", nb::arg("batch"));
 

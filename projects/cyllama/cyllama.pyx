@@ -1967,11 +1967,13 @@ cdef class LlamaContext:
     cdef public LlamaModel model
     cdef public ContextParams params
     cdef public bint verbose
+    cdef public int n_tokens
     cdef bint owner
 
     def __cinit__(self):
         self.ptr = NULL
         self.owner = True
+        self.n_tokens = 0
 
     def __init__(
         self,
@@ -2296,6 +2298,7 @@ cdef class LlamaContext:
             self.ptr,
             batch.p,
         )
+        self.n_tokens = batch.n_tokens()
         if res == 1:
             raise ValueError("could not find a KV slot for the batch (try reducing the size of the batch or increase the context)")
         if res < 0:
@@ -2343,22 +2346,24 @@ cdef class LlamaContext:
         """
         llama_cpp.llama_synchronize(self.ptr)
 
-    # def get_logits(self) -> list[float]:
-    #     """Token logits obtained from the last call to llama_decode()
+    # def n_outputs(self) -> int:
+    #     return llama_cpp.llama_n_outputs(self.ptr)
 
-    #     The logits for which llama_batch.logits[i] != 0 are stored contiguously
-    #     in the order they have appeared in the batch.
+    def get_logits(self) -> list[float]:
+        """Token logits obtained from the last call to llama_decode()
 
-    #     Rows: number of tokens for which llama_batch.logits[i] != 0
-    #     Cols: n_vocab
-    #     """
-    #     cdef int n_vocab = self.model.n_vocab()
-    #     cdef int n_outputs = llama_cpp.llama_n_outputs(self.ptr)
-    #     cdef float * logits = llama_cpp.llama_get_logits(self.ptr)
-    #     cdef vector[float] vec
-    #     for i in range(n_vocab * n_outputs):
-    #         vec.push_back(logits[i])
-    #     return vec
+        The logits for which llama_batch.logits[i] != 0 are stored contiguously
+        in the order they have appeared in the batch.
+
+        Rows: number of tokens for which llama_batch.logits[i] != 0
+        Cols: n_vocab
+        """
+        cdef int n_vocab = self.model.n_vocab()
+        cdef float * logits = llama_cpp.llama_get_logits(self.ptr)
+        cdef vector[float] vec
+        for i in range(n_vocab):
+            vec.push_back(logits[i])
+        return vec
 
     # def get_logits_ith(self, int i):
     #     """Logits for the ith token. For positive indices, 
@@ -2545,7 +2550,20 @@ cdef class LlamaContext:
 
 
 cdef class LlamaBatch:
-    """Intermediate Python wrapper for a llama.cpp llama_batch."""
+    """Input data for llama_decode
+    
+    A llama_batch object can contain input about one or many sequences
+    The provided arrays (i.e. token, embd, pos, etc.) must have size of n_tokens
+
+    - token  : the token ids of the input (used when embd is NULL)
+    - embd   : token embeddings (i.e. float vector of size n_embd) (used when token is NULL)
+    - pos    : the positions of the respective token in the sequence
+               (if set to NULL, the token position will be tracked automatically by llama_decode)
+    - seq_id : the sequence to which the respective token belongs
+               (if set to NULL, the sequence ID will be assumed to be 0)
+    - logits : if zero, the logits (and/or the embeddings) for the respective token will not be output
+               (if set to NULL, only the logits for last token will be returned)
+    """
     cdef llama_cpp.llama_batch p
     cdef int _n_tokens
     cdef public int embd
