@@ -210,7 +210,7 @@ cdef extern from "ggml.h":
     cdef int64_t ggml_cycles()
     cdef int64_t ggml_cycles_per_ms()
 
-    # typedef struct ggml_threadpool * ggml_threadpool_t;
+    # typedef struct ggml_threadpool * ggml_threadpool_t
     ctypedef struct ggml_threadpool_t:
         pass
 
@@ -918,7 +918,7 @@ cdef extern from "llama.h":
     cdef float * llama_get_logits( llama_context * ctx)
 
     # FIXME: should this be added
-    # cdef int32_t llama_n_outputs( llama_context * ctx);
+    # cdef int32_t llama_n_outputs( llama_context * ctx)
 
     # Logits for the ith token. For positive indices, Equivalent to:
     # llama_get_logits(ctx) + ctx->output_ids[i]*n_vocab
@@ -1619,13 +1619,13 @@ cdef extern from "common.h":
 
     cdef llama_model_params common_model_params_to_llama(const common_params & params)
     cdef llama_context_params common_context_params_to_llama(const common_params & params)
-    # struct ggml_threadpool_params ggml_threadpool_params_from_cpu_params(const cpu_params & params);
+    # ggml_threadpool_params ggml_threadpool_params_from_cpu_params(const cpu_params & params);
     
-    # struct llama_model * common_load_model_from_url(const char * model_url, const char * path_model, const char * hf_token, const struct llama_model_params & params);
-    # struct llama_model * common_load_model_from_hf(const char * repo, const char * file, const char * path_model, const char * hf_token, const struct llama_model_params & params);
+    llama_model * common_load_model_from_url(const char * model_url, const char * path_model, const char * hf_token, const llama_model_params & params);
+    llama_model * common_load_model_from_hf(const char * repo, const char * file, const char * path_model, const char * hf_token, const llama_model_params & params);
 
     # clear LoRA adapters from context, then apply new list of adapters
-    # void common_lora_adapters_apply(struct llama_context * ctx, std::vector<common_lora_adapter_container> & lora_adapters);
+    void common_lora_adapters_apply(llama_context * ctx, std_vector[common_lora_adapter_container] & lora_adapters)
 
     # Batch utils
 
@@ -1644,7 +1644,6 @@ cdef extern from "common.h":
 
     # tokenizes a token into a piece, optionally renders special/control tokens
     # should work similar to Python's `tokenizer.id_to_piece`
-    # cdef std_string llama_token_to_piece(const llama_context * ctx, llama_token token, bint special)
     cdef std_string common_token_to_piece (const llama_context * ctx, llama_token token, bint special)
 
     # detokenizes a vector of tokens into a string

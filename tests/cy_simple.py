@@ -32,9 +32,6 @@ params.model = str(MODEL)
 
 model = cy.LlamaModel(path_model=params.model, params=model_params)
 
-if not model:
-    raise SystemExit(f"Unable to load model: {params.model}")
-
 # initialize the context
 ctx_params = cy.common_context_params_to_llama(params)
 ctx = cy.LlamaContext(model=model, params=ctx_params)
@@ -87,8 +84,7 @@ batch.set_last_logits_to_true()
 
 # logits = batch.get_logits()
 
-if cy.llama_decode(ctx, batch) != 0:
-    raise SystemExit("llama_decode() failed.")
+ctx.decode(batch)
 
 # main loop
 

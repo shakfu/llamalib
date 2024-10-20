@@ -10,6 +10,41 @@ import os
 from typing import Optional, Sequence
 
 
+# enums
+# -----------------------------------------------------------------------------
+
+cpdef enum llama_vocab_type:
+    LLAMA_VOCAB_TYPE_NONE # For models without vocab
+    LLAMA_VOCAB_TYPE_SPM  # LLaMA tokenizer based on byte-level BPE with byte fallback
+    LLAMA_VOCAB_TYPE_BPE  # GPT-2 tokenizer based on byte-level BPE
+    LLAMA_VOCAB_TYPE_WPM  # BERT tokenizer based on WordPiece
+    LLAMA_VOCAB_TYPE_UGM  # T5 tokenizer based on Unigram
+    LLAMA_VOCAB_TYPE_RWKV # RWKV tokenizer based on greedy tokenization
+
+cpdef enum llama_rope_type:
+    LLAMA_ROPE_TYPE_NONE = -1
+    LLAMA_ROPE_TYPE_NORM =  0
+    LLAMA_ROPE_TYPE_NEOX =  2
+
+cpdef enum llama_token_attr:
+    LLAMA_TOKEN_ATTR_UNDEFINED    = 0
+    LLAMA_TOKEN_ATTR_UNKNOWN      = 1 << 0
+    LLAMA_TOKEN_ATTR_UNUSED       = 1 << 1
+    LLAMA_TOKEN_ATTR_NORMAL       = 1 << 2
+    LLAMA_TOKEN_ATTR_CONTROL      = 1 << 3 # SPECIAL?
+    LLAMA_TOKEN_ATTR_USER_DEFINED = 1 << 4
+    LLAMA_TOKEN_ATTR_BYTE         = 1 << 5
+    LLAMA_TOKEN_ATTR_NORMALIZED   = 1 << 6
+    LLAMA_TOKEN_ATTR_LSTRIP       = 1 << 7
+    LLAMA_TOKEN_ATTR_RSTRIP       = 1 << 8
+    LLAMA_TOKEN_ATTR_SINGLE_WORD  = 1 << 9
+
+
+# llama-cpp wrappers
+# -----------------------------------------------------------------------------
+
+
+
 def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_threads=4) -> str:
     """ask/prompt a llama model"""
 
@@ -1813,10 +1848,10 @@ cdef class LlamaModel:
         wrapper.ptr_owner = owner
         return wrapper
 
-    def vocab_type(self) -> int:
+    def vocab_type(self) -> llama_vocab_type:
         return llama_cpp.get_llama_vocab_type(self.ptr)
 
-    def rope_type(self) -> int:
+    def rope_type(self) -> llama_rope_type:
         return llama_cpp.get_llama_rope_type(self.ptr)
 
     def n_vocab(self) -> int:
@@ -1928,7 +1963,7 @@ cdef class LlamaModel:
     def token_get_score(self, llama_cpp.llama_token token) -> float:
         return llama_cpp.llama_token_get_score(self.ptr, token)
 
-    def token_get_attr(self, llama_cpp.llama_token token) -> int:
+    def token_get_attr(self, llama_cpp.llama_token token) -> llama_token_attr:
         return llama_cpp.llama_token_get_attr(self.ptr, token)
 
     def token_is_eog(self, llama_cpp.llama_token token) -> bool:
@@ -2030,6 +2065,32 @@ cdef class LlamaModel:
             if len(tokens) > 0 and tokens[0] == self.token_bos() and output[0:1] == b" "
             else output
         )
+
+    # chat template
+
+
+    # def chat_apply_template(self, str tmpl, str chat, size_t n_msg, bint add_ass) -> str:
+    #     """Apply chat template. Inspired by hf apply_chat_template() on python.
+        
+    #     Both "model" and "custom_template" are optional, but at least one is required. "custom_template" has higher precedence than "model"
+    #     NOTE: This function does not use a jinja parser. It only support a pre-defined list of template. See more: https://github.com/ggerganov/llama.cpp/wiki/Templates-supported-by-llama_chat_apply_template
+    #     @param tmpl A Jinja template to use for this chat. If this is nullptr, the model’s default chat template will be used instead.
+    #     @param chat Pointer to a list of multiple llama_chat_message
+    #     @param n_msg Number of llama_chat_message in this chat
+    #     @param add_ass Whether to end the prompt with the token(s) that indicate the start of an assistant message.
+    #     @param buf A buffer to hold the output formatted prompt. The recommended alloc size is 2 * (total number of characters of all messages)
+    #     @param length The size of the allocated buffer
+    #     @return The total number of bytes of the formatted prompt. If is it larger than the size of buffer, you may need to re-alloc it and then re-apply the template.
+    #     """
+    #     cdef char * buf = NULL
+    #     cdef int length = 0
+    #     cdef int bytes = llama_cpp.llama_chat_apply_template(
+    #         self.ptr, tmpl.encode(), chat.encode(), n_msg, add_ass, buf, length)
+    #     cdef str result = buf.decode()
+    #     free(buf)
+    #     return result
+
+
 
     # Extra
 
@@ -2792,6 +2853,15 @@ cdef class LlamaBatch:
     def reset(self):
         self.p.n_tokens = 0
 
+    def add(self, llama_cpp.llama_token id, llama_cpp.llama_pos pos, list[int] seq_ids, bint logits):
+        cdef vector[llama_cpp.llama_seq_id] _seq_ids
+        for i in seq_ids:
+            _seq_ids.push_back(i)
+        llama_cpp.common_batch_add(self.p, id, pos, _seq_ids, logits)
+
+    def clear(self):
+        llama_cpp.common_batch_clear(self.p)
+
     def set_batch(self, batch: Sequence[int], n_past: int, logits_all: bool):
         n_tokens = len(batch)
         self.p.n_tokens = n_tokens
@@ -2923,16 +2993,16 @@ def common_token_to_piece(LlamaContext ctx, int token, bint special = True) -> s
 def common_batch_add(LlamaBatch batch, llama_cpp.llama_token id, llama_cpp.llama_pos pos, list[int] seq_ids, bint logits):
     return llama_cpp.common_batch_add(batch.p, id, pos, seq_ids, logits)
 
-def llama_decode(LlamaContext ctx, LlamaBatch batch) -> int:
-    return llama_cpp.llama_decode(ctx.ptr, batch.p)
+# def llama_decode(LlamaContext ctx, LlamaBatch batch) -> int:
+#     return llama_cpp.llama_decode(ctx.ptr, batch.p)
 
-def llama_new_context_with_model(LlamaModel model, ContextParams params) -> LlamaContext:
-    cdef llama_cpp.llama_context * ctx = llama_cpp.llama_new_context_with_model(model.ptr, params.p)
-    return LlamaContext.from_ptr(ctx)
+# def llama_new_context_with_model(LlamaModel model, ContextParams params) -> LlamaContext:
+#     cdef llama_cpp.llama_context * ctx = llama_cpp.llama_new_context_with_model(model.ptr, params.p)
+#     return LlamaContext.from_ptr(ctx)
 
-def llama_load_model_from_file(str path_model, ModelParams params) -> LlamaModel:
-    cdef llama_cpp.llama_model * model = llama_cpp.llama_load_model_from_file(path_model.encode(), params.p)
-    return LlamaModel.from_ptr(model)
+# def llama_load_model_from_file(str path_model, ModelParams params) -> LlamaModel:
+#     cdef llama_cpp.llama_model * model = llama_cpp.llama_load_model_from_file(path_model.encode(), params.p)
+#     return LlamaModel.from_ptr(model)
 
 def ggml_time_us() -> int:
     return llama_cpp.ggml_time_us()
