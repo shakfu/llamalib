@@ -2,22 +2,21 @@
 
 ## Summary
 
-| model 			                     		| size (GB)  | speed (t/s) |
+| model                                         | size (GB)  | speed (t/s) |
 | :-------------------------------------------- | :--------: | :---------: |
-| llama-3.2-1b-instruct-q4_k_m.gguf       		| 0.77       | 57.78       |
-| Llama-3.2-3B-Instruct-Q6_K.gguf        		| 2.5        | 19.99       |
+| llama-3.2-1b-instruct-q4_k_m.gguf             | 0.77       | 57.78       |
+| Llama-3.2-3B-Instruct-Q6_K.gguf               | 2.5        | 19.99       |
 | Phi-3.5-mini-instruct.Q6_K.gguf               | 2.9        | 16.71       |
 | Phi-3.5-mini-instruct_Uncensored-Q6_K_L.gguf  | 3.0        | 16.54       |
-| Llama-3.2-3B-Instruct-Q8_0.gguf        		| 3.2        | 15.45       |
-| mistral-7b-instruct-v0.1.Q4_K_M.gguf   		| 4.1        | 12.76       |
+| Llama-3.2-3B-Instruct-Q8_0.gguf               | 3.2        | 15.45       |
+| mistral-7b-instruct-v0.1.Q4_K_M.gguf          | 4.1        | 12.76       |
 | Bio-Medical-Llama-3.1-8B.i1-Q4_K_M.gguf       | 4.6        | 11.75       |
-| vicuna-7b-cot.Q5_K_M.gguf      				| 4.6        | 11.23       |
-| gemma-2-9b-it-IQ4_XS.gguf              		| 4.8        | 10.16       |
-| Cinder-Phi-2-V1.F16.gguf       				| 5.2        | 10.14       |
-| Llama-3-Groq-8B-Tool-Use-Q5_K_M.gguf   		| 5.3        | 10.10       |
-| Meta-Llama-3.1-8B-Instruct-Q6_K.gguf       	| 6.2        | 9.02        |
-| Gemma-2-Ataraxy-v2-9B-Q5_K_M.gguf   			| 6.2        | 7.63        |
-
+| vicuna-7b-cot.Q5_K_M.gguf                     | 4.6        | 11.23       |
+| gemma-2-9b-it-IQ4_XS.gguf                     | 4.8        | 10.16       |
+| Cinder-Phi-2-V1.F16.gguf                      | 5.2        | 10.14       |
+| Llama-3-Groq-8B-Tool-Use-Q5_K_M.gguf          | 5.3        | 10.10       |
+| Meta-Llama-3.1-8B-Instruct-Q6_K.gguf          | 6.2        | 9.02        |
+| Gemma-2-Ataraxy-v2-9B-Q5_K_M.gguf             | 6.2        | 7.63        |
 
 ## The Models
 
@@ -41,6 +40,7 @@ main: decoded 377 tokens in 24.40 s, speed: 15.45 t/s
 ```sh
 bin/llama-simple -c 512 -n 384 -m models/Llama-3.2-3B-Instruct-Q6_K.gguf -p "When did the universe begin?"
 ```
+
 ```text
 <|begin_of_text|>When did the universe begin? The Big Bang theory suggests that the universe began as a singularity, an infinitely hot and dense point, around 13.8 billion years ago. This singularity expanded rapidly, and as it did, it cooled and formed subatomic particles, atoms, and eventually the stars and galaxies we see today. The exact timing of the Big Bang is still a topic of ongoing research and debate among scientists. However, the overwhelming consensus among cosmologists is that the universe began in a very short period of time, likely in the range of 10^-43 seconds to 10^-36 seconds. This is an incredibly small time frame, and it's difficult to even comprehend the scale of it. To put it into perspective, the fastest human-made object, Voyager 1, has been traveling for over 40 years and has only reached a distance of about 14 light-hours from Earth. In contrast, the universe has been expanding for over 13.8 billion years, and it's still growing today. The Big Bang theory is widely accepted as the most accurate explanation for the origins of the universe, and it has been extensively tested and confirmed through a wide range of observations and experiments. Despite the uncertainty surrounding the exact timing of the Big Bang, the theory remains a cornerstone of modern astrophysics and cosmology.
 
@@ -98,6 +98,7 @@ main: decoded 24 tokens in 1.88 s, speed: 12.76 t/s
 ```sh
 bin/llama-simple -c 512 -n 384 -m models/Phi-3.5-mini-instruct.Q6_K.gguf -p "When did the universe begin?"
 ```
+
 ```text
  When did the universe begin?
 
@@ -133,7 +134,6 @@ The universe began with the Big Bang, which is estimated to have occurred around
 main: decoded 378 tokens in 22.62 s, speed: 16.71 t/s
 ```
 
-
 ### Phi-3.5-mini-instruct_Uncensored-Q6_K_L.gguf
 
 - [download](https://huggingface.co/bartowski/Phi-3.5-mini-instruct_Uncensored-GGUF/resolve/main/Phi-3.5-mini-instruct_Uncensored-Q6_K_L.gguf)
@@ -141,6 +141,7 @@ main: decoded 378 tokens in 22.62 s, speed: 16.71 t/s
 ```sh
 bin/llama-simple -c 512 -n 384 -m models/Phi-3.5-mini-instruct_Uncensored-Q6_K_L.gguf  -p "When did the universe begin?"
 ```
+
 ```text
  When did the universe begin?
 

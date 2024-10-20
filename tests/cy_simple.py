@@ -13,7 +13,6 @@ params.prompt = "When did the universe begin?"
 params.n_predict = 32
 params.n_ctx = 2048
 params.cpuparams.n_threads = 4
-# params.n_threads = 4
 
 
 
@@ -65,14 +64,14 @@ if not smplr:
 
 
 # cy.llama_sampler_chain_add(smplr, cy.llama_sampler_init_greedy())
-smplr.chain_add_greedy()
+smplr.add_greedy()
 
 
 # tokenize the prompt
 
 tokens_list: list[int] = cy.common_tokenize(ctx, params.prompt, True)
 
-n_ctx: int = cy.llama_n_ctx(ctx)
+n_ctx: int = ctx.n_ctx()
 
 n_kv_req: int = len(tokens_list) + (n_predict - len(tokens_list))
 
@@ -122,11 +121,13 @@ while (n_cur <= n_predict):
     # sample the next token
 
     if True:
-        new_token_id = cy.llama_sampler_sample(smplr, ctx, batch.n_tokens - 1)
+        new_token_id = smplr.sample(ctx, batch.n_tokens - 1)
+        # new_token_id = cy.llama_sampler_sample(smplr, ctx, batch.n_tokens - 1)
 
         # print("new_token_id: ", new_token_id)
 
-        cy.llama_sampler_accept(smplr, new_token_id);
+        # cy.llama_sampler_accept(smplr, new_token_id);
+        smplr.accept(new_token_id)
 
         # is it an end of generation?
         if (cy.llama_token_is_eog(model, new_token_id) or n_cur == n_predict):
@@ -146,6 +147,7 @@ while (n_cur <= n_predict):
     n_cur += 1
 
     # evaluate the current batch with the transformer model
+
     if cy.llama_decode(ctx, batch):
         raise SystemExit("llama_decode() failed.")
 

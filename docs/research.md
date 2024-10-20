@@ -1,6 +1,5 @@
 # Research
 
-
 ## Llama
 
 - [Meta's Llama page](https://ai.meta.com/blog/large-language-model-llama-meta-ai/)
@@ -15,13 +14,11 @@
 - [Llama-3.2-3B-Instruct-Q6_K.gguf](https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q6_K.gguf?download=true)
 - [llava-llama-3-8b-v1_1-gguf](https://huggingface.co/xtuner/llava-llama-3-8b-v1_1-gguf)
 
-
 pending (due to memory errors, probably need to specify n_ctx)
 
 - LongWriter-llama3.1-8b-Q3_K_L.gguf
 - LongWriter-llama3.1-8b-Q5_K_S.gguf
 - codellama-7b.Q4_K_M.gguf
-
 
 ## llama.cpp
 
@@ -50,6 +47,8 @@ pending (due to memory errors, probably need to specify n_ctx)
 - [pyllamacpp](https://github.com/abdeladim-s/pyllamacpp)
 
 - [llamaindex](https://docs.llamaindex.ai) and [llama-cpp on llamaindex](https://docs.llamaindex.ai/en/stable/examples/llm/llama_2_llama_cpp/)
+
+- [fastLLaMa](https://github.com/PotatoSpudowski/fastLLaMa): An experimental high-performance framework for running Decoder-only LLMs with 4-bit quantization in Python using a C/C++ backend.
 
 ## Allocating Memory for 2d Matrices in c/c++
 
@@ -126,8 +125,7 @@ PYBIND_MODULE(mymodule, m) {
 }
 ```
 
-> If you wish to avoid conflict with other pybind11 modules that might declare types on this third-party type, consider using `py::module_local()` refered to in the docs [here](https://pybind11.readthedocs.io/en/stable/advanced/classes.html#module-local-class-bindings) 
-
+> If you wish to avoid conflict with other pybind11 modules that might declare types on this third-party type, consider using `py::module_local()` refered to in the docs [here](https://pybind11.readthedocs.io/en/stable/advanced/classes.html#module-local-class-bindings)
 
 see also:
 
@@ -143,11 +141,9 @@ see also:
 
  [distilabel](https://github.com/argilla-io/distilabel) - Distilabel is a framework for synthetic data and AI feedback for engineers who need fast, reliable and scalable pipelines based on verified research papers.
 
-
 ## Frontends
 
 - [mikupad](https://github.com/lmg-anon/mikupad) - LLM Frontend in a single html file
-
 
 ## GGUF Compatible Projects
 
@@ -155,7 +151,7 @@ see also:
 
 - [llama.cpp](https://github.com/ggerganov/llama.cpp), the source project for GGUF. Offers a CLI and a server option.
 
-- [text-generation-webui](https://github.com/oobabooga/text-generation-webui, the most widely used web UI, with many features and powerful extensions. Supports GPU acceleration.
+- [text-generation-webui](https://github.com/oobabooga/text-generation-webui), the most widely used web UI, with many features and powerful extensions. Supports GPU acceleration.
 
 - [oLLMS Web UI](https://github.com/ParisNeo/lollms-webui), a great web UI with many interesting and unique features, including a full model library for easy model selection.
 
@@ -163,13 +159,11 @@ see also:
 
 - [ctransformers](https://github.com/marella/ctransformers), a Python library with GPU accel, LangChain support, and OpenAI-compatible AI server.
 
-
 - [KoboldCpp](https://github.com/LostRuins/koboldcpp), a fork of llama-cpp, fully featured web UI, with GPU accel across all platforms and GPU architectures. Especially good for story telling.
 
 - [LM Studio](https://lmstudio.ai), an easy-to-use and powerful local GUI for Windows and macOS (Silicon), with GPU acceleration.
 
 - [llama-cpp-agent](https://github.com/Maximilian-Winter/llama-cpp-agent) - The llama-cpp-agent framework is a tool designed for easy interaction with Large Language Models (LLMs). Allowing users to chat with LLM models, execute structured function calls and get structured output. Works also with models not fine-tuned to JSON output and function calls.
-
 
 - [candle](https://github.com/huggingface/candle), a Rust ML framework with a focus on performance, including GPU support, and ease of use.
 
@@ -177,7 +171,6 @@ see also:
 
 - [LlamaEdge](https://github.com/LlamaEdge/LlamaEdge) - backend-agnostic inference frontend - The easiest & fastest way to run customized and fine-tuned LLMs locally or on the edge ([based on llama.cpp](https://www.secondstate.io/articles/fast-llm-inference/
 ): "The llama.cpp project is one of the inference backends for LlamaEdge"), (see also; [main site](https://llamaedge.com))
-
 
 ## Inference Engines
 
@@ -205,10 +198,9 @@ see also:
 
 - [ell](https://github.com/MadcowD/ell) - a Python library for language model programming (LMP). It provides a simple and intuitive interface for working with large language models.
 
-
 ## Fine-Tuning
 
-- [lmx]()
+- lmx
 
 - [unsloth](https://github.com/unslothai/unsloth) - Finetune Llama 3.1, Mistral, Phi & Gemma LLMs 2-5x faster with 80% less memory
 
@@ -240,7 +232,6 @@ see also:
 
 - [MemoryRAG](https://github.com/qhjqhj00/MemoRAG) - Empowering RAG with a memory-based data interface for all-purpose applications!
 
-
 ## Guides
 
 - [Awesome-LLM](https://github.com/Hannibal046/Awesome-LLM) - a curated list of Large Language Models
@@ -249,9 +240,6 @@ see also:
 
 - [Awesome-Efficient-LLM](https://github.com/horseee/Awesome-Efficient-LLM) - A curated list for Efficient Large Language Models
 
-
 ## Technical Questions
 
 - [Is llama_context.logits a 2d array, and where is it allocated?](https://github.com/ggerganov/llama.cpp/discussions/9345)
-
-

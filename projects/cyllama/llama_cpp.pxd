@@ -158,7 +158,8 @@ cdef extern from "ggml.h":
         GGML_SCHED_PRIO_HIGH
         GGML_SCHED_PRIO_REALTIME
 
-    ctypedef struct ggml_backend_buffer
+    ctypedef struct ggml_backend_buffer:
+        pass
 
     DEF GGML_MAX_DIMS = 4
     DEF GGML_MAX_NAME = 64
@@ -210,7 +211,8 @@ cdef extern from "ggml.h":
     cdef int64_t ggml_cycles_per_ms()
 
     # typedef struct ggml_threadpool * ggml_threadpool_t;
-    ctypedef ggml_threadpool_t
+    ctypedef struct ggml_threadpool_t:
+        pass
 
 
 #------------------------------------------------------------------------------
@@ -224,9 +226,9 @@ cdef extern from "llama.h":
 
     long LLAMA_DEFAULT_SEED
 
-    ctypedef struct llama_model
-    ctypedef struct llama_context
-    ctypedef struct llama_sampler
+    ctypedef struct llama_model: pass
+    ctypedef struct llama_context: pass
+    ctypedef struct llama_sampler: pass
 
     ctypedef int32_t llama_pos
     ctypedef int32_t llama_token
@@ -479,7 +481,7 @@ cdef extern from "llama.h":
         const char * role
         const char * content
 
-    ctypedef struct llama_lora_adapter
+    ctypedef struct llama_lora_adapter: pass
 
 
     # -------------------------------------------------------------------------
@@ -1317,11 +1319,11 @@ cdef extern from "common.h":
 
     ctypedef struct cpu_params:
         int      n_threads
-        bint     cpumask[512] # CPU affinity mask.
-        bint     mask_valid                  # Default: any CPU
-        ggml_sched_priority  priority        # Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)
-        bint     strict_cpu                  # Use strict CPU placement
-        uint32_t poll                        # Polling (busywait) level (0 - no polling, 100 - mostly polling)
+        bint     cpumask[512]           # CPU affinity mask.
+        bint     mask_valid             # Default: any CPU
+        ggml_sched_priority  priority   # Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)
+        bint     strict_cpu             # Use strict CPU placement
+        uint32_t poll                   # Polling (busywait) level (0 - no polling, 100 - mostly polling)
 
     ctypedef enum llama_example:
         LLAMA_EXAMPLE_COMMON
@@ -1600,9 +1602,9 @@ cdef extern from "common.h":
 
     cdef std_string common_params_get_system_info(const common_params & params)
 
-    cdef bint parse_cpu_range(const std_string& range, bint(&bintmask)[GGML_MAX_N_THREADS])
-    cdef bint parse_cpu_mask(const std_string& mask, bint(&bintmask)[GGML_MAX_N_THREADS])
-    cdef void postprocess_cpu_params(cpu_params& cpuparams, const cpu_params* role_model)
+    # cdef bint parse_cpu_range(const std_string & range, bool(&boolmask)[GGML_MAX_N_THREADS])
+    # cdef bint parse_cpu_mask(const std_string & mask, bool(&boolmask)[GGML_MAX_N_THREADS])
+    cdef void postprocess_cpu_params(cpu_params & cpuparams, const cpu_params * role_model)
     cdef bint set_process_priority(ggml_sched_priority prio)
 
     # Model utils
@@ -1703,7 +1705,7 @@ cdef extern from "common.h":
 #------------------------------------------------------------------------------
 
 cdef extern from "sampling.h": # optional llama_sampler extensions
-    ctypedef struct gpt_sampler # opaque
+    ctypedef struct gpt_sampler: pass # opaque
 
     cdef gpt_sampler * gpt_sampler_init(const llama_model * model, const common_sampler_params & params)
 
@@ -1729,7 +1731,8 @@ cdef extern from "arg.h":
 
     ctypedef struct common_params_context:
         llama_example ex
-        common_params & params
+        # common_params& params
+        common_params params
         std_vector[common_arg] options
         void(*print_usage)(int, char **)
 
@@ -1738,7 +1741,7 @@ cdef extern from "arg.h":
     cdef bint common_params_parse(int argc, char ** argv, common_params & params, llama_example ex, void(*print_usage)(int, char **))
 
     # function to be used by test-arg-parser
-    cdef common_params_context common_params_parser_init(common_params & params, llama_example ex, void(*print_usage)(int, char **))
+    cdef common_params_context common_params_parser_init(common_params & params, llama_example ex, void(*print_usage)(int, char **))    
 
 #------------------------------------------------------------------------------
 cdef extern from "clip.h":
@@ -1761,7 +1764,7 @@ cdef extern from "clip.h":
 
     # end (additions) ------------------------
 
-    ctypedef struct clip_ctx
+    ctypedef struct clip_ctx: pass
 
     ctypedef struct clip_image_size:
         int width
@@ -1826,7 +1829,7 @@ cdef extern from "clip.h":
 
 cdef extern from "llava.h":
 
-    ctypedef struct clip_ctx
+    ctypedef struct clip_ctx: pass
 
     ctypedef struct llava_image_embed:
         float * embed

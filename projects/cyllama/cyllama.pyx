@@ -117,14 +117,18 @@ cdef class SamplerChainParams:
 cdef class LlamaSampler:
     """cython wrapper for llama_cpp.llama_sampler."""
     cdef llama_cpp.llama_sampler * ptr
+    cdef SamplerChainParams params
     cdef bint owner
 
     def __cinit__(self):
         self.ptr = NULL
         self.owner = True
 
-    def __init__(self, params: SamplerChainParams):
-        self.ptr = llama_cpp.llama_sampler_chain_init(params.p)
+    def __init__(self, params: Optional[SamplerChainParams] = None):
+        if not params:
+            self.ptr = llama_cpp.llama_sampler_chain_init(self.params.p)
+        else:
+            self.ptr = llama_cpp.llama_sampler_chain_init(params.p)
 
         if self.ptr is NULL:
             raise ValueError("Failed to init Sampler")
@@ -134,18 +138,202 @@ cdef class LlamaSampler:
             llama_cpp.llama_sampler_free(self.ptr)
             self.ptr = NULL
 
-    @staticmethod
-    cdef LlamaSampler init_greedy():
+    def name(self) -> str:
+        """Get sampler name"""
+        return llama_cpp.llama_sampler_name(self.ptr).decode()
+
+    def accept(self, llama_cpp.llama_token token):
+        """Accept llama token"""
+        llama_cpp.llama_sampler_accept(self.ptr, token)
+
+    # cdef void llama_sampler_apply (llama_sampler * smpl, llama_token_data_array * cur_p)
+    
+    def reset(self):
+        """Reset sampler"""
+        llama_cpp.llama_sampler_reset(self.ptr)
+
+    def clone(self) -> LlamaSampler:
+        """clone sampler"""
+        cdef llama_cpp.llama_sampler * smplr = llama_cpp.llama_sampler_clone(self.ptr)
         cdef LlamaSampler wrapper = LlamaSampler.__new__(LlamaSampler)
-        wrapper.ptr = llama_cpp.llama_sampler_init_greedy()
+        wrapper.ptr = smplr
         return wrapper
 
-    def chain_add(self, smplr: LlamaSampler):
-        smplr.owner = False
-        llama_cpp.llama_sampler_chain_add(self.ptr, smplr.ptr)
+    def get_seed(self) -> int:
+        """Returns the seed used by the sampler if applicable, LLAMA_DEFAULT_SEED otherwise"""
+        return llama_cpp.llama_sampler_get_seed(self.ptr)
 
-    def chain_add_greedy(self):
-        self.chain_add(LlamaSampler.init_greedy())
+    def add_greedy(self):
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_greedy())
+
+    def add_dist(self, llama_cpp.uint32_t seed):
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_dist(seed))
+
+    def add_softmax(self):
+        """Sorts candidate tokens by their logits in descending order and calculate probabilities based on logits."""
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_softmax())
+
+    def add_top_k(self, int32_t k):
+        """Top-K sampling described in academic paper "The Curious Case of Neural Text Degeneration" https:#arxiv.org/abs/1904.09751"""
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_top_k(k))
+
+    def add_top_p(self, float p, size_t min_keep):
+        """Nucleus sampling described in academic paper "The Curious Case of Neural Text Degeneration" https:#arxiv.org/abs/1904.09751"""
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_top_p(p, min_keep))
+
+    def add_min_p(self, float p, size_t min_keep):
+        """Minimum P sampling as described in https:#github.com/ggerganov/llama.cpp/pull/3841"""
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_min_p(p, min_keep))
+
+    def add_tail_free(self, float z, size_t min_keep):
+        """Tail Free Sampling described in https:#www.trentonbricken.com/Tail-Free-Sampling/."""
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_tail_free(z, min_keep))
+
+    # XXX: should add_typical + add_temp be combined?
+    def add_typical(self, float p, size_t min_keep):
+        """Locally Typical Sampling implementation described in the paper https:#arxiv.org/abs/2202.00666."""
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_typical(p, min_keep))
+
+    def add_temp(self, float t):
+        """Locally Typical Sampling implementation described in the paper https:#arxiv.org/abs/2202.00666."""
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_temp(t))
+
+    def add_temp_ext(self, float t, float delta, float exponent):
+        """Dynamic temperature implementation described in the paper https:#arxiv.org/abs/2309.02772."""
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_temp_ext(t, delta, exponent))
+
+    def add_xtc(self, float p, float t, size_t min_keep, llama_cpp.uint32_t seed):
+        """XTC sampler as described in https://github.com/oobabooga/text-generation-webui/pull/6335"""
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_xtc(p, t, min_keep, seed))
+
+    # XXX: docstring incorrect
+    def add_mirostat(self, int n_vocab, llama_cpp.uint32_t seed, float tau, float eta, int m):
+        """Mirostat 1.0 algorithm described in the paper https:#arxiv.org/abs/2007.14966. Uses tokens instead of words.
+    
+        candidates: A vector of `llama_token_data` containing the candidate tokens, their probabilities (p), and log-odds (logit) for the current position in the generated text.
+        tau:     The target cross-entropy (or surprise) value you want to achieve for the generated text. A higher value corresponds to more surprising or less predictable text, while a lower value corresponds to less surprising or more predictable text.
+        eta:     The learning rate used to update `mu` based on the error between the target and observed surprisal of the sampled word. A larger learning rate will cause `mu` to be updated more quickly, while a smaller learning rate will result in slower updates.
+        m:       The number of tokens considered in the estimation of `s_hat`. This is an arbitrary value that is used to calculate `s_hat`, which in turn helps to calculate the value of `k`. In the paper, they use `m = 100`, but you can experiment with different values to see how it affects the performance of the algorithm.
+        mu:      Maximum cross-entropy. This value is initialized to be twice the target cross-entropy (`2 * tau`) and is updated in the algorithm based on the error between the target and observed surprisal.
+        """
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_mirostat(n_vocab, seed, tau, eta, m))
+
+    def add_mirostat_v2(self, llama_cpp.uint32_t seed, float tau, float eta):
+        """Mirostat 2.0 algorithm described in the paper https:#arxiv.org/abs/2007.14966. Uses tokens instead of words.
+        
+        candidates: A vector of `llama_token_data` containing the candidate tokens, their probabilities (p), and log-odds (logit) for the current position in the generated text.
+        tau:  The target cross-entropy (or surprise) value you want to achieve for the generated text. A higher value corresponds to more surprising or less predictable text, while a lower value corresponds to less surprising or more predictable text.
+        eta: The learning rate used to update `mu` based on the error between the target and observed surprisal of the sampled word. A larger learning rate will cause `mu` to be updated more quickly, while a smaller learning rate will result in slower updates.
+        mu: Maximum cross-entropy. This value is initialized to be twice the target cross-entropy (`2 * tau`) and is updated in the algorithm based on the error between the target and observed surprisal.
+        """
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_mirostat_v2(seed, tau, eta))
+
+    def add_grammar(self, LlamaModel model, str grammar_str, str grammar_root):
+        """Add grammer chain link"""
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_grammar(
+                model.ptr, grammar_str.encode(), grammar_root.encode()))
+
+    def add_penalties(self,      int n_vocab,         # llama_n_vocab()
+               llama_cpp.llama_token special_eos_id,  # llama_token_eos()
+               llama_cpp.llama_token linefeed_id,     # llama_token_nl()
+                                 int penalty_last_n,  # last n tokens to penalize (0 = disable penalty, -1 = context size)
+                               float penalty_repeat,  # 1.0 = disabled
+                               float penalty_freq,    # 0.0 = disabled
+                               float penalty_present, # 0.0 = disabled
+                                bint penalize_nl,     # consider newlines as a repeatable token
+                                bint ignore_eos):     # ignore the end-of-sequence token
+
+        """Add penalties chain link"""
+        llama_cpp.llama_sampler_chain_add(
+            self.ptr, llama_cpp.llama_sampler_init_penalties(
+                n_vocab, 
+                special_eos_id,
+                linefeed_id,
+                penalty_last_n,
+                penalty_repeat,
+                penalty_freq,
+                penalty_present,
+                penalize_nl,
+                ignore_eos,
+            ))
+
+    # XXX FIXME:
+    # def add_logit_bias(self, int n_vocab, int n_logit_bias, logit_bias: list[LogitBias]):
+    #     """Add grammer chain link"""
+    #     cdef vector[llama_cpp.logit_bias] vec
+    #     llama_cpp.llama_sampler_chain_add(
+    #         self.ptr, llama_cpp.llama_sampler_init_logit_bias(
+    #             n_vocab, n_logit_bias, vec.data()))
+
+    def add_infill(self, LlamaModel model):
+        """This sampler is meant to be used for fill-in-the-middle infilling
+        
+        it's supposed to be used after top_k + top_p sampling
+        
+        1. if the sum of the EOG probs times the number of candidates is higher than the sum of the other probs -> pick EOG
+        2. combine probs of tokens that have the same prefix
+        
+        example:
+        
+        - before:
+          "hel":   0.5
+          "hell":  0.2
+          "hello": 0.1
+          "dummy": 0.1
+        
+        - after:
+          "hel":   0.8
+          "dummy": 0.1
+        
+        3. discard non-EOG tokens with low prob
+        4. if no tokens are left -> pick EOT
+        """
+        llama_cpp.llama_sampler_chain_add(self.ptr,
+            llama_cpp.llama_sampler_init_infill(model.ptr))
+
+
+    def sample(self, LlamaContext ctx, int idx) -> int:
+        """Sample and accept a token from the idx-th output of the last evaluation
+        
+        Shorthand for:
+        
+           const auto * logits = llama_get_logits_ith(ctx, idx)
+           llama_token_data_array cur_p = { ... init from logits ... }
+           llama_sampler_apply(smpl, &cur_p)
+           return cur_p.data[cur_p.selected].id
+        
+        At this point, this is mostly a convenience function.
+        """
+        return llama_cpp.llama_sampler_sample(self.ptr, ctx.ptr, idx)
+
+
+
+    # @staticmethod
+    # cdef LlamaSampler init_greedy():
+    #     cdef LlamaSampler wrapper = LlamaSampler.__new__(LlamaSampler)
+    #     wrapper.ptr = llama_cpp.llama_sampler_init_greedy()
+    #     return wrapper
+
+    # def chain_add(self, smplr: LlamaSampler):
+    #     smplr.owner = False
+    #     llama_cpp.llama_sampler_chain_add(self.ptr, smplr.ptr)
+
+    # def chain_add_greedy(self):
+    #     self.chain_add(LlamaSampler.init_greedy())
 
 
 cdef class CpuParams:
@@ -705,7 +893,7 @@ cdef class CommonParams:
         self.p.rpc_servers = value.encode('utf8')
 
     @property
-    def in_files(self) -> [str]:
+    def in_files(self) -> list[str]:
         """all input files."""
         result = []
         for i in range(self.p.in_files.size()):
@@ -713,13 +901,13 @@ cdef class CommonParams:
         return result
 
     @in_files.setter
-    def in_files(self, files: [str]):
+    def in_files(self, files: list[str]):
         self.p.in_files.clear()
         for i in files:
             self.p.in_files.push_back(i.encode('utf8'))
 
     @property
-    def antiprompt(self) -> [str]:
+    def antiprompt(self) -> list[str]:
         """strings upon which more user input is prompted (a.k.a. reverse prompts)."""
         result = []
         for i in range(self.p.antiprompt.size()):
@@ -727,7 +915,7 @@ cdef class CommonParams:
         return result
 
     @antiprompt.setter
-    def antiprompt(self, values: [str]):
+    def antiprompt(self, values: list[str]):
         self.p.antiprompt.clear()
         for i in values:
             self.p.antiprompt.push_back(i.encode('utf8'))
@@ -1157,7 +1345,7 @@ cdef class CommonParams:
         self.p.mmproj = value.encode('utf8')
 
     @property
-    def image(self) -> [str]:
+    def image(self) -> list[str]:
         """paths to image file(s)"""
         result = []
         for i in range(self.p.image.size()):
@@ -1165,7 +1353,7 @@ cdef class CommonParams:
         return result
 
     @image.setter
-    def image(self, files: [str]):
+    def image(self, files: list[str]):
         self.p.image.clear()
         for i in files:
             self.p.image.push_back(i.encode('utf8'))
@@ -1261,7 +1449,7 @@ cdef class CommonParams:
         self.p.enable_chat_template = value
 
     @property
-    def api_keys(self) -> [str]:
+    def api_keys(self) -> list[str]:
         """list of api keys"""
         result = []
         for i in range(self.p.api_keys.size()):
@@ -1269,7 +1457,7 @@ cdef class CommonParams:
         return result
 
     @api_keys.setter
-    def api_keys(self, files: [str]):
+    def api_keys(self, files: list[str]):
         self.p.api_keys.clear()
         for i in files:
             self.p.api_keys.push_back(i.encode('utf8'))
@@ -2591,15 +2779,12 @@ cdef class LlamaBatch:
 
     @property
     def n_tokens(self) -> int:
-        # assert self.p is not NULL
         return self.p.n_tokens
 
     def reset(self):
-        # assert self.p is not NULL
         self.p.n_tokens = 0
 
     def set_batch(self, batch: Sequence[int], n_past: int, logits_all: bool):
-        # assert self.p is not NULL
         n_tokens = len(batch)
         self.p.n_tokens = n_tokens
         for i in range(n_tokens):
@@ -2611,7 +2796,6 @@ cdef class LlamaBatch:
         self.p.logits[n_tokens - 1] = True
 
     def add_sequence(self, batch: Sequence[int], seq_id: int, logits_all: bool):
-        # assert self.p is not NULL
         n_tokens = len(batch)
         n_tokens0 = self.p.n_tokens
         self.p.n_tokens += n_tokens
