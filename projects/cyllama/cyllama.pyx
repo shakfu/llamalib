@@ -2486,7 +2486,7 @@ cdef class LlamaContext:
             self.ptr,
             batch.p,
         )
-        self.n_tokens = batch.n_tokens()
+        self.n_tokens = batch.n_tokens
         if res == 1:
             raise ValueError("could not find a KV slot for the batch (try reducing the size of the batch or increase the context)")
         if res < 0:

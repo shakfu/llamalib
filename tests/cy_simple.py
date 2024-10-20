@@ -16,15 +16,10 @@ params.cpuparams.n_threads = 4
 
 
 
-# args = []
-# if not cy.gpt_params_parse(args, params, cy.LLAMA_EXAMPLE_COMMON):
-#     raise SystemExit("gpt_params_parse failed")
-
 # total length of the sequence including the prompt
 n_predict: int = params.n_predict
 
 # init LLM
-
 cy.llama_backend_init()
 cy.llama_numa_init(params.numa)
 
@@ -35,35 +30,22 @@ model_params = cy.common_model_params_to_llama(params)
 # set local test model
 params.model = str(MODEL)
 
-# model = cy.llama_load_model_from_file(params.model, model_params)
 model = cy.LlamaModel(path_model=params.model, params=model_params)
 
 if not model:
     raise SystemExit(f"Unable to load model: {params.model}")
 
 # initialize the context
-
 ctx_params = cy.common_context_params_to_llama(params)
-
-# ctx = cy.llama_new_context_with_model(model, ctx_params)
 ctx = cy.LlamaContext(model=model, params=ctx_params)
 
-if not ctx:
-    raise SystemExit("Failed to create the llama context")
 
-
+# build sampler chain
 sparams = cy.llama_sampler_chain_default_params()
-
 sparams.no_perf = False
 
-# smplr = cy.llama_sampler_chain_init(sparams)
 smplr = cy.LlamaSampler(sparams)
 
-if not smplr:
-    raise SystemExit(f"Unable to init sampler.")
-
-
-# cy.llama_sampler_chain_add(smplr, cy.llama_sampler_init_greedy())
 smplr.add_greedy()
 
 
@@ -92,7 +74,7 @@ print(prompt)
 # create a llama_batch with size 512
 # we use this object to submit token data for decoding
 
-# batch = cy.llama_batch_init(512, 0, 1)
+# create batch
 batch = cy.LlamaBatch(n_tokens=512, embd=0, n_seq_max=1)
 
 # evaluate the initial prompt
@@ -122,11 +104,9 @@ while (n_cur <= n_predict):
 
     if True:
         new_token_id = smplr.sample(ctx, batch.n_tokens - 1)
-        # new_token_id = cy.llama_sampler_sample(smplr, ctx, batch.n_tokens - 1)
 
         # print("new_token_id: ", new_token_id)
 
-        # cy.llama_sampler_accept(smplr, new_token_id);
         smplr.accept(new_token_id)
 
         # is it an end of generation?
@@ -147,9 +127,8 @@ while (n_cur <= n_predict):
     n_cur += 1
 
     # evaluate the current batch with the transformer model
+    ctx.decode(batch)
 
-    if cy.llama_decode(ctx, batch):
-        raise SystemExit("llama_decode() failed.")
 
 print(result)
 
