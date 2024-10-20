@@ -110,7 +110,7 @@ while (n_cur <= n_predict):
         smplr.accept(new_token_id)
 
         # is it an end of generation?
-        if (cy.llama_token_is_eog(model, new_token_id) or n_cur == n_predict):
+        if (model.token_is_eog(new_token_id) or n_cur == n_predict):
             print()
             break
 

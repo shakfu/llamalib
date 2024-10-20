@@ -1922,14 +1922,22 @@ cdef class LlamaModel:
 
     # Vocab
 
-    def token_get_text(self, token: int) -> str:
+    def token_get_text(self, llama_cpp.llama_token token) -> str:
         return llama_cpp.llama_token_get_text(self.ptr, token).decode("utf-8")
 
-    def token_get_score(self, token: int) -> float:
+    def token_get_score(self, llama_cpp.llama_token token) -> float:
         return llama_cpp.llama_token_get_score(self.ptr, token)
 
-    def token_get_attr(self, token: int) -> int:
+    def token_get_attr(self, llama_cpp.llama_token token) -> int:
         return llama_cpp.llama_token_get_attr(self.ptr, token)
+
+    def token_is_eog(self, llama_cpp.llama_token token) -> bool:
+        """Check if the token is supposed to end generation (end-of-generation, eg. EOS, EOT, etc.)"""
+        return llama_cpp.llama_token_is_eog(self.ptr, token)
+
+    def token_is_control(self, llama_cpp.llama_token token) -> bool:
+        """Identify if Token Id is a control token or a render-able token"""
+        return llama_cpp.llama_token_is_control(self.ptr, token)
 
     # Special tokens
 
