@@ -371,6 +371,7 @@ cdef extern from "llama.h":
         float p
 
     ctypedef struct llama_token_data_array:
+        # NOTE: this pointer can be modified by the samplers
         llama_token_data * data
         size_t size
         int64_t selected  # this is the index in the data array (i.e. not the token id)
@@ -1132,9 +1133,9 @@ cdef extern from "llama.h":
     cdef llama_sampler * llama_sampler_init_greedy()
     cdef llama_sampler * llama_sampler_init_dist(uint32_t seed)
 
-
+    # DEPRECATED
     # @details Sorts candidate tokens by their logits in descending order and calculate probabilities based on logits.
-    cdef llama_sampler * llama_sampler_init_softmax()
+    # cdef llama_sampler * llama_sampler_init_softmax()
 
     # @details Top-K sampling described in academic paper "The Curious Case of Neural Text Degeneration" https:#arxiv.org/abs/1904.09751
     cdef llama_sampler * llama_sampler_init_top_k(int32_t k)
@@ -1150,6 +1151,8 @@ cdef extern from "llama.h":
 
     # @details Locally Typical Sampling implementation described in the paper https:#arxiv.org/abs/2202.00666.
     cdef llama_sampler * llama_sampler_init_typical (float p, size_t min_keep)
+
+    # @details Updates the logits l_i` = l_i/t. When t <= 0.0f, the maximum logit is kept at it's original value, the rest are set to -inf
     cdef llama_sampler * llama_sampler_init_temp (float t)
 
     # @details Dynamic temperature implementation described in the paper https:#arxiv.org/abs/2309.02772.
