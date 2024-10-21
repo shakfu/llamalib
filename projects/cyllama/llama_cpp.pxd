@@ -871,17 +871,13 @@ cdef extern from "llama.h":
     # Stores the encoder output internally for later use by the decoder cross-attention layers.
     #   0 - success
     # < 0 - error
-    cdef int32_t llama_encode(
-             llama_context * ctx,
-               llama_batch   batch)
+    cdef int32_t llama_encode(llama_context * ctx, llama_batch batch)
 
     # Positive return values does not mean a fatal error, but rather a warning.
     #   0 - success
     #   1 - could not find a KV slot for the batch (try reducing the size of the batch or increase the context)
     # < 0 - error
-    cdef int32_t llama_decode(
-             llama_context * ctx,
-               llama_batch   batch)
+    cdef int32_t llama_decode(llama_context * ctx, llama_batch batch)
 
     # Set the number of threads used for decoding
     # n_threads is the number of threads used for generation (single token)

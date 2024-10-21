@@ -17,17 +17,11 @@ def test_cy_lowlevel_simple(model_path):
     params.n_predict = 32
     params.n_ctx = 2048
     params.cpuparams.n_threads = 4
-    # params.n_threads = 4
-
-    # args = []
-    # if not cy.gpt_params_parse(args, params, cy.LLAMA_EXAMPLE_COMMON):
-    #     raise SystemExit("gpt_params_parse failed")
 
     # total length of the sequence including the prompt
     n_predict: int = params.n_predict
 
     # init LLM
-
     cy.llama_backend_init()
     cy.llama_numa_init(params.numa)
 
@@ -38,43 +32,27 @@ def test_cy_lowlevel_simple(model_path):
     # set local test model
     params.model = model_path
 
-    # model = cy.llama_load_model_from_file(params.model, model_params)
     model = cy.LlamaModel(path_model=params.model, params=model_params)
 
-    if not model:
-        raise SystemExit(f"Unable to load model: {params.model}")
-
     # initialize the context
-
     ctx_params = cy.common_context_params_to_llama(params)
-
-    # ctx = cy.llama_new_context_with_model(model, ctx_params)
     ctx = cy.LlamaContext(model=model, params=ctx_params)
 
-    if not ctx:
-        raise SystemExit("Failed to create the llama context")
 
-
+    # build sampler chain
     sparams = cy.llama_sampler_chain_default_params()
-
     sparams.no_perf = False
 
-    # smplr = cy.llama_sampler_chain_init(sparams)
     smplr = cy.LlamaSampler(sparams)
 
-    if not smplr:
-        raise SystemExit(f"Unable to init sampler.")
-
-
-    # cy.llama_sampler_chain_add(smplr, cy.llama_sampler_init_greedy())
-    smplr.chain_add_greedy()
+    smplr.add_greedy()
 
 
     # tokenize the prompt
 
     tokens_list: list[int] = cy.common_tokenize(ctx, params.prompt, True)
 
-    n_ctx: int = cy.llama_n_ctx(ctx)
+    n_ctx: int = ctx.n_ctx()
 
     n_kv_req: int = len(tokens_list) + (n_predict - len(tokens_list))
 
@@ -95,7 +73,7 @@ def test_cy_lowlevel_simple(model_path):
     # create a llama_batch with size 512
     # we use this object to submit token data for decoding
 
-    # batch = cy.llama_batch_init(512, 0, 1)
+    # create batch
     batch = cy.LlamaBatch(n_tokens=512, embd=0, n_seq_max=1)
 
     # evaluate the initial prompt
@@ -108,8 +86,7 @@ def test_cy_lowlevel_simple(model_path):
 
     # logits = batch.get_logits()
 
-    if cy.llama_decode(ctx, batch) != 0:
-        raise SystemExit("llama_decode() failed.")
+    ctx.decode(batch)
 
     # main loop
 
@@ -124,14 +101,14 @@ def test_cy_lowlevel_simple(model_path):
         # sample the next token
 
         if True:
-            new_token_id = cy.llama_sampler_sample(smplr, ctx, batch.n_tokens - 1)
+            new_token_id = smplr.sample(ctx, batch.n_tokens - 1)
 
             # print("new_token_id: ", new_token_id)
 
-            cy.llama_sampler_accept(smplr, new_token_id);
+            smplr.accept(new_token_id)
 
             # is it an end of generation?
-            if (cy.llama_token_is_eog(model, new_token_id) or n_cur == n_predict):
+            if (model.token_is_eog(new_token_id) or n_cur == n_predict):
                 print()
                 break
 
@@ -148,8 +125,8 @@ def test_cy_lowlevel_simple(model_path):
         n_cur += 1
 
         # evaluate the current batch with the transformer model
-        if cy.llama_decode(ctx, batch):
-            raise SystemExit("llama_decode() failed.")
+        ctx.decode(batch)
+
 
     print(result)
 

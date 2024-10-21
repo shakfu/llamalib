@@ -8,10 +8,18 @@ cimport llama_cpp
 
 import os
 from typing import Optional, Sequence
-
+# from collections.abc import Callable
 
 # enums
 # -----------------------------------------------------------------------------
+
+cpdef enum ggml_log_level:
+    GGML_LOG_LEVEL_NONE  = 0
+    GGML_LOG_LEVEL_INFO  = 1
+    GGML_LOG_LEVEL_WARN  = 2
+    GGML_LOG_LEVEL_ERROR = 3
+    GGML_LOG_LEVEL_DEBUG = 4
+    GGML_LOG_LEVEL_CONT  = 5
 
 cpdef enum llama_vocab_type:
     LLAMA_VOCAB_TYPE_NONE # For models without vocab
@@ -39,6 +47,108 @@ cpdef enum llama_token_attr:
     LLAMA_TOKEN_ATTR_RSTRIP       = 1 << 8
     LLAMA_TOKEN_ATTR_SINGLE_WORD  = 1 << 9
 
+cpdef enum ggml_numa_strategy:
+    GGML_NUMA_STRATEGY_DISABLED   = 0
+    GGML_NUMA_STRATEGY_DISTRIBUTE = 1
+    GGML_NUMA_STRATEGY_ISOLATE    = 2
+    GGML_NUMA_STRATEGY_NUMACTL    = 3
+    GGML_NUMA_STRATEGY_MIRROR     = 4
+    GGML_NUMA_STRATEGY_COUNT
+
+cpdef enum llama_ftype:
+    LLAMA_FTYPE_ALL_F32              = 0
+    LLAMA_FTYPE_MOSTLY_F16           = 1
+    LLAMA_FTYPE_MOSTLY_Q4_0          = 2
+    LLAMA_FTYPE_MOSTLY_Q4_1          = 3
+    # LLAMA_FTYPE_MOSTLY_Q4_1_SOME_F16 = 4  # tok_embeddings.weight and output.weight are F16
+    # LLAMA_FTYPE_MOSTLY_Q4_2       = 5     # support has been removed
+    # LLAMA_FTYPE_MOSTLY_Q4_3       = 6     # support has been removed
+    LLAMA_FTYPE_MOSTLY_Q8_0          = 7
+    LLAMA_FTYPE_MOSTLY_Q5_0          = 8
+    LLAMA_FTYPE_MOSTLY_Q5_1          = 9
+    LLAMA_FTYPE_MOSTLY_Q2_K          = 10
+    LLAMA_FTYPE_MOSTLY_Q3_K_S        = 11
+    LLAMA_FTYPE_MOSTLY_Q3_K_M        = 12
+    LLAMA_FTYPE_MOSTLY_Q3_K_L        = 13
+    LLAMA_FTYPE_MOSTLY_Q4_K_S        = 14
+    LLAMA_FTYPE_MOSTLY_Q4_K_M        = 15
+    LLAMA_FTYPE_MOSTLY_Q5_K_S        = 16
+    LLAMA_FTYPE_MOSTLY_Q5_K_M        = 17
+    LLAMA_FTYPE_MOSTLY_Q6_K          = 18
+    LLAMA_FTYPE_MOSTLY_IQ2_XXS       = 19
+    LLAMA_FTYPE_MOSTLY_IQ2_XS        = 20
+    LLAMA_FTYPE_MOSTLY_Q2_K_S        = 21
+    LLAMA_FTYPE_MOSTLY_IQ3_XS        = 22
+    LLAMA_FTYPE_MOSTLY_IQ3_XXS       = 23
+    LLAMA_FTYPE_MOSTLY_IQ1_S         = 24
+    LLAMA_FTYPE_MOSTLY_IQ4_NL        = 25
+    LLAMA_FTYPE_MOSTLY_IQ3_S         = 26
+    LLAMA_FTYPE_MOSTLY_IQ3_M         = 27
+    LLAMA_FTYPE_MOSTLY_IQ2_S         = 28
+    LLAMA_FTYPE_MOSTLY_IQ2_M         = 29
+    LLAMA_FTYPE_MOSTLY_IQ4_XS        = 30
+    LLAMA_FTYPE_MOSTLY_IQ1_M         = 31
+    LLAMA_FTYPE_MOSTLY_BF16          = 32
+    LLAMA_FTYPE_MOSTLY_Q4_0_4_4      = 33
+    LLAMA_FTYPE_MOSTLY_Q4_0_4_8      = 34
+    LLAMA_FTYPE_MOSTLY_Q4_0_8_8      = 35
+    LLAMA_FTYPE_MOSTLY_TQ1_0         = 36 # except 1d tensors
+    LLAMA_FTYPE_MOSTLY_TQ2_0         = 37 # except 1d tensors
+    LLAMA_FTYPE_GUESSED              = 1024
+
+cpdef enum llama_rope_scaling_type:
+    LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED = -1
+    LLAMA_ROPE_SCALING_TYPE_NONE        = 0
+    LLAMA_ROPE_SCALING_TYPE_LINEAR      = 1
+    LLAMA_ROPE_SCALING_TYPE_YARN        = 2
+    LLAMA_ROPE_SCALING_TYPE_MAX_VALUE   = 2
+
+cpdef enum llama_pooling_type:
+    LLAMA_POOLING_TYPE_UNSPECIFIED = -1
+    LLAMA_POOLING_TYPE_NONE = 0
+    LLAMA_POOLING_TYPE_MEAN = 1
+    LLAMA_POOLING_TYPE_CLS  = 2
+    LLAMA_POOLING_TYPE_LAST = 3
+    LLAMA_POOLING_TYPE_RANK = 4 # used by reranking models to attach the classification head to the graph
+
+cpdef enum llama_attention_type:
+    LLAMA_ATTENTION_TYPE_UNSPECIFIED = -1
+    LLAMA_ATTENTION_TYPE_CAUSAL      = 0
+    LLAMA_ATTENTION_TYPE_NON_CAUSAL  = 1
+
+cpdef enum llama_split_mode:
+    LLAMA_SPLIT_MODE_NONE  = 0
+    LLAMA_SPLIT_MODE_LAYER = 1
+    LLAMA_SPLIT_MODE_ROW   = 2
+
+# callbacks
+# -----------------------------------------------------------------------------
+
+# ctypedef void (*ggml_log_callback)(ggml_log_level level, const char * text, void * user_data)
+# ctypedef bint (*ggml_abort_callback)(void * data)
+# ctypedef bint (*ggml_backend_sched_eval_callback)(ggml_tensor * t, bint ask, void * user_data)
+# ctypedef bint (*llama_progress_callback)(float progress, void * user_data)
+
+cdef void log_callback(ggml_log_level level, const char * text, void * py_log_callback) noexcept:
+    (<object>py_log_callback)(level, text.decode())
+
+def set_log_callback(object py_log_callback):
+    """Set callback for all future logging events.
+    
+    If this is not called, or NULL is supplied, everything is output on stderr.
+    """
+    llama_cpp.llama_log_set(<llama_cpp.ggml_log_callback>&log_callback, <void*>py_log_callback)
+
+cdef bint abort_callback(void * py_abort_callback):
+    return (<object>py_abort_callback)()
+
+cdef bint sched_eval_callback(llama_cpp.ggml_tensor * t, bint ask, void * py_sched_eval_callback):
+    cdef GGMLTensor tensor = GGMLTensor.from_ptr(t)
+    return (<object>py_sched_eval_callback)(tensor, ask)
+
+cdef bint progress_callback(float progress, void * py_progress_callback):
+    return (<object>py_progress_callback)(progress)
+
 
 # llama-cpp wrappers
 # -----------------------------------------------------------------------------
@@ -56,6 +166,84 @@ def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_th
         disable_log,
         n_threads).decode()
     return result.strip()
+
+
+
+cdef class LlamaTokenData:
+    cdef llama_cpp.llama_token_data * ptr
+    cdef bint owner
+
+    def __cinit__(self):
+        self.ptr = NULL
+        self.owner = True
+
+    def __init__(self, int id, float logit, float p):
+        self.ptr = <llama_cpp.llama_token_data *>malloc(sizeof(llama_cpp.llama_token_data))
+        if self.ptr is NULL:
+            raise MemoryError
+        self.owner = True
+        self.ptr.id = id
+        self.ptr.logit = logit
+        self.ptr.p = p
+
+    def __dealloc__(self):
+        # De-allocate if not null and flag is set
+        if self.ptr is not NULL and self.ptr_owner is True:
+            free(self.ptr)
+            self.ptr = NULL
+
+    @staticmethod
+    cdef LlamaTokenData from_ptr(llama_cpp.llama_token_data *ptr, bint owner=False):
+        # Fast call to __new__() that bypasses the __init__() constructor.
+        cdef LlamaTokenData wrapper = LlamaTokenData.__new__(LlamaTokenData)
+        wrapper.ptr = ptr
+        wrapper.ptr_owner = owner
+        return wrapper
+
+    @property
+    def id(self) -> int:
+        """id llama_token field"""
+        return self.ptr.id
+
+    @id.setter
+    def id(self, int value):
+        self.ptr.id = value
+
+    @property
+    def logit(self) -> float:
+        """logit field"""
+        return self.ptr.logit
+
+    @logit.setter
+    def logit(self, float value):
+        self.ptr.logit = value
+
+    @property
+    def p(self) -> float:
+        """probability field"""
+        return self.ptr.p
+
+    @p.setter
+    def p(self, float value):
+        self.ptr.p = value
+
+
+# cdef class LlamaTokenDataArray:
+#     """Intermediate Cython wrapper for a llama.cpp llama_batch."""
+#     cdef llama_cpp.llama_token_data_array * ptr
+#     cdef bint owner
+
+#     def __cinit__(self):
+#         self.ptr = NULL
+#         self.owner = True
+
+#     ctypedef struct llama_token_data_array:
+#         llama_token_data * data
+#         size_t size
+#         int64_t selected  # this is the index in the data array (i.e. not the token id)
+#         bint sorted
+
+
 
 
 cdef class LoraAdapter:
@@ -354,21 +542,6 @@ cdef class LlamaSampler:
         At this point, this is mostly a convenience function.
         """
         return llama_cpp.llama_sampler_sample(self.ptr, ctx.ptr, idx)
-
-
-
-    # @staticmethod
-    # cdef LlamaSampler init_greedy():
-    #     cdef LlamaSampler wrapper = LlamaSampler.__new__(LlamaSampler)
-    #     wrapper.ptr = llama_cpp.llama_sampler_init_greedy()
-    #     return wrapper
-
-    # def chain_add(self, smplr: LlamaSampler):
-    #     smplr.owner = False
-    #     llama_cpp.llama_sampler_chain_add(self.ptr, smplr.ptr)
-
-    # def chain_add_greedy(self):
-    #     self.chain_add(LlamaSampler.init_greedy())
 
 
 cdef class CpuParams:
@@ -683,26 +856,6 @@ cdef class CommonParams:
         self.p.defrag_thold = value
 
     # @property
-    # def cpuparams(self) -> CpuParams:
-    #     """cpuparams instance."""
-    #     return CpuParams.from_instance(self.p.cpuparams)
-
-    # @property
-    # def cpuparams_batch(self) -> CpuParams:
-    #     """cpuparams_batch instance."""
-    #     return CpuParams.from_instance(self.p.cpuparams_batch)
-
-    # @property
-    # def draft_cpuparams(self) -> CpuParams:
-    #     """draft_cpuparams instance."""
-    #     return CpuParams.from_instance(self.p.draft_cpuparams)
-
-    # @property
-    # def draft_cpuparams_batch(self) -> CpuParams:
-    #     """draft_cpuparams_batch instance."""
-    #     return CpuParams.from_instance(self.p.draft_cpuparams_batch)
-
-    # @property
     # def cb_eval(self) -> llama_cpp.ggml_backend_sched_eval_callback:
     #     """ggml backend sched eval callback."""
     #     return self.p.cb_eval
@@ -721,49 +874,49 @@ cdef class CommonParams:
     #     self.p.cb_eval_user_data = value
 
     @property
-    def numa(self) -> llama_cpp.ggml_numa_strategy:
+    def numa(self) -> ggml_numa_strategy:
         """KV cache defragmentation threshold."""
         return self.p.numa
 
     @numa.setter
-    def numa(self, value: llama_cpp.ggml_numa_strategy):
+    def numa(self, value: ggml_numa_strategy):
         self.p.numa = value
 
     @property
-    def split_mode(self) -> llama_cpp.llama_split_mode:
+    def split_mode(self) -> llama_split_mode:
         """how to split the model across GPUs."""
         return self.p.split_mode
 
     @split_mode.setter
-    def split_mode(self, value: llama_cpp.llama_split_mode):
+    def split_mode(self, llama_split_mode value):
         self.p.split_mode = value
 
-    # @property
-    # def rope_scaling_type(self) -> llama_cpp.llama_rope_scaling_type:
-    #     """rope scaling type."""
-    #     return self.p.rope_scaling_type
+    @property
+    def rope_scaling_type(self) -> llama_rope_scaling_type:
+        """rope scaling type."""
+        return self.p.rope_scaling_type
 
-    # @rope_scaling_type.setter
-    # def rope_scaling_type(self, value: llama_cpp.rope_scaling_type):
-    #     self.p.rope_scaling_type = value
+    @rope_scaling_type.setter
+    def rope_scaling_type(self, llama_rope_scaling_type value):
+        self.p.rope_scaling_type = value
 
-    # @property
-    # def pooling_type(self) -> llama_cpp.llama_pooling_type:
-    #     """pooling type for embeddings."""
-    #     return self.p.pooling_type
+    @property
+    def pooling_type(self) -> llama_pooling_type:
+        """pooling type for embeddings."""
+        return self.p.pooling_type
 
-    # @pooling_type.setter
-    # def pooling_type(self, value: llama_cpp.llama_pooling_type):
-    #     self.p.pooling_type = value
+    @pooling_type.setter
+    def pooling_type(self, llama_pooling_type value):
+        self.p.pooling_type = value
 
-    # @property
-    # def attention_type(self) -> llama_cpp.llama_attention_type:
-    #     """attention type for embeddings."""
-    #     return self.p.attention_type
+    @property
+    def attention_type(self) -> llama_attention_type:
+        """attention type for embeddings."""
+        return self.p.attention_type
 
-    # @attention_type.setter
-    # def attention_type(self, value: llama_cpp.llama_attention_type):
-    #     self.p.attention_type = value
+    @attention_type.setter
+    def attention_type(self, llama_attention_type value):
+        self.p.attention_type = value
 
     @property
     def sparams(self) -> llama_cpp.common_sampler_params:
@@ -2591,9 +2744,10 @@ cdef class LlamaContext:
         """
         llama_cpp.llama_set_causal_attn(self.ptr, causal_attn)
 
-    # def set_abort_callback(self, abort_callback):
-    #     """Set abort callback"""
-    #     llama_cpp.llama_set_abort_callback(self.ptr, ggml_abort_callback abort_callback, void * abort_callback_data)
+    def set_abort_callback(self, object py_abort_callback):
+        """Set abort callback"""
+        llama_cpp.llama_set_abort_callback(self.ptr,
+            <llama_cpp.ggml_abort_callback>&abort_callback, <void*>py_abort_callback)
 
     def synchronize(self):
         """Wait until all computations are finished
@@ -2912,14 +3066,14 @@ cdef class LlamaBatch:
 #   https://groups.google.com/g/cython-users/c/hGMPOI0BNpk/m/0iy1Yi9tCAAJ
 
 # FIXME: convert to buffer protocol or memoryview
-cdef class LlamaTokenDataArray:
-    """Intermediate Cython wrapper for a llama.cpp llama_batch."""
-    cdef llama_cpp.llama_token_data_array * ptr
-    cdef bint owner
+# cdef class LlamaTokenDataArray:
+#     """Intermediate Cython wrapper for a llama.cpp llama_batch."""
+#     cdef llama_cpp.llama_token_data_array * ptr
+#     cdef bint owner
 
-    def __cinit__(self):
-        self.ptr = NULL
-        self.owner = True
+#     def __cinit__(self):
+#         self.ptr = NULL
+#         self.owner = True
 
     # def __dealloc__(self):
     #     if self.candidates is not NULL and self.owner is True:
@@ -2962,7 +3116,7 @@ def llama_backend_init():
     """
     llama_cpp.llama_backend_init()
 
-def llama_numa_init(llama_cpp.ggml_numa_strategy numa):
+def llama_numa_init(ggml_numa_strategy numa):
     llama_cpp.llama_numa_init(numa)
 
 def common_model_params_to_llama(params: CommonParams) -> ModelParams:
