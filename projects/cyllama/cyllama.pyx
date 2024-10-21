@@ -20,7 +20,7 @@ classes:
 
 
 """
-from libc.stdint cimport uint8_t, int32_t
+from libc.stdint cimport uint8_t, int32_t, int64_t
 from libc.stdlib cimport malloc, calloc, realloc, free
 from libcpp.vector cimport vector
 from libcpp.string cimport string
@@ -171,7 +171,7 @@ cdef cppbool progress_callback(float progress, void * py_progress_callback) noex
     return (<object>py_progress_callback)(progress)
 
 
-# llama-cpp wrappers
+# high-level api
 # -----------------------------------------------------------------------------
 
 
@@ -188,6 +188,56 @@ def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_th
         n_threads).decode()
     return result.strip()
 
+
+
+# wrapper classes
+# -----------------------------------------------------------------------------
+
+
+
+
+# see: 
+#   https://groups.google.com/g/cython-users/c/TbLbXdi0_h4/m/vf9iCcFtGHkJ
+#   https://groups.google.com/g/cython-users/c/ytfJDZ_1DAI/m/xUHAm9uynacJ
+#   https://groups.google.com/g/cython-users/c/hGMPOI0BNpk/m/0iy1Yi9tCAAJ
+
+# FIXME: convert to buffer protocol or memoryview
+# cdef class LlamaTokenDataArray:
+#     """Intermediate Cython wrapper for a llama.cpp llama_batch."""
+#     cdef llama_cpp.llama_token_data_array * ptr
+#     cdef bint owner
+
+#     def __cinit__(self):
+#         self.ptr = NULL
+#         self.owner = True
+
+    # def __dealloc__(self):
+    #     if self.candidates is not NULL and self.owner is True:
+    #         llama_cpp.llama_batch_free(self.batch[0])
+    #         self.batch = NULL
+    
+    # def __init__(self, *, n_vocab: int):
+    #     self.n_vocab = n_vocab
+    #     self.candidates_data = np.recarray(
+    #         (self.n_vocab,),
+    #         dtype=np.dtype(
+    #             [("id", np.intc), ("logit", np.single), ("p", np.single)], align=True
+    #         ),
+    #     )
+    #     self.candidates = llama_cpp.llama_token_data_array(
+    #         data=self.candidates_data.ctypes.data_as(llama_cpp.llama_token_data_p),
+    #         size=self.n_vocab,
+    #         sorted=False,
+    #     )
+    #     self.default_candidates_data_id = np.arange(self.n_vocab, dtype=np.intc)  # type: ignore
+    #     self.default_candidates_data_p = np.zeros(self.n_vocab, dtype=np.single)
+
+    # def copy_logits(self, logits: npt.NDArray[np.single]):
+    #     self.candidates_data.id[:] = self.default_candidates_data_id
+    #     self.candidates_data.logit[:] = logits
+    #     self.candidates_data.p[:] = self.default_candidates_data_p
+    #     self.candidates.sorted = False
+    #     self.candidates.size = self.n_vocab
 
 
 cdef class LlamaTokenData:
@@ -223,7 +273,7 @@ cdef class LlamaTokenData:
 
     @property
     def id(self) -> int:
-        """id llama_token field"""
+        """token id"""
         return self.ptr.id
 
     @id.setter
@@ -232,7 +282,7 @@ cdef class LlamaTokenData:
 
     @property
     def logit(self) -> float:
-        """logit field"""
+        """log-odds of the token"""
         return self.ptr.logit
 
     @logit.setter
@@ -241,7 +291,7 @@ cdef class LlamaTokenData:
 
     @property
     def p(self) -> float:
-        """probability field"""
+        """probability of the token"""
         return self.ptr.p
 
     @p.setter
@@ -249,21 +299,82 @@ cdef class LlamaTokenData:
         self.ptr.p = value
 
 
-# cdef class LlamaTokenDataArray:
-#     """Intermediate Cython wrapper for a llama.cpp llama_batch."""
-#     cdef llama_cpp.llama_token_data_array * ptr
-#     cdef bint owner
+cdef class LlamaTokenDataArray:
+    """Intermediate Cython wrapper for llama_token_data_array."""
+    cdef llama_cpp.llama_token_data_array * ptr
+    cdef bint owner
 
-#     def __cinit__(self):
-#         self.ptr = NULL
-#         self.owner = True
+    def __cinit__(self):
+        self.ptr = NULL
+        self.owner = True
 
-#     ctypedef struct llama_token_data_array:
-#         llama_token_data * data
-#         size_t size
-#         int64_t selected  # this is the index in the data array (i.e. not the token id)
-#         bint sorted
+    # def __init__(self, int id, float logit, float p):
+    #     self.ptr = <llama_cpp.llama_token_data_array *>malloc(sizeof(llama_cpp.llama_token_data_array))
+    #     if self.ptr is NULL:
+    #         raise MemoryError
+    #     self.owner = True
+    #     self.ptr.id = id
+    #     self.ptr.logit = logit
+    #     self.ptr.p = p
 
+    def __dealloc__(self):
+        # De-allocate if not null and flag is set
+        if self.ptr is not NULL and self.ptr_owner is True:
+            free(self.ptr)
+            self.ptr = NULL
+
+    @staticmethod
+    cdef LlamaTokenDataArray from_ptr(llama_cpp.llama_token_data_array *ptr, bint owner=False):
+        # Fast call to __new__() that bypasses the __init__() constructor.
+        cdef LlamaTokenDataArray wrapper = LlamaTokenDataArray.__new__(LlamaTokenDataArray)
+        wrapper.ptr = ptr
+        wrapper.ptr_owner = owner
+        return wrapper
+
+    @property
+    def data(self) -> list[LlamaTokenData]:
+        """llama_token_data array"""
+        result = []
+        for i in range(self.p.size):
+            result.append(LlamaTokenData.from_ptr(<llama_cpp.llama_token_data *>self.p.data[i]))
+        return result
+
+    # FIXME: should resize on demand.
+    @data.setter
+    def data(self, value: list[LlamaTokenData]):
+        if len(value) != self.p.size:
+            raise RuntimeError("sizes of input array and receiving array should be the samee")
+        for i in range(self.p.size):
+            self.ptr.data[i].id = value[i].id
+            self.ptr.data[i].logit = value[i].logit
+            self.ptr.data[i].id = value[i].id
+
+    @property
+    def size(self) -> int:
+        """size field"""
+        return self.ptr.size
+
+    @size.setter
+    def size(self, size_t value):
+        self.ptr.size = value
+
+    @property
+    def selected(self) -> int:
+        """this is the index in the data array (i.e. not the token id)"""
+        return self.ptr.selected
+
+    @selected.setter
+    def selected(self, int64_t value):
+        self.ptr.selected = value
+
+    @property
+    def sorted(self) -> bool:
+        """sorted field"""
+        return self.ptr.sorted
+
+    @sorted.setter
+    def sorted(self, bint value):
+        self.ptr.sorted = value
 
 
 
@@ -3015,64 +3126,6 @@ cdef class LlamaBatch:
         self.p.logits[self.p.n_tokens - 1] = True
 
 
-
-
-    # typedef struct llama_token_data {
-    #     llama_token id; // token id
-    #     float logit;    // log-odds of the token
-    #     float p;        // probability of the token
-    # } llama_token_data;
-
-    # typedef struct llama_token_data_array {
-    #     # TODO: consider SoA
-    #     llama_token_data * data;
-    #     size_t size;
-    #     int64_t selected; # this is the index in the data array (i.e. not the token id)
-    #     bool sorted;
-    # } llama_token_data_array;
-
-# see: 
-#   https://groups.google.com/g/cython-users/c/TbLbXdi0_h4/m/vf9iCcFtGHkJ
-#   https://groups.google.com/g/cython-users/c/ytfJDZ_1DAI/m/xUHAm9uynacJ
-#   https://groups.google.com/g/cython-users/c/hGMPOI0BNpk/m/0iy1Yi9tCAAJ
-
-# FIXME: convert to buffer protocol or memoryview
-# cdef class LlamaTokenDataArray:
-#     """Intermediate Cython wrapper for a llama.cpp llama_batch."""
-#     cdef llama_cpp.llama_token_data_array * ptr
-#     cdef bint owner
-
-#     def __cinit__(self):
-#         self.ptr = NULL
-#         self.owner = True
-
-    # def __dealloc__(self):
-    #     if self.candidates is not NULL and self.owner is True:
-    #         llama_cpp.llama_batch_free(self.batch[0])
-    #         self.batch = NULL
-    
-    # def __init__(self, *, n_vocab: int):
-    #     self.n_vocab = n_vocab
-    #     self.candidates_data = np.recarray(
-    #         (self.n_vocab,),
-    #         dtype=np.dtype(
-    #             [("id", np.intc), ("logit", np.single), ("p", np.single)], align=True
-    #         ),
-    #     )
-    #     self.candidates = llama_cpp.llama_token_data_array(
-    #         data=self.candidates_data.ctypes.data_as(llama_cpp.llama_token_data_p),
-    #         size=self.n_vocab,
-    #         sorted=False,
-    #     )
-    #     self.default_candidates_data_id = np.arange(self.n_vocab, dtype=np.intc)  # type: ignore
-    #     self.default_candidates_data_p = np.zeros(self.n_vocab, dtype=np.single)
-
-    # def copy_logits(self, logits: npt.NDArray[np.single]):
-    #     self.candidates_data.id[:] = self.default_candidates_data_id
-    #     self.candidates_data.logit[:] = logits
-    #     self.candidates_data.p[:] = self.default_candidates_data_p
-    #     self.candidates.sorted = False
-    #     self.candidates.size = self.n_vocab
 
 
 

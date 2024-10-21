@@ -14,7 +14,7 @@ cdef extern from "ggml.h":
     DEF GGML_MAX_OP_PARAMS = 64
     DEF GGML_MAX_SRC = 10
 
-    ctypedef enum ggml_log_level:
+    cdef enum ggml_log_level:
         GGML_LOG_LEVEL_NONE  = 0
         GGML_LOG_LEVEL_INFO  = 1
         GGML_LOG_LEVEL_WARN  = 2
@@ -25,7 +25,7 @@ cdef extern from "ggml.h":
     ctypedef void (*ggml_log_callback)(ggml_log_level level, const char * text, void * user_data)
     ctypedef bint (*ggml_abort_callback)(void * data)
 
-    ctypedef enum ggml_type:
+    cdef enum ggml_type:
         GGML_TYPE_F32     = 0
         GGML_TYPE_F16     = 1
         GGML_TYPE_Q4_0    = 2
@@ -62,7 +62,7 @@ cdef extern from "ggml.h":
         GGML_TYPE_Q4_0_8_8 = 33
         GGML_TYPE_COUNT
 
-    ctypedef enum ggml_op:
+    cdef enum ggml_op:
         GGML_OP_NONE = 0
 
         GGML_OP_DUP
@@ -149,7 +149,7 @@ cdef extern from "ggml.h":
 
         GGML_OP_COUNT
 
-    ctypedef enum ggml_numa_strategy:
+    cdef enum ggml_numa_strategy:
         GGML_NUMA_STRATEGY_DISABLED   = 0
         GGML_NUMA_STRATEGY_DISTRIBUTE = 1
         GGML_NUMA_STRATEGY_ISOLATE    = 2
@@ -157,7 +157,7 @@ cdef extern from "ggml.h":
         GGML_NUMA_STRATEGY_MIRROR     = 4
         GGML_NUMA_STRATEGY_COUNT
 
-    ctypedef enum ggml_sched_priority:
+    cdef enum ggml_sched_priority:
         GGML_SCHED_PRIO_NORMAL
         GGML_SCHED_PRIO_MEDIUM
         GGML_SCHED_PRIO_HIGH
@@ -235,15 +235,15 @@ cdef extern from "llama.h":
     ctypedef int32_t llama_seq_id
 
     cdef enum llama_vocab_type:
-        LLAMA_VOCAB_TYPE_NONE
-        LLAMA_VOCAB_TYPE_SPM
-        LLAMA_VOCAB_TYPE_BPE
-        LLAMA_VOCAB_TYPE_WPM
-        LLAMA_VOCAB_TYPE_UGM
-        LLAMA_VOCAB_TYPE_RWKV
+        LLAMA_VOCAB_TYPE_NONE = 0  # For models without vocab
+        LLAMA_VOCAB_TYPE_SPM  = 1  # LLaMA tokenizer based on byte-level BPE with byte fallback
+        LLAMA_VOCAB_TYPE_BPE  = 2  # GPT-2 tokenizer based on byte-level BPE
+        LLAMA_VOCAB_TYPE_WPM  = 3  # BERT tokenizer based on WordPiece
+        LLAMA_VOCAB_TYPE_UGM  = 4  # T5 tokenizer based on Unigram
+        LLAMA_VOCAB_TYPE_RWKV = 5  # RWKV tokenizer based on greedy tokenization
 
     # pre-tokenization types
-    ctypedef enum llama_vocab_pre_type:
+    cdef enum llama_vocab_pre_type:
         LLAMA_VOCAB_PRE_TYPE_DEFAULT
         LLAMA_VOCAB_PRE_TYPE_LLAMA3
         LLAMA_VOCAB_PRE_TYPE_DEEPSEEK_LLM
@@ -277,7 +277,7 @@ cdef extern from "llama.h":
         LLAMA_ROPE_TYPE_NORM =  0
         LLAMA_ROPE_TYPE_NEOX =  2
 
-    ctypedef enum llama_token_type:
+    cdef enum llama_token_type:
         LLAMA_TOKEN_TYPE_UNDEFINED    = 0
         LLAMA_TOKEN_TYPE_NORMAL       = 1
         LLAMA_TOKEN_TYPE_UNKNOWN      = 2
@@ -286,7 +286,7 @@ cdef extern from "llama.h":
         LLAMA_TOKEN_TYPE_UNUSED       = 5
         LLAMA_TOKEN_TYPE_BYTE         = 6
 
-    ctypedef enum llama_token_attr:
+    cdef enum llama_token_attr:
         LLAMA_TOKEN_ATTR_UNDEFINED    = 0
         LLAMA_TOKEN_ATTR_UNKNOWN      = 1 << 0
         LLAMA_TOKEN_ATTR_UNUSED       = 1 << 1
@@ -299,7 +299,7 @@ cdef extern from "llama.h":
         LLAMA_TOKEN_ATTR_RSTRIP       = 1 << 8
         LLAMA_TOKEN_ATTR_SINGLE_WORD  = 1 << 9
 
-    ctypedef enum llama_ftype:
+    cdef enum llama_ftype:
         LLAMA_FTYPE_ALL_F32              = 0
         LLAMA_FTYPE_MOSTLY_F16           = 1
         LLAMA_FTYPE_MOSTLY_Q4_0          = 2
@@ -340,7 +340,7 @@ cdef extern from "llama.h":
         LLAMA_FTYPE_MOSTLY_TQ2_0         = 37 # except 1d tensors
         LLAMA_FTYPE_GUESSED              = 1024
 
-    ctypedef enum llama_rope_scaling_type:
+    cdef enum llama_rope_scaling_type:
         LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED = -1
         LLAMA_ROPE_SCALING_TYPE_NONE        = 0
         LLAMA_ROPE_SCALING_TYPE_LINEAR      = 1
@@ -355,12 +355,12 @@ cdef extern from "llama.h":
         LLAMA_POOLING_TYPE_LAST = 3
         LLAMA_POOLING_TYPE_RANK = 4 # used by reranking models to attach the classification head to the graph
 
-    ctypedef enum llama_attention_type:
+    cdef enum llama_attention_type:
         LLAMA_ATTENTION_TYPE_UNSPECIFIED = -1
         LLAMA_ATTENTION_TYPE_CAUSAL      = 0
         LLAMA_ATTENTION_TYPE_NON_CAUSAL  = 1
 
-    ctypedef enum llama_split_mode:
+    cdef enum llama_split_mode:
         LLAMA_SPLIT_MODE_NONE  = 0
         LLAMA_SPLIT_MODE_LAYER = 1
         LLAMA_SPLIT_MODE_ROW   = 2
@@ -389,7 +389,7 @@ cdef extern from "llama.h":
         llama_seq_id ** seq_id
         int8_t       *  logits   # TODO: rename this to "output"
 
-    ctypedef enum llama_model_kv_override_type:
+    cdef enum llama_model_kv_override_type:
         LLAMA_KV_OVERRIDE_TYPE_INT
         LLAMA_KV_OVERRIDE_TYPE_FLOAT
         LLAMA_KV_OVERRIDE_TYPE_BOOL
@@ -1324,7 +1324,7 @@ cdef extern from "common.h":
         bint     strict_cpu             # Use strict CPU placement
         uint32_t poll                   # Polling (busywait) level (0 - no polling, 100 - mostly polling)
 
-    ctypedef enum llama_example:
+    cdef enum llama_example:
         LLAMA_EXAMPLE_COMMON
         LLAMA_EXAMPLE_SPECULATIVE
         LLAMA_EXAMPLE_MAIN
@@ -1341,7 +1341,7 @@ cdef extern from "common.h":
         LLAMA_EXAMPLE_LLAVA
         LLAMA_EXAMPLE_COUNT
 
-    ctypedef enum common_sampler_type:
+    cdef enum common_sampler_type:
         COMMON_SAMPLER_TYPE_NONE
         COMMON_SAMPLER_TYPE_TOP_K
         COMMON_SAMPLER_TYPE_TOP_P
@@ -1352,7 +1352,7 @@ cdef extern from "common.h":
         COMMON_SAMPLER_TYPE_XTC
         COMMON_SAMPLER_TYPE_INFILL
 
-    ctypedef enum dimre_method:
+    cdef enum dimre_method:
         DIMRE_METHOD_PCA
         DIMRE_METHOD_MEAN
 
