@@ -58,13 +58,13 @@ import cyllama as cy
 # set path to model
 MODEL = str(Path.cwd() / "models" / "Llama-3.2-1B-Instruct-Q8_0.gguf")
 
+# configure params & prompt
 params = cy.CommonParams()
 params.model = MODEL
 params.prompt = "When did the universe begin?"
 params.n_predict = 32
 params.n_ctx = 2048
 params.cpuparams.n_threads = 4
-
 
 # total length of the sequence including the prompt
 n_predict: int = params.n_predict
@@ -74,34 +74,22 @@ cy.llama_backend_init()
 cy.llama_numa_init(params.numa)
 
 # initialize the model
-
 model_params = cy.common_model_params_to_llama(params)
-
-# set local test model
-params.model = str(MODEL)
-
 model = cy.LlamaModel(path_model=params.model, params=model_params)
 
 # initialize the context
 ctx_params = cy.common_context_params_to_llama(params)
 ctx = cy.LlamaContext(model=model, params=ctx_params)
 
-
 # build sampler chain
 sparams = cy.llama_sampler_chain_default_params()
 sparams.no_perf = False
-
 smplr = cy.LlamaSampler(sparams)
-
 smplr.add_greedy()
 
-
 # tokenize the prompt
-
 tokens_list: list[int] = cy.common_tokenize(ctx, params.prompt, True)
-
 n_ctx: int = ctx.n_ctx()
-
 n_kv_req: int = len(tokens_list) + (n_predict - len(tokens_list))
 
 print("n_predict = %d, n_ctx = %d, n_kv_req = %d" % (n_predict, n_ctx, n_kv_req))
@@ -144,10 +132,9 @@ t_main_start: int = cy.ggml_time_us()
 result: str = ""
 
 while n_cur <= n_predict:
+
     # sample the next token
-
     new_token_id = smplr.sample(ctx, batch.n_tokens - 1)
-
     smplr.accept(new_token_id)
 
     # is it an end of generation?
@@ -159,11 +146,11 @@ while n_cur <= n_predict:
 
     # prepare the next batch
     cy.common_batch_clear(batch)
+
     # push this new token for next evaluation
     cy.common_batch_add(batch, new_token_id, n_cur, [0], True)
 
     n_decode += 1
-
     n_cur += 1
 
     # evaluate the current batch with the transformer model
@@ -171,7 +158,6 @@ while n_cur <= n_predict:
 
 
 print(result)
-
 print()
 
 t_main_end: int = cy.ggml_time_us()
@@ -186,7 +172,7 @@ print(
 )
 print()
 
-
+# cleanup
 cy.llama_backend_free()
 ```
 
