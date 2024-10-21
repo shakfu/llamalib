@@ -9,6 +9,11 @@ from libcpp.set cimport set as std_set
 
 cdef extern from "ggml.h":
 
+    DEF GGML_MAX_DIMS = 4
+    DEF GGML_MAX_NAME = 64
+    DEF GGML_MAX_OP_PARAMS = 64
+    DEF GGML_MAX_SRC = 10
+
     ctypedef enum ggml_log_level:
         GGML_LOG_LEVEL_NONE  = 0
         GGML_LOG_LEVEL_INFO  = 1
@@ -161,16 +166,11 @@ cdef extern from "ggml.h":
     ctypedef struct ggml_backend_buffer:
         pass
 
-    DEF GGML_MAX_DIMS = 4
-    DEF GGML_MAX_NAME = 64
-    DEF GGML_MAX_OP_PARAMS = 64
-    DEF GGML_MAX_SRC = 10
 
     # n-dimensional tensor
+
     ctypedef struct ggml_tensor:
         ggml_type type
-
-        # GGML_DEPRECATED(enum ggml_backend_type backend, "use the buffer type to find the storage location of the tensor")
 
         ggml_backend_buffer * buffer
 
@@ -184,8 +184,7 @@ cdef extern from "ggml.h":
         ggml_op op
 
         # op params - allocated as int32_t for alignment
-        # int32_t op_params[GGML_MAX_OP_PARAMS / sizeof(int32_t)]
-        int32_t op_params[16] # 64 / 4
+        int32_t op_params[16] # GGML_MAX_OP_PARAMS / sizeof(int32_t?)
 
         int32_t flags
 
@@ -194,7 +193,7 @@ cdef extern from "ggml.h":
 
         # source tensor and offset for views
         ggml_tensor * view_src
-        size_t               view_offs
+        size_t view_offs
 
         void * data
 
@@ -203,6 +202,7 @@ cdef extern from "ggml.h":
         void * extra # extra things e.g. for ggml-cuda.cu
 
         # char padding[4]
+
 
     cdef void    ggml_time_init() # call this once at the beginning of the program
     cdef int64_t ggml_time_ms()

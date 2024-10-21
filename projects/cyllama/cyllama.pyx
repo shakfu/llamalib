@@ -139,15 +139,15 @@ def set_log_callback(object py_log_callback):
     """
     llama_cpp.llama_log_set(<llama_cpp.ggml_log_callback>&log_callback, <void*>py_log_callback)
 
-cdef bint abort_callback(void * py_abort_callback):
+cdef bint abort_callback(void * py_abort_callback) noexcept:
     return (<object>py_abort_callback)()
 
-cdef bint sched_eval_callback(llama_cpp.ggml_tensor * t, bint ask, void * py_sched_eval_callback):
-    cdef GGMLTensor tensor = GGMLTensor.from_ptr(t)
-    return (<object>py_sched_eval_callback)(tensor, ask)
+# cdef bint sched_eval_callback(llama_cpp.ggml_tensor * t, bint ask, void * py_sched_eval_callback) noexcept:
+#     cdef GGMLTensor tensor = GGMLTensor.from_ptr(t)
+#     return (<object>py_sched_eval_callback)(tensor, ask)
 
-cdef bint progress_callback(float progress, void * py_progress_callback):
-    return (<object>py_progress_callback)(progress)
+# cdef bint progress_callback(float progress, void * py_progress_callback) noexcept:
+#     return (<object>py_progress_callback)(progress)
 
 
 # llama-cpp wrappers
@@ -1782,11 +1782,20 @@ cdef class CommonParams:
     # bool batched_bench_output_jsonl = false;
 
 
+
+
+
+
 cdef class ModelParams:
     cdef llama_cpp.llama_model_params p
+    # cdef llama_cpp.llama_progress_callback * cb
+
+    # def __cinit__(self):
+    #     self.cb = NULL
 
     def __init__(self):
         self.p = llama_cpp.llama_model_default_params()
+        # self.p.progress_callback = &progress_callback
 
     @staticmethod
     cdef ModelParams from_instance(llama_cpp.llama_model_params params):
@@ -1804,12 +1813,12 @@ cdef class ModelParams:
         self.p.n_gpu_layers = value
 
     @property
-    def split_mode(self) -> int:
+    def split_mode(self) -> llama_split_mode:
         """How to split the model across multiple GPUs."""
         return self.p.split_mode
 
     @split_mode.setter
-    def split_mode(self, value: int):
+    def split_mode(self, llama_split_mode value):
         self.p.split_mode = value
 
     @property
@@ -1825,6 +1834,58 @@ cdef class ModelParams:
     @main_gpu.setter
     def main_gpu(self, value: int):
         self.p.main_gpu = value
+
+    # @property
+    # def tensor_split(self) -> list[float]:
+    #     """how split tensors should be distributed across GPUs
+        
+    #     const float * tensor_split
+    #     """
+    #     return self.p.tensor_split
+
+    # @tensor_split.setter
+    # def tensor_split(self, value: list[float]):
+    #     self.p.tensor_split = value
+
+    # @property
+    # def rpc_servers(self) -> list[str]:
+    #     """List separated list of RPC servers
+        
+    #     const char * rpc_servers
+    #     """
+    #     return self.p.rpc_servers
+
+    # @rpc_servers.setter
+    # def rpc_servers(self, value: list[str]):
+    #     self.p.rpc_servers = value
+
+    # @property
+    # def progress_callback(self) -> list[str]:
+    #     """callback to indicate progress in processing model.
+        
+    #     llama_progress_callback progress_callback
+    #     """
+    #     return self.p.progress_callback
+
+    # @progress_callback.setter
+    # def progress_callback(self, value: list[str]):
+    #     self.p.progress_callback = value
+
+    # @property
+    # def progress_callback(self) -> list[str]:
+    #     """callback to indicate progress in processing model.
+        
+    #     llama_progress_callback progress_callback
+    #     """
+    #     return self.p.progress_callback
+
+    # @progress_callback.setter
+    # def progress_callback(self, value: list[str]):
+    #     self.p.progress_callback = value
+
+    # void * progress_callback_user_data        
+    # const llama_model_kv_override * kv_overrides
+
 
     @property
     def vocab_only(self) -> bool:

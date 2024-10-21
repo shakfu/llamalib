@@ -24,8 +24,8 @@ LIBRARIES = ["pthread"]
 if WITH_DYLIB:
     LIBRARIES.extend([
         'common',
-        'llama',
         'ggml',
+        'llama',
     ])
 else:
     EXTRA_OBJECTS.extend([
