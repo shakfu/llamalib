@@ -38,7 +38,7 @@ ctx = cy.LlamaContext(model=model, params=ctx_params)
 
 
 # build sampler chain
-sparams = cy.llama_sampler_chain_default_params()
+sparams = cy.SamplerChainParams()
 sparams.no_perf = False
 
 smplr = cy.LlamaSampler(sparams)

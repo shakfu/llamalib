@@ -40,7 +40,7 @@ def test_cy_lowlevel_simple(model_path):
 
 
     # build sampler chain
-    sparams = cy.llama_sampler_chain_default_params()
+    sparams = cy.SamplerChainParams()
     sparams.no_perf = False
 
     smplr = cy.LlamaSampler(sparams)

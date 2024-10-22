@@ -160,10 +160,10 @@ cdef bint abort_callback(void * py_abort_callback) noexcept:
     """ggml_abort_callback wrapper enabling python callbacks to be used"""
     return (<object>py_abort_callback)()
 
-cdef cppbool sched_eval_callback(llama_cpp.ggml_tensor * t, cppbool ask, void * py_sched_eval_callback) noexcept:
-    """ggml_backend_sched_eval_callback wrapper enabling python callbacks to be used"""
-    cdef GGMLTensor tensor = GGMLTensor.from_ptr(t)
-    return (<object>py_sched_eval_callback)(tensor, ask)
+# cdef cppbool sched_eval_callback(llama_cpp.ggml_tensor * t, cppbool ask, void * py_sched_eval_callback) noexcept:
+#     """ggml_backend_sched_eval_callback wrapper enabling python callbacks to be used"""
+#     cdef GGMLTensor tensor = GGMLTensor.from_ptr(t)
+#     return (<object>py_sched_eval_callback)(tensor, ask)
 
 cdef cppbool progress_callback(float progress, void * py_progress_callback) noexcept:
     """llama_progress_callback callback wrapper enabling python callbacks to be used"""
@@ -756,7 +756,7 @@ cdef class CommonParams:
         return wrapper
 
     def __cinit__(self):
-        self.p.cb_eval = &sched_eval_callback # set callback wrapper
+        # self.p.cb_eval = &sched_eval_callback # set callback wrapper
         self.cpuparams = CpuParams.from_ptr(&self.p.cpuparams, self)
         self.cpuparams_batch = CpuParams.from_ptr(&self.p.cpuparams_batch, self)
         self.draft_cpuparams = CpuParams.from_ptr(&self.p.draft_cpuparams, self)
@@ -984,14 +984,14 @@ cdef class CommonParams:
     def defrag_thold(self, value: float):
         self.p.defrag_thold = value
 
-    @property
-    def cb_eval(self) -> py_sched_eval_callback:
-        """get/set python ggml backend sched eval callback."""
-        return <object>self.p.cb_eval_user_data
+    # @property
+    # def cb_eval(self) -> py_sched_eval_callback:
+    #     """get/set python ggml backend sched eval callback."""
+    #     return <object>self.p.cb_eval_user_data
 
-    @cb_eval.setter
-    def cb_eval(self, object py_sched_eval_callback):
-        self.p.cb_eval_user_data = <void*>py_sched_eval_callback
+    # @cb_eval.setter
+    # def cb_eval(self, object py_sched_eval_callback):
+    #     self.p.cb_eval_user_data = <void*>py_sched_eval_callback
 
     @property
     def numa(self) -> ggml_numa_strategy:
@@ -2910,10 +2910,7 @@ cdef class LlamaContext:
           1 - could not find a KV slot for the batch (try reducing the size of the batch or increase the context)
         < 0 - error
         """
-        cdef int32_t res = llama_cpp.llama_decode(
-            self.ptr,
-            batch.p,
-        )
+        cdef int32_t res = llama_cpp.llama_decode(self.ptr,batch.p)
         self.n_tokens = batch.n_tokens
         if res == 1:
             raise ValueError("could not find a KV slot for the batch (try reducing the size of the batch or increase the context)")
@@ -3126,18 +3123,12 @@ def llama_backend_init():
 def llama_numa_init(ggml_numa_strategy numa):
     llama_cpp.llama_numa_init(numa)
 
-def common_model_params_to_llama(params: CommonParams) -> ModelParams:
+def common_model_params_to_llama(CommonParams params) -> ModelParams:
     cdef llama_cpp.llama_model_params model_params = llama_cpp.common_model_params_to_llama(params.p)
     return ModelParams.from_instance(model_params)
 
-def common_context_params_to_llama(params: CommonParams) -> ContextParams:
+def common_context_params_to_llama(CommonParams params) -> ContextParams:
     return ContextParams.from_common_params(params)
-
-def llama_sampler_chain_default_params() -> SamplerChainParams:
-    return SamplerChainParams()
-
-def llama_model_quantize_default_params() -> ModelQuantizeParams:
-    return ModelQuantizeParams()
 
 def common_tokenize(LlamaContext ctx, str text, bint add_special, bint parse_special = False):
     return llama_cpp.common_tokenize(<const llama_cpp.llama_context *>ctx.ptr, <string>text.encode(), add_special, parse_special)
@@ -3145,25 +3136,11 @@ def common_tokenize(LlamaContext ctx, str text, bint add_special, bint parse_spe
 def common_tokenize_from_model(LlamaModel model, str text, bint add_special, bint parse_special = False):
     return llama_cpp.common_tokenize(<const llama_cpp.llama_model *>model.ptr, <string>text.encode(), add_special, parse_special)
 
-def llama_n_ctx(LlamaContext ctx) -> int:
-    return llama_cpp.llama_n_ctx(ctx.ptr)
-
 def common_token_to_piece(LlamaContext ctx, int token, bint special = True) -> str:
     return llama_cpp.common_token_to_piece(ctx.ptr, token, special).decode()
 
 def common_batch_add(LlamaBatch batch, llama_cpp.llama_token id, llama_cpp.llama_pos pos, list[int] seq_ids, bint logits):
     return llama_cpp.common_batch_add(batch.p, id, pos, seq_ids, logits)
-
-# def llama_decode(LlamaContext ctx, LlamaBatch batch) -> int:
-#     return llama_cpp.llama_decode(ctx.ptr, batch.p)
-
-# def llama_new_context_with_model(LlamaModel model, ContextParams params) -> LlamaContext:
-#     cdef llama_cpp.llama_context * ctx = llama_cpp.llama_new_context_with_model(model.ptr, params.p)
-#     return LlamaContext.from_ptr(ctx)
-
-# def llama_load_model_from_file(str path_model, ModelParams params) -> LlamaModel:
-#     cdef llama_cpp.llama_model * model = llama_cpp.llama_load_model_from_file(path_model.encode(), params.p)
-#     return LlamaModel.from_ptr(model)
 
 def ggml_time_us() -> int:
     return llama_cpp.ggml_time_us()
@@ -3185,17 +3162,6 @@ def llama_supports_gpu_offload() -> bool:
 
 def llama_supports_rpc() -> bool:
     return llama_cpp.llama_supports_rpc()
-
-
-
-def llama_sampler_sample(LlamaSampler smplr, LlamaContext ctx, int idx) -> int:
-    return llama_cpp.llama_sampler_sample(smplr.ptr, ctx.ptr, idx)
-
-def llama_sampler_accept(LlamaSampler smplr, llama_cpp.llama_token id):
-    llama_cpp.llama_sampler_accept(smplr.ptr, id)
-
-def llama_token_is_eog(LlamaModel model, llama_cpp.llama_token token) -> bool:
-    return llama_cpp.llama_token_is_eog(model.ptr, token)
 
 def common_batch_clear(LlamaBatch batch):
     llama_cpp.common_batch_clear(batch.p)
