@@ -6,6 +6,7 @@ from libcpp.set cimport set as std_set
 
 
 #------------------------------------------------------------------------------
+# ggml.h
 
 cdef extern from "ggml.h":
 
@@ -167,6 +168,7 @@ cdef extern from "ggml.h":
         pass
 
 
+    # -------------------------------------------------------------------------
     # n-dimensional tensor
 
     ctypedef struct ggml_tensor:
@@ -216,11 +218,14 @@ cdef extern from "ggml.h":
 
 
 #------------------------------------------------------------------------------
+# ggml-backend.h
+
 
 cdef extern from "ggml-backend.h":
     ctypedef bint (*ggml_backend_sched_eval_callback)(ggml_tensor * t, bint ask, void * user_data)
 
 #------------------------------------------------------------------------------
+# llama.h
 
 cdef extern from "llama.h":
 
@@ -486,7 +491,7 @@ cdef extern from "llama.h":
 
 
     # -------------------------------------------------------------------------
-    # functions
+    # llama.h functions
 
     # TODO: update API to start accepting pointers to params structs (https://github.com/ggerganov/llama.cpp/discussions/9172)
     cdef llama_model_params llama_model_default_params()
@@ -640,6 +645,7 @@ cdef extern from "llama.h":
                          int32_t   il_end)
 
 
+    # -------------------------------------------------------------------------
     # KV cache
 
     ctypedef struct llama_kv_cache_view_cell:
@@ -765,9 +771,8 @@ cdef extern from "llama.h":
     # Apply the KV cache updates (such as K-shifts, defragmentation, etc.)
     cdef void llama_kv_cache_update(llama_context * ctx)
 
-    #
+    # -------------------------------------------------------------------------
     # State / sessions
-    #
 
     # Returns the *actual* size in bytes of the state
     # (logits, embedding and kv_cache)
@@ -840,9 +845,8 @@ cdef extern from "llama.h":
                           size_t   n_token_capacity,
                           size_t * n_token_count_out)
 
-    #
+    # -------------------------------------------------------------------------
     # Decoding
-    #
 
     # Return batch for single sequence of tokens
     # The sequence ID will be fixed to 0
@@ -944,9 +948,8 @@ cdef extern from "llama.h":
     cdef float * llama_get_embeddings_seq( llama_context * ctx, llama_seq_id seq_id)
 
 
-    #
+    # -------------------------------------------------------------------------
     # Vocab
-    #
 
     cdef const char * llama_token_get_text(const llama_model * model, llama_token token)
 
@@ -980,9 +983,8 @@ cdef extern from "llama.h":
     cdef llama_token llama_token_fim_rep(const llama_model * model)
     cdef llama_token llama_token_fim_sep(const llama_model * model)
 
-    #
+    # -------------------------------------------------------------------------
     # Tokenization (The API is thread-safe)
-    #
 
     # @details Convert the provided text into tokens.
     # @param tokens The tokens pointer must be large enough to hold the resulting tokens.
@@ -1030,7 +1032,7 @@ cdef extern from "llama.h":
                             bint   unparse_special)
 
 
-    #
+    # -------------------------------------------------------------------------
     # Chat templates
     #
 
@@ -1053,8 +1055,9 @@ cdef extern from "llama.h":
                                   char * buf,
                                int32_t   length)
 
+    # -------------------------------------------------------------------------
     # Sampling API
-    #
+ 
     # Sample usage:
     #
     #    # prepare the sampling chain at the start
@@ -1248,9 +1251,8 @@ cdef extern from "llama.h":
     # TODO: extend in the future
     # void llama_decode_with_sampler(llama_context * ctx, llama_sampler * smpl, llama_batch batch, ...)
 
-    #
+    # -------------------------------------------------------------------------
     # Model split
-    #
 
     # @details Build a split GGUF final path for this chunk.
     #          llama_split_path(split_path, sizeof(split_path), "/models/ggml-model-q4_0", 2, 4) => split_path = "/models/ggml-model-q4_0-00002-of-00004.gguf"
@@ -1269,9 +1271,9 @@ cdef extern from "llama.h":
     # If this is not called, or NULL is supplied, everything is output on stderr.
     cdef void llama_log_set(ggml_log_callback log_callback, void * user_data)
 
-    #
+    # -------------------------------------------------------------------------
     # Performance utils
-    #
+
     # NOTE: Used by llama.cpp examples, avoid using in third-party apps. Instead, do your own performance measurements.
     #
 
@@ -1303,6 +1305,7 @@ cdef extern from "llama.h":
 
 
 #------------------------------------------------------------------------------
+# common.h
 
 cdef extern from "common.h":
 
@@ -1310,19 +1313,31 @@ cdef extern from "common.h":
         std_string path
         float scale
 
-    ctypedef struct common_lora_adapter_container: #common_lora_adapter_info {
+    # inherits from common_lora_adapter_info
+    ctypedef struct common_lora_adapter_container:
         llama_lora_adapter * adapter
 
-    # cdef int GGML_MAX_N_THREADS = 512
+    ctypedef struct common_control_vector_load_info: pass
+
+    # -------------------------------------------------------------------------
+    # CPU utils
+
     DEF GGML_MAX_N_THREADS = 512
 
     ctypedef struct cpu_params:
         int      n_threads
-        bint     cpumask[512]           # CPU affinity mask.
+        bint     cpumask[GGML_MAX_N_THREADS] # CPU affinity mask.
         bint     mask_valid             # Default: any CPU
         ggml_sched_priority  priority   # Scheduling prio : (0 - normal, 1 - medium, 2 - high, 3 - realtime)
         bint     strict_cpu             # Use strict CPU placement
         uint32_t poll                   # Polling (busywait) level (0 - no polling, 100 - mostly polling)
+
+
+    cdef int32_t cpu_get_num_physical_cores()
+    cdef int32_t cpu_get_num_math()
+
+    # -------------------------------------------------------------------------
+    # Common params
 
     cdef enum llama_example:
         LLAMA_EXAMPLE_COMMON
@@ -1352,10 +1367,12 @@ cdef extern from "common.h":
         COMMON_SAMPLER_TYPE_XTC
         COMMON_SAMPLER_TYPE_INFILL
 
+    # dimensionality reduction methods, used by cvector-generator
     cdef enum dimre_method:
         DIMRE_METHOD_PCA
         DIMRE_METHOD_MEAN
 
+    # sampler parameters
     ctypedef struct common_sampler_params:
         uint32_t seed   ; # the seed used to initialize llama_sampler
 
@@ -1521,9 +1538,9 @@ cdef extern from "common.h":
 
         # embedding
         bint embedding              # get only sentence embedding
-        int32_t embd_normalize      # normalisation for embendings (-1=none, 0=max absolute int16, 1=taxicab, 2=euclidean, >2=p-norm)
+        int32_t embd_normalize      # normalisation for embeddings (-1=none, 0=max absolute int16, 1=taxicab, 2=euclidean, >2=p-norm)
         std_string embd_out         # empty = default, "array" = [[],[]...], "json" = openai style, "json+" = same "json" + cosine similarity matrix
-        std_string embd_sep         # separator of embendings
+        std_string embd_sep         # separator of embeddings
         bint reranking              # enable reranking support on server
 
         # server params
@@ -1597,6 +1614,8 @@ cdef extern from "common.h":
         # batched-bench params
         bint batched_bench_output_jsonl
 
+    # call once at the start of a program if it uses libcommon
+    # initializes the logging system and prints info about the build
     cdef void common_init()
 
     cdef std_string common_params_get_system_info(const common_params & params)
@@ -1606,6 +1625,7 @@ cdef extern from "common.h":
     cdef void postprocess_cpu_params(cpu_params & cpuparams, const cpu_params * role_model)
     cdef bint set_process_priority(ggml_sched_priority prio)
 
+    # -------------------------------------------------------------------------
     # Model utils
 
     ctypedef struct common_init_result:
@@ -1626,12 +1646,14 @@ cdef extern from "common.h":
     # clear LoRA adapters from context, then apply new list of adapters
     void common_lora_adapters_apply(llama_context * ctx, std_vector[common_lora_adapter_container] & lora_adapters)
 
+    # -------------------------------------------------------------------------
     # Batch utils
 
     cdef void common_batch_add(llama_batch & batch, llama_token id, llama_pos pos, const std_vector[llama_seq_id] & seq_ids, bint logits)
 
     cdef void common_batch_clear(llama_batch & batch)
 
+    # -------------------------------------------------------------------------
     # Vocab utils
 
     cdef std_vector[llama_token] common_tokenize(const llama_context * ctx, const std_string & text, bint add_special, bint parse_special)
@@ -1650,6 +1672,7 @@ cdef extern from "common.h":
     # optionally renders special/control tokens
     cdef std_string common_detokenize(llama_context * ctx, const std_vector[llama_token] & tokens, bint special)
 
+    # -------------------------------------------------------------------------
     # Chat template utils
 
     # same with llama_chat_message, but uses std::string
@@ -1671,6 +1694,7 @@ cdef extern from "common.h":
     # # Returns an example of formatted chat
     cdef std_string common_chat_format_example(const llama_model * model, const std_string & tmpl)
 
+    # -------------------------------------------------------------------------
     # KV cache utils
 
     # # Dump the KV cache view with the number of sequences per cell.
@@ -1679,11 +1703,13 @@ cdef extern from "common.h":
     # # Dump the KV cache view showing individual sequences in each cell (long output).
     cdef void common_kv_cache_dump_view_seqs(const llama_kv_cache_view & view, int row_size)
 
+    # -------------------------------------------------------------------------
     # Embedding utils
 
     cdef void common_embd_normalize(const float * inp, float * out, int n, int embd_norm)
     cdef float common_embd_similarity_cos(const float * embd1, const float * embd2, int n)
 
+    # -------------------------------------------------------------------------
     # Control vector utils
 
     ctypedef struct common_control_vector_data:
@@ -1699,18 +1725,73 @@ cdef extern from "common.h":
     # On error, returns {-1, empty}
     cdef common_control_vector_data common_control_vector_load(const std_vector[common_control_vector_load_info] & load_infos)
 
+    # -------------------------------------------------------------------------
+    # Split Utils
 
-#------------------------------------------------------------------------------
+    # ..
 
-cdef extern from "sampling.h": # optional llama_sampler extensions
-    ctypedef struct gpt_sampler: pass # opaque
 
-    cdef gpt_sampler * gpt_sampler_init(const llama_model * model, const common_sampler_params & params)
+    # -------------------------------------------------------------------------
+    # YAML utils
 
-    # cdef llama_token_data_array * common_sampler_get_candidates(common_sampler * gsmpl)
     # ..
 
 #------------------------------------------------------------------------------
+# sampling.h
+
+cdef extern from "sampling.h": # optional llama_sampler extensions
+    ctypedef struct common_sampler: pass # opaque
+
+    # llama_sampler API overloads
+
+    cdef common_sampler * common_sampler_init(const llama_model * model, const common_sampler_params & params)
+
+    void common_sampler_free(common_sampler * gsmpl);
+
+    # if accept_grammar is true, the token is accepted both by the sampling chain and the grammar
+    void common_sampler_accept(common_sampler * gsmpl, llama_token token, bint accept_grammar)
+    void common_sampler_reset (common_sampler * gsmpl)
+    common_sampler * common_sampler_clone (common_sampler * gsmpl)
+
+    # arguments can be nullptr to skip printing
+    void common_perf_print(const llama_context * ctx, const common_sampler * gsmpl)
+
+    # extended sampling implementation:
+    #
+    # - set logits
+    # - apply the configured sampler chain
+    # - check if the token fits the grammar (if any)
+    # - if not: resample by first applying the grammar constraints and then sampling again (slower path)
+    #
+    # if grammar_first is true, the grammar is applied before the samplers (slower)
+    # useful in cases where all the resulting candidates (not just the sampled one) must fit the grammar
+    #
+    llama_token common_sampler_sample(common_sampler * gsmpl, llama_context * ctx, int idx, bint grammar_first)
+
+    uint32_t common_sampler_get_seed(const common_sampler * gsmpl)
+
+    # helpers
+
+    # access the internal list of current candidate tokens
+    llama_token_data_array * common_sampler_get_candidates(common_sampler * gsmpl)
+
+    # get the last accepted token
+    llama_token common_sampler_last(const common_sampler * gsmpl)
+
+    # print the sampler chain into a string
+    std_string common_sampler_print(const common_sampler * gsmpl)
+
+    # get a string representation of the last accepted tokens
+    std_string common_sampler_prev_str(common_sampler * gsmpl, llama_context * ctx, int n)
+
+    char common_sampler_type_to_chr(common_sampler_type cnstr)
+    std_string common_sampler_type_to_str(common_sampler_type cnstr)
+
+    std_vector[common_sampler_type] common_sampler_types_from_names(const std_vector[std_string] & names, bint allow_alt_names)
+    std_vector[common_sampler_type] common_sampler_types_from_chars(const std_string & chars)
+
+#------------------------------------------------------------------------------
+# arg.h
 
 cdef extern from "arg.h":      
 
@@ -1825,6 +1906,9 @@ cdef extern from "clip.h":
     cdef int clip_is_minicpmv(const clip_ctx * ctx)
 
 
+#------------------------------------------------------------------------------
+# llava.h
+
 cdef extern from "llava.h":
 
     ctypedef struct clip_ctx: pass
@@ -1853,6 +1937,7 @@ cdef extern from "llava.h":
 
 
 #------------------------------------------------------------------------------
+# llamalib.h
 
 cdef extern from "llamalib.h":
     cdef std_string simple_prompt(const std_string model_path, const std_string prompt, const int n_predict, const int n_ctx, bint disable_log, int n_threads)

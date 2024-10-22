@@ -20,7 +20,7 @@ classes:
 
 
 """
-from libc.stdint cimport uint8_t, int32_t, int64_t
+from libc.stdint cimport uint8_t, int32_t, int64_t, uint32_t
 from libc.stdlib cimport malloc, calloc, realloc, free
 from libcpp.vector cimport vector
 from libcpp.string cimport string
@@ -172,7 +172,6 @@ cdef cppbool progress_callback(float progress, void * py_progress_callback) noex
 
 # high-level api
 # -----------------------------------------------------------------------------
-
 
 
 def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_threads=4) -> str:
@@ -376,7 +375,6 @@ cdef class LlamaTokenDataArray:
         self.ptr.sorted = value
 
 
-
 cdef class LoraAdapter:
     cdef llama_cpp.llama_lora_adapter * ptr
     cdef bint ptr_owner
@@ -517,7 +515,7 @@ cdef class LlamaSampler:
         llama_cpp.llama_sampler_chain_add(
             self.ptr, llama_cpp.llama_sampler_init_greedy())
 
-    def add_dist(self, llama_cpp.uint32_t seed):
+    def add_dist(self, uint32_t seed):
         llama_cpp.llama_sampler_chain_add(
             self.ptr, llama_cpp.llama_sampler_init_dist(seed))
 
@@ -562,13 +560,13 @@ cdef class LlamaSampler:
         llama_cpp.llama_sampler_chain_add(
             self.ptr, llama_cpp.llama_sampler_init_temp_ext(t, delta, exponent))
 
-    def add_xtc(self, float p, float t, size_t min_keep, llama_cpp.uint32_t seed):
+    def add_xtc(self, float p, float t, size_t min_keep, uint32_t seed):
         """XTC sampler as described in https://github.com/oobabooga/text-generation-webui/pull/6335"""
         llama_cpp.llama_sampler_chain_add(
             self.ptr, llama_cpp.llama_sampler_init_xtc(p, t, min_keep, seed))
 
     # XXX: docstring incorrect
-    def add_mirostat(self, int n_vocab, llama_cpp.uint32_t seed, float tau, float eta, int m):
+    def add_mirostat(self, int n_vocab, uint32_t seed, float tau, float eta, int m):
         """Mirostat 1.0 algorithm described in the paper https:#arxiv.org/abs/2007.14966. Uses tokens instead of words.
     
         candidates: A vector of `llama_token_data` containing the candidate tokens, their probabilities (p), and log-odds (logit) for the current position in the generated text.
@@ -580,7 +578,7 @@ cdef class LlamaSampler:
         llama_cpp.llama_sampler_chain_add(
             self.ptr, llama_cpp.llama_sampler_init_mirostat(n_vocab, seed, tau, eta, m))
 
-    def add_mirostat_v2(self, llama_cpp.uint32_t seed, float tau, float eta):
+    def add_mirostat_v2(self, uint32_t seed, float tau, float eta):
         """Mirostat 2.0 algorithm described in the paper https:#arxiv.org/abs/2007.14966. Uses tokens instead of words.
         
         candidates: A vector of `llama_token_data` containing the candidate tokens, their probabilities (p), and log-odds (logit) for the current position in the generated text.
@@ -670,6 +668,329 @@ cdef class LlamaSampler:
         At this point, this is mostly a convenience function.
         """
         return llama_cpp.llama_sampler_sample(self.ptr, ctx.ptr, idx)
+
+
+cdef class CommonSamplerParams:
+    cdef llama_cpp.common_sampler_params p
+
+    @staticmethod
+    cdef CommonSamplerParams from_instance(llama_cpp.common_sampler_params params):
+        cdef CommonSamplerParams wrapper = CommonSamplerParams.__new__(CommonSamplerParams)
+        wrapper.p = params
+        return wrapper
+
+    @property
+    def seed(self) -> int:
+        """the seed used to initialize llama_sampler."""
+        return self.p.seed
+
+    @seed.setter
+    def seed(self, uint32_t value):
+        self.p.seed = value
+
+    @property
+    def n_prev(self) -> int:
+        """number of previous tokens to remember"""
+        return self.p.n_prev
+
+    @n_prev.setter
+    def n_prev(self, int32_t value):
+        self.p.n_prev = value
+
+    @property
+    def n_probs(self) -> int:
+        """if greater than 0, output the probabilities of top n_probs tokens."""
+        return self.p.n_probs
+
+    @n_probs.setter
+    def n_probs(self, int32_t value):
+        self.p.n_probs = value
+
+    @property
+    def min_keep(self) -> int:
+        """if greater than 0, output the probabilities of top min_keep tokens."""
+        return self.p.min_keep
+
+    @min_keep.setter
+    def min_keep(self, int32_t value):
+        self.p.min_keep = value
+
+    @property
+    def top_k(self) -> int:
+        """<= 0 to use vocab size."""
+        return self.p.top_k
+
+    @top_k.setter
+    def top_k(self, int32_t value):
+        self.p.top_k = value
+
+    @property
+    def top_p(self) -> int:
+        """1.0 = disabled"""
+        return self.p.top_p
+
+    @top_p.setter
+    def top_p(self, float value):
+        self.p.top_p = value
+
+    @property
+    def min_p(self) -> int:
+        """0.0 = disabled"""
+        return self.p.min_p
+
+    @min_p.setter
+    def min_p(self, float value):
+        self.p.min_p = value
+
+    @property
+    def xtc_probability(self) -> int:
+        """0.0 = disabled"""
+        return self.p.xtc_probability
+
+    @xtc_probability.setter
+    def xtc_probability(self, float value):
+        self.p.xtc_probability = value
+
+    @property
+    def xtc_threshold(self) -> int:
+        """> 0.5 disables XTC"""
+        return self.p.xtc_threshold
+
+    @xtc_threshold.setter
+    def xtc_threshold(self, float value):
+        self.p.xtc_threshold = value
+
+    @property
+    def tfs_z(self) -> int:
+        """1.0 = disabled"""
+        return self.p.tfs_z
+
+    @tfs_z.setter
+    def tfs_z(self, float value):
+        self.p.tfs_z = value
+
+    @property
+    def typ_p(self) -> int:
+        """typical_p, 1.0 = disabled"""
+        return self.p.typ_p
+
+    @typ_p.setter
+    def typ_p(self, float value):
+        self.p.typ_p = value
+
+    @property
+    def temp(self) -> int:
+        """<= 0.0 to sample greedily, 0.0 to not output probabilities"""
+        return self.p.temp
+
+    @temp.setter
+    def temp(self, float value):
+        self.p.temp = value
+
+    @property
+    def dynatemp_range(self) -> int:
+        """0.0 = disabled"""
+        return self.p.dynatemp_range
+
+    @dynatemp_range.setter
+    def dynatemp_range(self, float value):
+        self.p.dynatemp_range = value
+
+    @property
+    def dynatemp_exponent(self) -> int:
+        """controls how entropy maps to temperature in dynamic temperature sampler"""
+        return self.p.dynatemp_exponent
+
+    @dynatemp_exponent.setter
+    def dynatemp_exponent(self, float value):
+        self.p.dynatemp_exponent = value
+
+    @property
+    def penalty_last_n(self) -> int:
+        """last n tokens to penalize (0 = disable penalty, -1 = context size)"""
+        return self.p.penalty_last_n
+
+    @penalty_last_n.setter
+    def penalty_last_n(self, int value):
+        self.p.penalty_last_n = value
+
+    @property
+    def penalty_repeat(self) -> float:
+        """1.0 = disabled"""
+        return self.p.penalty_repeat
+
+    @penalty_repeat.setter
+    def penalty_repeat(self, float value):
+        self.p.penalty_repeat = value
+
+    @property
+    def penalty_freq(self) -> float:
+        """0.0 = disabled"""
+        return self.p.penalty_freq
+
+    @penalty_freq.setter
+    def penalty_freq(self, float value):
+        self.p.penalty_freq = value
+
+    @property
+    def penalty_present(self) -> float:
+        """0.0 = disabled"""
+        return self.p.penalty_present
+
+    @penalty_present.setter
+    def penalty_present(self, float value):
+        self.p.penalty_present = value
+
+    @property
+    def mirostat(self) -> int:
+        """0 = disabled, 1 = mirostat, 2 = mirostat 2.0"""
+        return self.p.mirostat
+
+    @mirostat.setter
+    def mirostat(self, int value):
+        self.p.mirostat = value
+
+    @property
+    def mirostat_tau(self) -> float:
+        """target entropy"""
+        return self.p.mirostat_tau
+
+    @mirostat_tau.setter
+    def mirostat_tau(self, float value):
+        self.p.mirostat_tau = value
+
+    @property
+    def mirostat_eta(self) -> float:
+        """learning rate"""
+        return self.p.mirostat_eta
+
+    @mirostat_eta.setter
+    def mirostat_eta(self, float value):
+        self.p.mirostat_eta = value
+
+    @property
+    def penalize_nl(self) -> bool:
+        """consider newlines as a repeatable token"""
+        return self.p.penalize_nl
+
+    @penalize_nl.setter
+    def penalize_nl(self, bint value):
+        self.p.penalize_nl = value
+
+    @property
+    def ignore_eos(self) -> bool:
+        """ignore end-of-sentence"""
+        return self.p.ignore_eos
+
+    @ignore_eos.setter
+    def ignore_eos(self, bint value):
+        self.p.ignore_eos = value
+
+    @property
+    def samplers(self) -> list[common_sampler_type]:
+        """get/set sampler types
+        
+        std_vector[common_sampler_type] samplers
+        """
+        return self.p.samplers
+
+    @samplers.setter
+    def samplers(self, value: list[common_sampler_type]):
+        self.p.samplers = value
+
+    @property
+    def grammar(self) -> str:
+        """optional BNF-like grammar to constrain sampling"""
+        return self.p.grammar
+
+    @grammar.setter
+    def grammar(self, str value):
+        self.p.grammar = value
+
+    @property
+    def logit_bias(self) -> list[llama_logit_bias]:
+        """logit biases to apply
+        
+        std_vector[llama_logit_bias] logit_bias
+        """
+        return self.p.logit_bias
+
+    @logit_bias.setter
+    def logit_bias(self, value: list[llama_logit_bias]):
+        self.p.logit_bias = value
+
+    # # print the parameters into a string
+    # # std_string print() const
+
+
+cdef class CommonSampler:
+    """cython wrapper of llama_cpp.common_sampler"""
+    cdef llama_cpp.common_sampler * ptr
+    cdef bint owner
+
+    def __cinit__(self):
+        self.ptr = NULL
+        self.owner = True
+
+    def __init__(self, LlamaModel model, CommonSamplerParams params):
+        self.ptr = llama_cpp.common_sampler_init(model.ptr, params.p)
+
+        if self.ptr is NULL:
+            raise ValueError("Failed to init Sampler")
+
+    def __dealloc__(self):
+        if self.ptr is not NULL and self.owner is True:
+            llama_cpp.common_sampler_free(self.ptr)
+            self.ptr = NULL
+
+    def accept(self, llama_cpp.llama_token token, bint accept_grammar):
+        """if accept_grammar is true, the token is accepted both by the sampling chain and the grammar"""
+        llama_cpp.common_sampler_accept(self.ptr, token, accept_grammar)
+
+    def reset(self):
+        """reset common sampler"""
+        llama_cpp.common_sampler_reset(self.ptr)
+
+    def clone(self) -> CommonSampler:
+        """clone sampler"""
+        cdef llama_cpp.common_sampler * smplr = llama_cpp.common_sampler_clone(self.ptr)
+        cdef CommonSampler wrapper = CommonSampler.__new__(CommonSampler)
+        wrapper.ptr = smplr
+        return wrapper
+
+    def sample(self, LlamaContext ctx, int idx, bint grammar_first) -> int:
+        """if grammar_first is true, the grammar is applied before the samplers (slower)
+
+        useful in cases where all the resulting candidates (not just the sampled one) must fit the grammar
+        """
+        return llama_cpp.common_sampler_sample(self.ptr, ctx.ptr, idx, grammar_first)
+
+    def get_seed(self) -> int:
+        """get random seed"""
+        return llama_cpp.common_sampler_get_seed(self.ptr)
+
+    # def get_candidates(self) -> LlamaTokenDataArray:
+    #     """access the internal list of current candidate tokens"""
+    #     return llama_cpp.common_sampler_get_candidates(self.ptr)
+
+    def get_last(self) -> int:
+        """get the last accepted token"""
+        return llama_cpp.common_sampler_last(self.ptr)
+
+    def to_string(self) -> str:
+        """print the sampler chain into a string"""
+        return llama_cpp.common_sampler_print(self.ptr).decode()
+
+    def prev_str(self, LlamaContext ctx, int n) -> str:
+        """get a string representation of the last accepted tokens"""
+        return llama_cpp.common_sampler_prev_str(self.ptr, ctx.ptr, n).decode()
+
+    # char common_sampler_type_to_chr(common_sampler_type cnstr)
+    # std_string common_sampler_type_to_str(common_sampler_type cnstr)
+
+    # std_vector[common_sampler_type] common_sampler_types_from_names(const std_vector[std_string] & names, bint allow_alt_names)
+    # std_vector[common_sampler_type] common_sampler_types_from_chars(const std_string & chars)
+
 
 
 cdef class CpuParams:
@@ -3111,6 +3432,13 @@ cdef class LlamaBatch:
         self.p.logits[self.p.n_tokens - 1] = True
 
 
+
+def common_init():
+    """call once at the start of a program if it uses libcommon
+    
+    initializes the logging system and prints info about the build
+    """
+    llama_cpp.common_init()
 
 def llama_backend_init():
     """Initialize the llama + ggml backend
