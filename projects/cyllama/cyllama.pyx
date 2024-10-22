@@ -145,12 +145,8 @@ cpdef enum llama_split_mode:
 # callbacks
 # -----------------------------------------------------------------------------
 
-# ctypedef void (*ggml_log_callback)(ggml_log_level level, const char * text, void * user_data)
-# ctypedef bint (*ggml_abort_callback)(void * data)
-# ctypedef bint (*ggml_backend_sched_eval_callback)(ggml_tensor * t, bint ask, void * user_data)
-# ctypedef bint (*llama_progress_callback)(float progress, void * user_data)
-
 cdef void log_callback(ggml_log_level level, const char * text, void * py_log_callback) noexcept:
+    """ggml_log_callback wrapper to enabling python callbacks to be used"""
     (<object>py_log_callback)(level, text.decode())
 
 def set_log_callback(object py_log_callback):
@@ -161,13 +157,16 @@ def set_log_callback(object py_log_callback):
     llama_cpp.llama_log_set(<llama_cpp.ggml_log_callback>&log_callback, <void*>py_log_callback)
 
 cdef bint abort_callback(void * py_abort_callback) noexcept:
+    """ggml_abort_callback wrapper enabling python callbacks to be used"""
     return (<object>py_abort_callback)()
 
-cdef bint sched_eval_callback(llama_cpp.ggml_tensor * t, bint ask, void * py_sched_eval_callback) noexcept:
+cdef cppbool sched_eval_callback(llama_cpp.ggml_tensor * t, cppbool ask, void * py_sched_eval_callback) noexcept:
+    """ggml_backend_sched_eval_callback wrapper enabling python callbacks to be used"""
     cdef GGMLTensor tensor = GGMLTensor.from_ptr(t)
     return (<object>py_sched_eval_callback)(tensor, ask)
 
 cdef cppbool progress_callback(float progress, void * py_progress_callback) noexcept:
+    """llama_progress_callback callback wrapper enabling python callbacks to be used"""
     return (<object>py_progress_callback)(progress)
 
 
@@ -757,6 +756,7 @@ cdef class CommonParams:
         return wrapper
 
     def __cinit__(self):
+        self.p.cb_eval = &sched_eval_callback # set callback wrapper
         self.cpuparams = CpuParams.from_ptr(&self.p.cpuparams, self)
         self.cpuparams_batch = CpuParams.from_ptr(&self.p.cpuparams_batch, self)
         self.draft_cpuparams = CpuParams.from_ptr(&self.p.draft_cpuparams, self)
@@ -984,23 +984,14 @@ cdef class CommonParams:
     def defrag_thold(self, value: float):
         self.p.defrag_thold = value
 
-    # @property
-    # def cb_eval(self) -> llama_cpp.ggml_backend_sched_eval_callback:
-    #     """ggml backend sched eval callback."""
-    #     return self.p.cb_eval
+    @property
+    def cb_eval(self) -> py_sched_eval_callback:
+        """get/set python ggml backend sched eval callback."""
+        return <object>self.p.cb_eval_user_data
 
-    # @cb_eval.setter
-    # def cb_eval(self, value: llama_cpp.ggml_backend_sched_eval_callback):
-    #     self.p.cb_eval = value
-
-    # @property
-    # def cb_eval_user_data(self):
-    #     """cb eval user data."""
-    #     return self.p.cb_eval_user_data
-
-    # @cb_eval_user_data.setter
-    # def cb_eval_user_data(self, value):
-    #     self.p.cb_eval_user_data = value
+    @cb_eval.setter
+    def cb_eval(self, object py_sched_eval_callback):
+        self.p.cb_eval_user_data = <void*>py_sched_eval_callback
 
     @property
     def numa(self) -> ggml_numa_strategy:
@@ -1985,16 +1976,13 @@ cdef class ModelParams:
     #     self.p.rpc_servers = value
 
     @property
-    def progress_callback(self) -> list[str]:
-        """callback to indicate progress in processing model.
-        
-        llama_progress_callback progress_callback
-        """
+    def progress_callback(self) -> py_progress_callback:
+        """get/set python callback to indicate progress in processing model."""
         return <object>self.p.progress_callback_user_data
 
     @progress_callback.setter
-    def progress_callback(self, object value):
-        self.p.progress_callback_user_data = <void*>value
+    def progress_callback(self, object py_progress_callback):
+        self.p.progress_callback_user_data = <void*>py_progress_callback
 
     # @property
     # def kv_overrides(self) -> list[str]:
@@ -3124,11 +3112,6 @@ cdef class LlamaBatch:
 
     def set_last_logits_to_true(self):
         self.p.logits[self.p.n_tokens - 1] = True
-
-
-
-
-
 
 
 
