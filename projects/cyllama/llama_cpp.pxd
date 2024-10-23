@@ -1791,6 +1791,13 @@ cdef extern from "sampling.h": # optional llama_sampler extensions
     std_vector[common_sampler_type] common_sampler_types_from_chars(const std_string & chars)
 
 #------------------------------------------------------------------------------
+# log.h
+
+cdef extern from "log.h":
+
+    cdef void common_log_set_verbosity_thold(int verbosity)
+
+#------------------------------------------------------------------------------
 # arg.h
 
 cdef extern from "arg.h":      

@@ -9,6 +9,8 @@ classes:
     GGMLTensor
     SamplerChainParams
     LlamaSampler
+    CommonSamplerParams
+    CommonSampler
     CpuParams
     CommonParams
     ModelParams
@@ -28,8 +30,21 @@ from libcpp cimport bool as cppbool # required for func pointer sigs
 
 cimport llama_cpp
 
+import numpy as np
+
 import os
 from typing import Optional, Sequence
+
+
+# scratch
+# -----------------------------------------------------------------------------
+#
+
+# Memoryview on a NumPy array
+# narr = np.arange(27, dtype=np.dtype("i")).reshape((3, 3, 3))
+#narr = np.recarray(30, dtype=np.dtype([("id", np.intc), ("logit", np.single), ("p", np.single)], align=True))
+#cdef int [:, :, :] narr_view = narr
+
 
 # enums
 # -----------------------------------------------------------------------------
@@ -190,8 +205,44 @@ def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_th
 
 # wrapper classes
 # -----------------------------------------------------------------------------
+# import numpy as np
+# cdef class TokenDataArray:
+#     """Intermediate Cython wrapper for a llama.cpp llama_batch."""
+#     cdef llama_cpp.llama_token_data_array * ptr
+#     cdef bint owner
 
+#     def __cinit__(self):
+#         self.ptr = NULL
+#         self.owner = True
 
+#     def __dealloc__(self):
+#         if self.data is not NULL and self.owner is True:
+#             llama_cpp.llama_batch_free(self.batch[0])
+#             self.batch = NULL
+    
+#     def __init__(self, *, n_vocab: int):
+#         self.n_vocab = n_vocab
+#         self.candidates_data = np.recarray(
+#             (self.n_vocab,),
+#             dtype=np.dtype(
+#                 [("id", np.intc), ("logit", np.single), ("p", np.single)], align=True
+#             ),
+#         )
+#         self.candidates = llama_cpp.llama_token_data_array(
+#             data=self.candidates_data.ctypes.data_as(llama_cpp.llama_token_data_p),
+#             size=self.n_vocab,
+#             sorted=False,
+#         )
+#         self.default_candidates_data_id = np.arange(self.n_vocab, dtype=np.intc)  # type: ignore
+#         self.default_candidates_data_p = np.zeros(self.n_vocab, dtype=np.single)
+
+#     def copy_logits(self, logits: npt.NDArray[np.single]):
+#         self.candidates_data.id[:] = self.default_candidates_data_id
+#         self.candidates_data.logit[:] = logits
+#         self.candidates_data.p[:] = self.default_candidates_data_p
+#         self.candidates.sorted = False
+#         self.candidates.size = self.n_vocab
+        
 
 
 # see: 
@@ -200,7 +251,7 @@ def ask(str prompt, str model, n_predict=512, n_ctx=2048, disable_log=True, n_th
 #   https://groups.google.com/g/cython-users/c/hGMPOI0BNpk/m/0iy1Yi9tCAAJ
 
 # FIXME: convert to buffer protocol or memoryview
-# cdef class LlamaTokenDataArray:
+# cdef class TokenDataArray:
 #     """Intermediate Cython wrapper for a llama.cpp llama_batch."""
 #     cdef llama_cpp.llama_token_data_array * ptr
 #     cdef bint owner
@@ -3490,6 +3541,9 @@ def llama_supports_gpu_offload() -> bool:
 
 def llama_supports_rpc() -> bool:
     return llama_cpp.llama_supports_rpc()
+
+def log_set_verbosity(int verbosity):
+    llama_cpp.common_log_set_verbosity_thold(verbosity)
 
 def common_batch_clear(LlamaBatch batch):
     llama_cpp.common_batch_clear(batch.p)
