@@ -40,9 +40,9 @@ class Llama:
     def __init__(self, model_path: Pathlike, n_predict: int = 512, n_ctx: int = 2048, disable_log: bool = True, n_threads: int = 4):
         self.model_path = Path(model_path)
         self.disable_log = disable_log
-
         if not self.model_path.exists():
             raise SystemExit(f"Provided model does not exist: {model_path}")
+        
         self.params = cy.CommonParams()
         self.params.model = str(self.model_path)
         self.params.n_predict = n_predict
@@ -50,12 +50,12 @@ class Llama:
         self.params.verbosity = -1;
         self.params.cpuparams.n_threads = n_threads
 
-        if self.disable_log:
-            cy.log_set_verbosity(self.params.verbosity)
-
         self.model: Optional[cy.LlamaModel] = None
         self.ctx: Optional[cy.LlamaContext] = None
         self.smplr: Optional[cy.LlamaSampler] = None
+        
+        if self.disable_log:
+            cy.log_set_verbosity(self.params.verbosity)
 
         cy.common_init()
         
@@ -89,22 +89,16 @@ class Llama:
         ctx_params = cy.common_context_params_to_llama(self.params)
         self.ctx = cy.LlamaContext(model=self.model, params=ctx_params)
 
-
         # build sampler chain
         sparams = cy.SamplerChainParams()
         sparams.no_perf = False
 
         self.smplr = cy.LlamaSampler(sparams)
-
         self.smplr.add_greedy()
 
-
         # tokenize the prompt
-
         tokens_list: list[int] = cy.common_tokenize(self.ctx, self.params.prompt, True)
-
         n_ctx: int = self.ctx.n_ctx()
-
         n_kv_req: int = len(tokens_list) + (n_predict - len(tokens_list))
 
         if not self.disable_log:
@@ -115,12 +109,13 @@ class Llama:
                 "error: n_kv_req > n_ctx, the required KV cache size is not big enough\n"
                 "either reduce n_predict or increase n_ctx.")
 
-        # print the prompt token-by-token
-        print()
-        prompt=""
-        for i in tokens_list:
-            prompt += cy.common_token_to_piece(self.ctx, i)
-        print(prompt)
+        if not self.disable_log: 
+            # print the prompt token-by-token
+            print()
+            prompt=""
+            for i in tokens_list:
+                prompt += cy.common_token_to_piece(self.ctx, i)
+            print(prompt)
 
         # create a llama_batch with size 512
         # we use this object to submit token data for decoding
@@ -155,13 +150,12 @@ class Llama:
             if True:
                 new_token_id = self.smplr.sample(self.ctx, batch.n_tokens - 1)
 
-                # print("new_token_id: ", new_token_id)
-
                 self.smplr.accept(new_token_id)
 
                 # is it an end of generation?
                 if (self.model.token_is_eog(new_token_id) or n_cur == n_predict):
-                    print()
+                    if not self.disable_log:
+                        print()
                     break
 
                 result += cy.common_token_to_piece(self.ctx, new_token_id)
@@ -187,12 +181,13 @@ class Llama:
                     (n_decode, (t_main_end - t_main_start) / 1000000.0, n_decode / ((t_main_end - t_main_start) / 1000000.0)))
             print()
 
-        return result
+        return result.strip()
 
 if __name__ == '__main__':
     MODEL = ROOT / 'models' / 'Llama-3.2-1B-Instruct-Q8_0.gguf'
-    
-    l = Llama(model_path=MODEL)
-    print(l.ask("When did the universe begin?", n_predict=32))
+    llm = Llama(model_path=MODEL)
+    prompt = "When did the universe begin?"
+    print(prompt)
+    print(llm.ask(prompt, n_predict=32))
 
 
