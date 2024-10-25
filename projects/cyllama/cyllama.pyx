@@ -30,20 +30,11 @@ from libcpp cimport bool as cppbool # required for func pointer sigs
 
 cimport llama_cpp
 
-import numpy as np
+# import numpy as np
 
 import os
 from typing import Optional, Sequence
 
-
-# scratch
-# -----------------------------------------------------------------------------
-#
-
-# Memoryview on a NumPy array
-# narr = np.arange(27, dtype=np.dtype("i")).reshape((3, 3, 3))
-#narr = np.recarray(30, dtype=np.dtype([("id", np.intc), ("logit", np.single), ("p", np.single)], align=True))
-#cdef int [:, :, :] narr_view = narr
 
 
 # enums
@@ -3481,6 +3472,24 @@ cdef class LlamaBatch:
 
     def set_last_logits_to_true(self):
         self.p.logits[self.p.n_tokens - 1] = True
+
+
+cdef class CommonInitResult:
+    cdef llama_cpp.common_init_result p
+    cdef vector[llama_cpp.common_lora_adapter_container] lora_adapters
+
+    def __init__(self, params: CommonParams):
+        self.p = llama_cpp.common_init_from_params(params.p)
+
+    def model(self) -> LlamaModel:
+        return LlamaModel.from_ptr(self.p.model)
+
+    def context(self) -> LlamaContext:
+        return LlamaContext.from_ptr(self.p.context)
+
+    def lora_adapters(self):
+        return 1
+
 
 
 

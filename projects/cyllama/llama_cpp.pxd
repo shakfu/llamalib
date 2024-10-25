@@ -1309,13 +1309,20 @@ cdef extern from "llama.h":
 
 cdef extern from "common.h":
 
-    ctypedef struct common_lora_adapter_info:
+    cdef cppclass common_lora_adapter_info:
         std_string path
         float scale
 
-    # inherits from common_lora_adapter_info
-    ctypedef struct common_lora_adapter_container:
+    cdef cppclass common_lora_adapter_container(common_lora_adapter_info):
         llama_lora_adapter * adapter
+
+    # ctypedef struct common_lora_adapter_info:
+    #     std_string path
+    #     float scale
+
+    # inherits from common_lora_adapter_info
+    # ctypedef struct common_lora_adapter_container:
+    #     llama_lora_adapter * adapter
 
     ctypedef struct common_control_vector_load_info: pass
 
@@ -1374,7 +1381,7 @@ cdef extern from "common.h":
 
     # sampler parameters
     ctypedef struct common_sampler_params:
-        uint32_t seed   ; # the seed used to initialize llama_sampler
+        uint32_t seed  # the seed used to initialize llama_sampler
 
         int32_t n_prev                 # number of previous tokens to remember
         int32_t n_probs                # if greater than 0, output the probabilities of top n_probs tokens.
