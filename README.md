@@ -1,12 +1,14 @@
 # llamalib - compiled python llama.cpp wrappers
 
-**Note**: Development in this project has been frozen to llama.cpp tag `b3982`, and the cython wrapper, `cyllama`, has been spun off to its own [repo](https://github.com/shakfu/cyllama), where development is ocurring at a more frequent pace. Updates to this repo will be made much less frequently if at all. The reason for the freeze is that keeping up to date with llama.cpp frequent changes with three different wrappers took too much time. It was decided to focus on the cython wrapper.
+**Note**: `cyllama`, a cython wrapper of llama.cpp, and one of the three python wrappers in this project, has been spun off to its own [repo](https://github.com/shakfu/cyllama) where more focused development will continue at a more frequent pace. 
+
+Development in this project has been frozen to llama.cpp tag `b3982`, and updates to this repo will be made much less frequently if at all. The reason for the freeze is that keeping up to date with llama.cpp's frequent changes with three different wrappers took too much time. It was decided to focus on the cython wrapper.
 
 --- 
 
-The project provides three different python wrappers of @ggerganov's [llama.cpp](https://github.com/ggerganov/llama.cpp) which is likely the most active open-source compiled LLM inference engine. The python wrapping frameworks used are [cython](https://github.com/cython/cython), [pybind11](https://github.com/pybind/pybind11), and [nanobind](https://github.com/wjakob/nanobind) and share the common feature of being compiled, and in this project statically linked, against `llama.cpp`.
+This project provides three different python wrappers of @ggerganov's [llama.cpp](https://github.com/ggerganov/llama.cpp) which is likely the most active open-source compiled LLM inference engine. The python wrapping frameworks used are [cython](https://github.com/cython/cython), [pybind11](https://github.com/pybind/pybind11), and [nanobind](https://github.com/wjakob/nanobind) and share the common feature of being compiled, and in this project statically linked, against `llama.cpp`.
 
-Development goals were to:
+Development goals are to:
 
 - Stay up-to-date with bleeding-edge `llama.cpp`.
 
@@ -49,7 +51,7 @@ Development only on macOS to keep things simple. The following table provide an 
 
 The initial milestone for each wrapper type was to create a high-level wrapper of `simple.cpp` llama.cpp example, following by a low-level one. The high-level wrapper c++ code is placed in `llamalib.h` single-header library, and wrapping is complete for all three frameworks. The final object is to fully wrap the functionality of `llama-cli` for all three wrapper-types.
 
-Nonetheless, not all wrapping efforts proceed at an equal pace: in general, the cython wrapper is typically the most advanced of the 3.
+Nonetheless, not all wrapping efforts proceed at an equal pace: in general, the cython wrapper is typically the most advanced of the 3. It has been spun off to its own [repo](https://github.com/shakfu/cyllama) where development will continue.
 
 The following is a relatively low-level example of the cython wrapper at work:
 
