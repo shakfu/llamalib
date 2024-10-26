@@ -743,6 +743,9 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("n_gpu_layers", &common_params::n_gpu_layers)
         .def_readwrite("n_gpu_layers_draft", &common_params::n_gpu_layers_draft)
         .def_readwrite("main_gpu", &common_params::main_gpu)
+        
+        .def_readonly("tensor_split", &common_params::tensor_split)
+        
         .def_readwrite("grp_attn_n", &common_params::grp_attn_n)
         .def_readwrite("grp_attn_w", &common_params::grp_attn_w)
         .def_readwrite("n_print", &common_params::n_print)
@@ -754,12 +757,23 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("yarn_beta_slow", &common_params::yarn_beta_slow)
         .def_readwrite("yarn_orig_ctx", &common_params::yarn_orig_ctx)
         .def_readwrite("defrag_thold", &common_params::defrag_thold)
+
+        .def_readonly("cpuparams", &common_params::cpuparams)
+        .def_readonly("cpuparams_batch", &common_params::numa)
+        .def_readonly("draft_cpuparams", &common_params::numa)
+        .def_readonly("numa", &common_params::numa)
+
+        // .def_readwrite("cb_eval", &common_params::cb_eval)
+        // .def_readwrite("cb_eval_user_data", &common_params::cb_eval_user_data)
+        
         .def_readwrite("numa", &common_params::numa)
         .def_readwrite("split_mode", &common_params::split_mode)
         .def_readwrite("rope_scaling_type", &common_params::rope_scaling_type)
         .def_readwrite("pooling_type", &common_params::pooling_type)
         .def_readwrite("attention_type", &common_params::attention_type)
+        
         .def_readwrite("sparams", &common_params::sparams)
+        
         .def_readwrite("model", &common_params::model)
         .def_readwrite("model_draft", &common_params::model_draft)
         .def_readwrite("model_alias", &common_params::model_alias)
@@ -777,10 +791,14 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("lookup_cache_dynamic", &common_params::lookup_cache_dynamic)
         .def_readwrite("logits_file", &common_params::logits_file)
         .def_readwrite("rpc_servers", &common_params::rpc_servers)
+        
         .def_readwrite("in_files", &common_params::in_files)
         .def_readwrite("antiprompt", &common_params::antiprompt)
         .def_readwrite("kv_overrides", &common_params::kv_overrides)
+        
+        .def_readwrite("lora_init_without_apply", &common_params::lora_init_without_apply)
         .def_readwrite("lora_adapters", &common_params::lora_adapters)
+
         .def_readwrite("control_vectors", &common_params::control_vectors)
         .def_readwrite("verbosity", &common_params::verbosity)
         .def_readwrite("control_vector_layer_start", &common_params::control_vector_layer_start)
@@ -802,6 +820,7 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("conversation", &common_params::conversation)
         .def_readwrite("prompt_cache_all", &common_params::prompt_cache_all)
         .def_readwrite("prompt_cache_ro", &common_params::prompt_cache_ro)
+        
         .def_readwrite("escape", &common_params::escape)
         .def_readwrite("multiline_input", &common_params::multiline_input)
         .def_readwrite("simple_io", &common_params::simple_io)
@@ -809,18 +828,18 @@ PYBIND11_MODULE(pbllama, m) {
         .def_readwrite("flash_attn", &common_params::flash_attn)
         .def_readwrite("no_perf", &common_params::flash_attn)
         .def_readwrite("ctx_shift", &common_params::flash_attn)
+        
         .def_readwrite("input_prefix_bos", &common_params::input_prefix_bos)
-        // .def_readwrite("ignore_eos", &common_params::ignore_eos)
         .def_readwrite("logits_all", &common_params::logits_all)
         .def_readwrite("use_mmap", &common_params::use_mmap)
         .def_readwrite("use_mlock", &common_params::use_mlock)
         .def_readwrite("verbose_prompt", &common_params::verbose_prompt)
         .def_readwrite("display_prompt", &common_params::display_prompt)
-        // .def_readwrite("infill", &common_params::infill)
         .def_readwrite("dump_kv_cache", &common_params::dump_kv_cache)
         .def_readwrite("no_kv_offload", &common_params::no_kv_offload)
-        .def_readwrite("warmup", &common_params::warmup)
+        .def_readwrite("warmup", &common_params::warmup)        
         .def_readwrite("check_tensors", &common_params::check_tensors)
+
         .def_readwrite("cache_type_k", &common_params::cache_type_k)
         .def_readwrite("cache_type_v", &common_params::cache_type_v)
         .def_readwrite("mmproj", &common_params::mmproj)
@@ -885,7 +904,7 @@ PYBIND11_MODULE(pbllama, m) {
     // m.def("common_params_handle_model_default", (void (*)(struct common_params &)) &common_params_handle_model_default, "C++: common_params_handle_model_default(struct common_params &) --> void", py::arg("params"));
     m.def("common_params_get_system_info", (std::string (*)(const struct common_params &)) &common_params_get_system_info, "C++: common_params_get_system_info(const struct common_params &) --> std::string", py::arg("params"));
 
-    m.def("string_split", (class std::vector<std::string> (*)(std::string, char)) &string_split, "C++: string_split(std::string, char) --> class std::vector<std::string>", py::arg("input"), py::arg("separator"));
+    // m.def("string_split", (class std::vector<std::string> (*)(std::string, char)) &string_split, "C++: string_split(std::string, char) --> class std::vector<std::string>", py::arg("input"), py::arg("separator"));
     m.def("string_strip", (std::string (*)(const std::string &)) &string_strip, "C++: string_strip(const std::string &) --> std::string", py::arg("str"));
     m.def("string_get_sortable_timestamp", (std::string (*)()) &string_get_sortable_timestamp, "C++: string_get_sortable_timestamp() --> std::string");
     m.def("string_parse_kv_override", (bool (*)(const char *, class std::vector<struct llama_model_kv_override> &)) &string_parse_kv_override, "C++: string_parse_kv_override(const char *, class std::vector<struct llama_model_kv_override> &) --> bool", py::arg("data"), py::arg("overrides"));

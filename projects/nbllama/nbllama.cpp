@@ -743,7 +743,7 @@ NB_MODULE(nbllama, m) {
     // m.def("common_params_handle_model_default", (void (*)(struct common_params &)) &common_params_handle_model_default, "C++: common_params_handle_model_default(struct common_params &) --> void", nb::arg("params"));
     m.def("common_params_get_system_info", (std::string (*)(const struct common_params &)) &common_params_get_system_info, "C++: common_params_get_system_info(const struct common_params &) --> std::string", nb::arg("params"));
 
-    m.def("string_split", (class std::vector<std::string> (*)(std::string, char)) &string_split, "C++: string_split(std::string, char) --> class std::vector<std::string>", nb::arg("input"), nb::arg("separator"));
+    // m.def("string_split", (class std::vector<std::string> (*)(std::string, char)) &string_split, "C++: string_split(std::string, char) --> class std::vector<std::string>", nb::arg("input"), nb::arg("separator"));
     m.def("string_strip", (std::string (*)(const std::string &)) &string_strip, "C++: string_strip(const std::string &) --> std::string", nb::arg("str"));
     m.def("string_get_sortable_timestamp", (std::string (*)()) &string_get_sortable_timestamp, "C++: string_get_sortable_timestamp() --> std::string");
     m.def("string_parse_kv_override", (bool (*)(const char *, class std::vector<struct llama_model_kv_override> &)) &string_parse_kv_override, "C++: string_parse_kv_override(const char *, class std::vector<struct llama_model_kv_override> &) --> bool", nb::arg("data"), nb::arg("overrides"));

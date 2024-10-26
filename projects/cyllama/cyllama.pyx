@@ -24,6 +24,7 @@ classes:
 """
 from libc.stdint cimport uint8_t, int32_t, int64_t, uint32_t
 from libc.stdlib cimport malloc, calloc, realloc, free
+from libc.string cimport strdup
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool as cppbool # required for func pointer sigs
@@ -528,6 +529,13 @@ cdef class LlamaSampler:
             llama_cpp.llama_sampler_free(self.ptr)
             self.ptr = NULL
 
+    @staticmethod
+    cdef LlamaSampler from_ptr(llama_cpp.llama_sampler *ptr, bint owner=False):
+        cdef LlamaSampler wrapper = LlamaSampler.__new__(LlamaSampler)
+        wrapper.ptr = ptr
+        wrapper.ptr_owner = owner
+        return wrapper
+
     def name(self) -> str:
         """Get sampler name"""
         return llama_cpp.llama_sampler_name(self.ptr).decode()
@@ -884,6 +892,42 @@ cdef class CommonSamplerParams:
         self.p.penalty_present = value
 
     @property
+    def dry_multiplier(self) -> float:
+        """0.0 = disabled; DRY repetition penalty for tokens extending repetition."""
+        return self.p.dry_multiplier
+
+    @dry_multiplier.setter
+    def dry_multiplier(self, float value):
+        self.p.dry_multiplier = value
+
+    @property
+    def dry_base(self) -> float:
+        """0.0 = disabled; multiplier * base ^ (length of sequence before token - allowed length)"""
+        return self.p.dry_base
+
+    @dry_base.setter
+    def dry_base(self, float value):
+        self.p.dry_base = value
+
+    @property
+    def dry_allowed_length(self) -> int:
+        """tokens extending repetitions beyond this receive penalty"""
+        return self.p.dry_allowed_length
+
+    @dry_allowed_length.setter
+    def dry_allowed_length(self, int value):
+        self.p.dry_allowed_length = value
+
+    @property
+    def dry_penalty_last_n(self) -> int:
+        """how many tokens to scan for repetitions (0 = disable penalty, -1 = context size)"""
+        return self.p.dry_penalty_last_n
+
+    @dry_penalty_last_n.setter
+    def dry_penalty_last_n(self, int value):
+        self.p.dry_penalty_last_n = value
+
+    @property
     def mirostat(self) -> int:
         """0 = disabled, 1 = mirostat, 2 = mirostat 2.0"""
         return self.p.mirostat
@@ -927,6 +971,15 @@ cdef class CommonSamplerParams:
     @ignore_eos.setter
     def ignore_eos(self, bint value):
         self.p.ignore_eos = value
+
+    @property
+    def no_perf(self) -> bool:
+        """disable performance metrics"""
+        return self.p.no_perf
+
+    @no_perf.setter
+    def no_perf(self, bint value):
+        self.p.no_perf = value
 
     @property
     def samplers(self) -> list[common_sampler_type]:
@@ -2787,6 +2840,27 @@ cdef class LlamaModel:
         result = buf.decode()
         free(buf)
         return result.lstrip()
+
+    def init_dry(self, float dry_multiplier, float dry_base, int dry_allowed_length, int dry_penalty_last_n, list[str] breakers) -> LlamaSampler: 
+        """DRY sampler, designed by p-e-w.
+
+        described in: https://github.com/oobabooga/text-generation-webui/pull/5677, 
+        porting Koboldcpp implementation 
+        authored by pi6am: https://github.com/LostRuins/koboldcpp/pull/982
+        """
+        cdef const char * s
+        cdef size_t num_breakers = len(breakers)
+        cdef const char **seq_breakers = <const char **>malloc(num_breakers * sizeof(char*))
+        for i in range(num_breakers):
+            s = breakers[i]
+            seq_breakers[i] = strdup(s)
+            # seq_breakers[i] = PyUnicode_AsUTF8(breakers[i])
+        cdef llama_cpp.llama_sampler * smplr = llama_cpp.llama_sampler_init_dry(
+            self.ptr, dry_multiplier, dry_base, dry_allowed_length, dry_penalty_last_n,
+            seq_breakers, num_breakers)
+        return LlamaSampler.from_ptr(<llama_cpp.llama_sampler *>smplr)
+
+
 
     # chat template
 

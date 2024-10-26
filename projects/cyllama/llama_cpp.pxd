@@ -1203,6 +1203,16 @@ cdef extern from "llama.h":
                                 bint   penalize_nl,     # consider newlines as a repeatable token
                                 bint   ignore_eos)      # ignore the end-of-sequence token
 
+    #  @details DRY sampler, designed by p-e-w, as described in: https://github.com/oobabooga/text-generation-webui/pull/5677, porting Koboldcpp implementation authored by pi6am: https://github.com/LostRuins/koboldcpp/pull/982
+    cdef llama_sampler * llama_sampler_init_dry(
+            const llama_model *  model,
+                               float    dry_multiplier,
+                               float    dry_base,
+                             int32_t    dry_allowed_length,
+                             int32_t    dry_penalty_last_n,
+                          const char ** seq_breakers,
+                              size_t    num_breakers)
+
     cdef llama_sampler * llama_sampler_init_logit_bias(
                              int32_t   n_vocab,
                              int32_t   n_logit_bias,
@@ -1365,6 +1375,7 @@ cdef extern from "common.h":
 
     cdef enum common_sampler_type:
         COMMON_SAMPLER_TYPE_NONE
+        COMMON_SAMPLER_TYPE_DRY
         COMMON_SAMPLER_TYPE_TOP_K
         COMMON_SAMPLER_TYPE_TOP_P
         COMMON_SAMPLER_TYPE_MIN_P
@@ -1400,11 +1411,18 @@ cdef extern from "common.h":
         float   penalty_repeat         # 1.0 = disabled
         float   penalty_freq           # 0.0 = disabled
         float   penalty_present        # 0.0 = disabled
+        float   dry_multiplier         # 0.0 = disabled;  DRY repetition penalty for tokens extending repetition:
+        float   dry_base               # 0.0 = disabled;      multiplier * base ^ (length of sequence before token - allowed length)
+        int32_t dry_allowed_length     # tokens extending repetitions beyond this receive penalty
+        int32_t dry_penalty_last_n     # how many tokens to scan for repetitions (0 = disable penalty, -1 = context size)
         int32_t mirostat               # 0 = disabled, 1 = mirostat, 2 = mirostat 2.0
         float   mirostat_tau           # target entropy
         float   mirostat_eta           # learning rate
-        bint    penalize_nl             # consider newlines as a repeatable token
-        bint    ignore_eos
+        bint    penalize_nl            # consider newlines as a repeatable token
+        bint    ignore_eos             # ignore end-of-sentence
+        bint    no_perf                # disable performance metrics
+
+        std_vector[std_string] dry_sequence_breakers # default sequence breakers for DRY
 
         std_vector[common_sampler_type] samplers
 
