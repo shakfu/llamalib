@@ -1,8 +1,12 @@
 # llamalib - compiled python llama.cpp wrappers
 
+**Note**: Development in this project has been frozen to llama.cpp tag `b3982`, and the cython wrapper, `cyllama`, has been spun off to its own [repo](https://github.com/shakfu/cyllama), where development is ocurring at a more frequent pace. Updates to this repo will be made much less frequently if at all. The reason for the freeze is that keeping up to date with llama.cpp frequent changes with three different wrappers took too much time. It was decided to focus on the cython wrapper.
+
+--- 
+
 The project provides three different python wrappers of @ggerganov's [llama.cpp](https://github.com/ggerganov/llama.cpp) which is likely the most active open-source compiled LLM inference engine. The python wrapping frameworks used are [cython](https://github.com/cython/cython), [pybind11](https://github.com/pybind/pybind11), and [nanobind](https://github.com/wjakob/nanobind) and share the common feature of being compiled, and in this project statically linked, against `llama.cpp`.
 
-Development goals are to:
+Development goals were to:
 
 - Stay up-to-date with bleeding-edge `llama.cpp`.
 
