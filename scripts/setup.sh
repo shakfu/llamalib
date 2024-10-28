@@ -102,7 +102,7 @@ remove_current() {
 main() {
 	remove_current
 	get_llamacpp
-	get_llamacpp_python
+	# get_llamacpp_python
 	# get_whispercpp
 	# get_stablediffusioncpp
 }
