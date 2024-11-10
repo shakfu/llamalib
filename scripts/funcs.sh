@@ -11,6 +11,6 @@ ask() {
 }
 
 srv() {
-    ./bin/llama-server -c ${N_CONTEXT} -n ${N_PREDICT} --repeat-penalty 1.15 --repeat-last-n 128 -m $1 & open scripts/mikupad.html
+    ./bin/llama-server -c ${N_CONTEXT} -n ${N_PREDICT} --repeat-penalty 1.15 --repeat-last-n 128 -m $1
 }
 
